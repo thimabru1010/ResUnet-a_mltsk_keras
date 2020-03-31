@@ -33,6 +33,9 @@ MANIFEST
 *.manifest
 *.spec
 
+# Zip files
+code_organized.zip 
+
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
