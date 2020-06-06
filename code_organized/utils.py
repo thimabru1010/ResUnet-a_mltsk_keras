@@ -17,7 +17,7 @@ from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 #from tensorflow.keras.applications.vgg16 import preprocess_input
 from skimage.morphology import disk
 from skimage.filters import rank
-import skimage.morphology 
+import skimage.morphology
 from contextlib import redirect_stdout
 import time
 import tensorflow.keras.backend as K
@@ -54,7 +54,7 @@ def extract_patches_mask_indices(input_image, patch_size, stride):
     image_indices = np.arange(h*w).reshape(h,w)
     window_shape = patch_size
     window_shape_array = (window_shape, window_shape)
-    patches_array = np.array(view_as_windows(image_indices, window_shape_array, step = stride))    
+    patches_array = np.array(view_as_windows(image_indices, window_shape_array, step = stride))
     num_row,num_col,row,col = patches_array.shape
     patches_array = patches_array.reshape(num_row*num_col,row,col)
     return patches_array
@@ -62,7 +62,7 @@ def extract_patches_mask_indices(input_image, patch_size, stride):
 def data_augmentation(image, labels):
     aug_imgs = np.zeros((5, image.shape[0], image.shape[1], image.shape[2]))
     aug_lbs = np.zeros((5, image.shape[0], image.shape[1]))
-    
+
     for i in range(0, len(aug_imgs)):
         aug_imgs[0, :, :, :] = image
         aug_imgs[1, :, :, :] = np.rot90(image, 1)
@@ -73,7 +73,7 @@ def data_augmentation(image, labels):
         aug_imgs[4, :, :, :] = np.flip(image, 1)
         #aug_imgs[6, :, :] = np.rot90(horizontal_flip, 2)
         #aug_imgs[7, :, :] =np.rot90(horizontal_flip, 3)
-        
+
     for i in range(0, len(aug_lbs)):
         aug_lbs[0, :, :] = labels
         aug_lbs[1, :, :] = np.rot90(labels, 1)
@@ -84,44 +84,44 @@ def data_augmentation(image, labels):
         aug_lbs[4, :, :] = np.flip(labels, 1)
         #aug_lbs[6, :, :] = np.rot90(horizontal_flip_lb, 2)
         #aug_lbs[7, :, :] =np.rot90(horizontal_flip_lb, 3)
-    
+
     return aug_imgs, aug_lbs
 
 # Original model
 def unet(input_shape):
     input_img = Input(input_shape)
-  
+
     f1 = 32
-    conv1 = Conv2D(f1 , (3 , 3) , activation='relu' , padding='same', name = 'conv1')(input_img) 
+    conv1 = Conv2D(f1 , (3 , 3) , activation='relu' , padding='same', name = 'conv1')(input_img)
     pool1 = MaxPool2D((2 , 2))(conv1)
-  
+
     conv2 = Conv2D(f1*2 , (3 , 3) , activation='relu' , padding='same', name = 'conv2')(pool1)
     pool2 = MaxPool2D((2 , 2))(conv2)
-  
+
     conv3 = Conv2D(f1*4 , (3 , 3) , activation='relu' , padding='same', name = 'conv3')(pool2)
     pool3 = MaxPool2D((2 , 2))(conv3)
-  
+
     conv4 = Conv2D(f1*8 , (3 , 3) , activation='relu' , padding='same', name = 'conv4')(pool3)
     pool4 = MaxPool2D((2 , 2))(conv4)
-  
+
     conv5 = Conv2D(f1*16 , (3 , 3) , activation='relu' , padding='same', name = 'conv5')(pool4)
     #drop1 = Dropout(0.5)(conv5)
 
     upsample1 = Conv2D(f1*8, (3 , 3), activation = 'relu', padding = 'same', name = 'upsampling1')(UpSampling2D(size = (2,2))(conv5))
     merged1 = concatenate([conv4, upsample1], name='concatenate1')
-      
+
     upsample2 = Conv2D(f1*4, (3 , 3), activation = 'relu', padding = 'same', name = 'upsampling2')(UpSampling2D(size = (2,2))(merged1))
     merged2 = concatenate([conv3, upsample2], name='concatenate2')
-      
+
     upsample3 = Conv2D(f1*2, (3 , 3), activation = 'relu', padding = 'same', name = 'upsampling3')(UpSampling2D(size = (2,2))(merged2))
     merged3 = concatenate([conv2, upsample3], name='concatenate3')
-     
+
     upsample4 = Conv2D(f1, (3 , 3), activation = 'relu', padding = 'same', name = 'upsampling4')(UpSampling2D(size = (2,2))(merged3))
     merged4 = concatenate([conv1, upsample4], name='concatenate4')
-        
+
     output = Conv2D(3,(1,1), activation = 'softmax')(merged4)
-    
-    return Model(input_img , output) 
+
+    return Model(input_img , output)
 
 def identity_block(X, f, filters, stage, block):
     # defining name basis
@@ -131,7 +131,7 @@ def identity_block(X, f, filters, stage, block):
     # Retrieve Filters
     F1, F2, F3 = filters
 
-    # Save the input value. We'll need this later to add back to the main path. 
+    # Save the input value. We'll need this later to add back to the main path.
     X_shortcut = X
     # First component of main path
     X = Conv2D(filters = F1, kernel_size = (1, 1), strides = (1,1), padding = 'same', name = conv_name_base + '2a')(X)
@@ -154,11 +154,11 @@ def identity_block(X, f, filters, stage, block):
     return X
 
 
-def ResNet50(input_shape):   
+def ResNet50(input_shape):
 
     # Define the input as a tensor with shape input_shape
     X_input = Input(input_shape)
-    
+
     #X = ZeroPadding2D((3, 3))(X_input)
 
     # Stage 1
@@ -172,21 +172,21 @@ def ResNet50(input_shape):
     conv2 = Conv2D(128, (3, 3), name = 'conv2', padding="same")(ident1)
     act2 = Activation('relu')(conv2)
     pool2 = MaxPool2D((2 , 2))(act2)
-    
+
     ident2 = identity_block(pool2, 3, [128,128,128], stage=3, block='b')
-    
+
     conv3 = Conv2D(256, (3, 3), name = 'conv3', padding="same")(ident2)
     act3 = Activation('relu')(conv3)
     pool3 = MaxPool2D((2 , 2))(act3)
-    
+
     ident3 = identity_block(pool3, 3, [256,256,256], stage=4, block='b')
-    
+
     conv4 = Conv2D(512, (3, 3), name = 'conv4', padding="same")(ident3)
     act4 = Activation('relu')(conv4)
     pool4 = MaxPool2D((2 , 2))(act4)
-    
+
     ident4 = identity_block(pool4, 3, [512,512,512], stage=5, block='5')
-    
+
     conv5 = Conv2D(1024, (3, 3), name = 'conv5', padding="same")(ident4)
     #X  BatchNormalization(axis = 3, name = 'bn_conv1')(X)
     act5 = Activation('relu')(conv5)
@@ -198,7 +198,7 @@ def ResNet50(input_shape):
     #X = identity_block(X, 3, [128, 128, 512], stage=3, block='b')
     #X = identity_block(X, 3, [128, 128, 512], stage=3, block='c')
     #X = identity_block(X, 3, [128, 128, 512], stage=3, block='d')
-    
+
     # Stage 4
     #X = convolutional_block(X, f=3, filters=[256, 256, 1024], stage=4, block='a', s=2)
     #X = identity_block(X, 3, [256, 256, 1024], stage=4, block='b')
@@ -206,16 +206,16 @@ def ResNet50(input_shape):
     # Decoder
     upsampling1 = Conv2D(512, (3 , 3), activation = 'relu', padding = 'same', name = 'upsampling1')(UpSampling2D(size = (2,2))(ident5))
     merged1 = concatenate([conv4, upsampling1], name='concatenate1')
-      
+
     upsampling2 = Conv2D(256, (3 , 3), activation = 'relu', padding = 'same', name = 'upsampling2')(UpSampling2D(size = (2,2))(merged1))
     merged2 = concatenate([conv3, upsampling2], name='concatenate2')
 
     upsampling3 = Conv2D(128, (3 , 3), activation = 'relu', padding = 'same', name = 'upsampling3')(UpSampling2D(size = (2,2))(merged2))
     merged3 = concatenate([conv2, upsampling3], name='concatenate3')
-     
+
     upsampling4 = Conv2D(64, (3 , 3), activation = 'relu', padding = 'same', name = 'upsampling4')(UpSampling2D(size = (2,2))(merged3))
     merged4 = concatenate([conv1, upsampling4], name='concatenate4')
-    
+
     output = Conv2D(3,(1,1), activation = 'softmax')(merged4)
 
     model = Model(inputs = X_input, outputs = output, name='ResNet50')
@@ -277,6 +277,8 @@ def RGB_image(image):
 
 def extract_patches(input_image, reference,  patch_size, stride):
     window_shape = patch_size
+    print('debug')
+    print(input_image.shape[2])
     window_shape_array = (window_shape, window_shape, input_image.shape[2])
     window_shape_ref = (window_shape, window_shape)
     patches_array = np.array(view_as_windows(input_image, window_shape_array, step = stride))
@@ -297,13 +299,13 @@ def patch_tiles(tiles, mask_amazon, image_array, image_ref, patch_size, stride):
         y1 = np.min(cols)
         x2 = np.max(rows)
         y2 = np.max(cols)
-        
+
         tile_img = image_array[x1:x2+1,y1:y2+1,:]
         tile_ref = image_ref[x1:x2+1,y1:y2+1]
         patches_img, patch_ref = extract_patches(tile_img, tile_ref, patch_size, stride)
         patches_out.append(patches_img)
         label_out.append(patch_ref)
-        
+
     patches_out = np.concatenate(patches_out)
     label_out = np.concatenate(label_out)
     return patches_out, label_out
@@ -311,25 +313,26 @@ def patch_tiles(tiles, mask_amazon, image_array, image_ref, patch_size, stride):
 def bal_aug_patches(percent, patch_size, patches_img, patches_ref):
     patches_images = []
     patches_labels = []
-    
+
     for i in range(0,len(patches_img)):
         patch = patches_ref[i]
         class1 = patch[patch==1]
-        
+
         if len(class1) >= int((patch_size**2)*(percent/100)):
             patch_img = patches_img[i]
             patch_label = patches_ref[i]
             img_aug, label_aug = data_augmentation(patch_img, patch_label)
             patches_images.append(img_aug)
             patches_labels.append(label_aug)
-    
+
+    print(len(patches_images))
     patches_bal = np.concatenate(patches_images).astype(np.float32)
     labels_bal = np.concatenate(patches_labels).astype(np.float32)
     return patches_bal, labels_bal
 
 def extrac_patch2(img, stride, img_type):
     if img_type == 1:
-        h, w = img.shape 
+        h, w = img.shape
         num_patches_h = int(h/stride)
         num_patches_w = int(w/stride)
         patch_t = []
@@ -344,9 +347,9 @@ def extrac_patch2(img, stride, img_type):
                 #print(patch.shape)
                 patch_t.append(patch)
         patch_t1=np.asarray(patch_t)
-        
+
     if img_type == 2:
-        h, w, c = img.shape 
+        h, w, c = img.shape
         num_patches_h = int(h/stride)
         num_patches_w = int(w/stride)
         patch_t = []
@@ -361,23 +364,23 @@ def extrac_patch2(img, stride, img_type):
                 #print(patch.shape)
                 patch_t.append(patch)
         patch_t1=np.asarray(patch_t)
-    
+
     return patch_t1
 
 def test_FCN(net, patch_test, patch_test_ref):
     predictions = net.predict(patch_test)
     print(predictions.shape)
     pred1 = predictions[:,:,:,1]
-    
+
     p_labels=predictions.argmax(axis=3)
-    
+
     t_vec=np.reshape(patch_test_ref,patch_test_ref.shape[0]*patch_test_ref.shape[1]*patch_test_ref.shape[2])
     p_vec=np.reshape(p_labels,p_labels.shape[0]*p_labels.shape[1]*p_labels.shape[2])
     #prob_vec=np.reshape(pred1,pred1.shape[0]*pred1.shape[1]*pred1.shape[2])
     return p_labels, t_vec, p_vec, pred1
 
 def pred_recostruction(patch_size, pred_labels, image_ref):
-    # Reconstruction 
+    # Reconstruction
     stride = patch_size
     h, w = image_ref.shape
     num_patches_h = int(h/stride)
@@ -394,18 +397,18 @@ def pred_recostruction(patch_size, pred_labels, image_ref):
 def weighted_categorical_crossentropy(weights):
         """
         A weighted version of keras.objectives.categorical_crossentropy
-        
+
         Variables:
             weights: numpy array of shape (C,) where C is the number of classes
-        
+
         Usage:
             weights = np.array([0.5,2,10]) # Class one at 0.5, class 2 twice the normal weights, class 3 10x.
             loss = weighted_categorical_crossentropy(weights)
             model.compile(loss=loss,optimizer='adam')
         """
-        
+
         weights = K.variable(weights)
-            
+
         def loss(y_true, y_pred):
             # scale predictions so that the class probas of each sample sum to 1
             y_pred /= K.sum(y_pred, axis=-1, keepdims=True)
@@ -433,7 +436,7 @@ def prediction(model, image_array, image_ref, final_mask, mask_amazon_ts_, patch
     patch_ts = extrac_patch2(image_array, patch_size, img_type = 2)
     patches_lb = extrac_patch2(image_ref, patch_size, img_type = 1)
     clipping_ref = extrac_patch2(final_mask, patch_size, img_type = 1)
-    
+
     start_test = time.time()
     p_labels, t_vec, p_vec, probs = test_FCN(model, patch_ts, patches_lb)
     end_test =  time.time() - start_test
@@ -442,26 +445,26 @@ def prediction(model, image_array, image_ref, final_mask, mask_amazon_ts_, patch
     img_reconstructed = pred_recostruction(patch_size, p_labels, image_ref)
     prob_recontructed = pred_recostruction(patch_size, probs, image_ref)
     ref_clip = pred_recostruction(patch_size, clipping_ref, image_ref)
-    
+
     clipping_mask = extrac_patch2(mask_amazon_ts_, patch_size, img_type = 1)
     clipping_mask_ = pred_recostruction(patch_size, clipping_mask, image_ref)
-    
+
     mask_areas_pred = np.ones_like(ref_reconstructed)
     area = skimage.morphology.area_opening(img_reconstructed, area_threshold = area, connectivity=1)
     area_no_consider = img_reconstructed-area
     mask_areas_pred[area_no_consider==1] = 0
-    
+
     # Mask areas no considered reference
     mask_borders = np.ones_like(img_reconstructed)
     mask_borders[ref_clip==2] = 0
-    
-    mask_no_consider = mask_areas_pred * mask_borders 
+
+    mask_no_consider = mask_areas_pred * mask_borders
     ref_consider = mask_no_consider * ref_clip
     pred_consider = mask_no_consider*img_reconstructed
-    
+
     ref_final = ref_consider[clipping_mask_*mask_no_consider==1]
     pre_final = pred_consider[clipping_mask_*mask_no_consider==1]
-    
+
     return ref_final, pre_final, prob_recontructed, ref_reconstructed, ref_clip, clipping_mask_, end_test
 
 
@@ -469,10 +472,10 @@ def color_map(prob_map, ref_reconstructed, mask_no_considered, clipping_mask_, t
     reconstructed = prob_map.copy()
     reconstructed[reconstructed >= th] = 1
     reconstructed[reconstructed < th] = 0
-    
+
     true_positives = (reconstructed*ref_reconstructed)
     diff_image = reconstructed-ref_reconstructed
-    
+
     output_map = np.zeros((ref_reconstructed.shape)).astype(np.float32)
     output_map[true_positives == 1] = 1
     output_map[diff_image == 1] = 2
