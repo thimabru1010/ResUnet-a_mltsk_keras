@@ -277,8 +277,8 @@ def RGB_image(image):
 
 def extract_patches(input_image, reference,  patch_size, stride):
     window_shape = patch_size
-    print('debug')
-    print(input_image.shape[2])
+    # print('debug')
+    # print(input_image.shape[2])
     window_shape_array = (window_shape, window_shape, input_image.shape[2])
     window_shape_ref = (window_shape, window_shape)
     patches_array = np.array(view_as_windows(input_image, window_shape_array, step = stride))

@@ -18,31 +18,49 @@ img_t2 = img_t2.transpose((1,2,0))
 
 # Concatenation of images
 image_array1 = np.concatenate((img_t1, img_t2), axis = -1).astype(np.float32)
+image_array1 = image_array1[:6100,:6600]
 h_, w_, channels = image_array1.shape
-print(image_array1.shape)
+print(f"Input image shape: {image_array1.shape}")
 
 # Normalization
 type_norm = 1
 image_array = normalization(image_array1, type_norm)
 print(np.min(image_array), np.max(image_array))
 
+# Load Mask area
+img_mask_ref_path = 'mask_ref.tif'
+img_mask_ref = load_tiff_image(os.path.join(root_path, img_mask_ref_path))
+img_mask_ref = img_mask_ref[:6100,:6600]
+print(f"Mask area reference shape: {img_mask_ref.shape}")
+
 # Load deforastation reference
-image_ref1 = load_tiff_image(os.path.join(root_path,'labels/binary_clipped_2019.tif'))
-image_ref = image_ref1[:1700,:1440]
+image_ref = load_tiff_image(os.path.join(root_path,'labels/binary_clipped_2019.tif'))
+# Clip to fit tiles of your specific image
+image_ref = image_ref[:6100,:6600]
+image_ref[img_mask_ref==-99] = -1
+print(f"Image reference shape: {image_ref.shape}")
 
 # Load past deforastation reference
 past_ref1 = load_tiff_image(os.path.join(root_path,'labels/binary_clipped_2013_2018.tif'))
 past_ref2 = load_tiff_image(os.path.join(root_path,'labels/binary_clipped_1988_2012.tif'))
 past_ref_sum = past_ref1 + past_ref2
-past_ref = past_ref_sum[:1700,:1440]
+# Clip to fit tiles of your specific image
+past_ref_sum = past_ref_sum[:6100,:6600]
+past_ref_sum[img_mask_ref==-99] = -1
+# Doing the sum, there are some pixels with value 2 (Case when both were deforastation).
+past_ref_sum[past_ref_sum==2] = 1
+# Same thing for background area (different from no deforastation)
+past_ref_sum[past_ref_sum==-2] = -1
+print(f"Past reference shape: {past_ref_sum.shape}")
 
 #  Creation of buffer
 buffer = 2
-final_mask = mask_no_considered(image_ref, buffer, past_ref)
+final_mask = mask_no_considered(image_ref, buffer, past_ref_sum)
 #plt.imshow(final_mask)
 
 # Mask with tiles
-tile_number = np.ones((340,480))
+# Divide tiles in 5 rows and 3 columns. Total = 15 tiles
+tile_number = np.ones((1220,2200))
 mask_c_1 = np.concatenate((tile_number, 2*tile_number, 3*tile_number), axis=1)
 mask_c_2 = np.concatenate((4*tile_number, 5*tile_number, 6*tile_number), axis=1)
 mask_c_3 = np.concatenate((7*tile_number, 8*tile_number, 9*tile_number), axis=1)
