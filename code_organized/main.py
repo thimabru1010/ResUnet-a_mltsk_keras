@@ -4,16 +4,13 @@ from utils import np, plt, load_tiff_image, load_SAR_image, compute_metrics, dat
 RGB_image, extract_patches, patch_tiles, bal_aug_patches, extrac_patch2, test_FCN, pred_recostruction, \
 weighted_categorical_crossentropy, mask_no_considered, tf, Adam, prediction, load_model, confusion_matrix, \
 EarlyStopping, ModelCheckpoint, identity_block, ResNet50, color_map
-import os
 
-root_path = '/media/thimabru/ssd/TCC/dataset'
-img_t1_path = 'clipped_raster_004_66_2018.tif'
-img_t2_path = 'clipped_raster_004_66_2019.tif'
+root_path = './'
 
 # Load images
-img_t1 = load_tiff_image(os.path.join(root_path,img_t1_path)).astype(np.float32)
+img_t1 = load_tiff_image(root_path+'images/18_08_2017_image'+'.tif').astype(np.float32)
 img_t1 = img_t1.transpose((1,2,0))
-img_t2 = load_tiff_image(os.path.join(root_path,img_t2_path)).astype(np.float32)
+img_t2 = load_tiff_image(root_path+'images/21_08_2018_image'+'.tif').astype(np.float32)
 img_t2 = img_t2.transpose((1,2,0))
 
 # Concatenation of images
@@ -28,9 +25,13 @@ print(np.min(image_array), np.max(image_array))
 
 # Load reference
 image_ref1 = load_tiff_image(root_path+'images/REFERENCE_2018_EPSG4674'+'.tif')
-print(image_ref1.shape)
 image_ref = image_ref1[:1700,:1440]
+
 past_ref1 = load_tiff_image(root_path+'images/PAST_REFERENCE_FOR_2018_EPSG4674'+'.tif')
+unique, counts = np.unique(past_ref1, return_counts=True)
+counts_dict = dict(zip(unique, counts))
+print('='*50)
+print(counts_dict)
 past_ref = past_ref1[:1700,:1440]
 
 #  Creation of buffer
@@ -73,7 +74,7 @@ print('Total deforestaion class is {}'.format(len(image_ref[image_ref==1])))
 print('Percentage of deforestaion class is {:.2f}'.format((len(image_ref[image_ref==1])*100)/len(image_ref[image_ref==0])))
 #%% Patches extraction
 patch_size = 128
-stride = patch_size//1
+stride = patch_size//8
 
 # Percent of class deforestation
 percent = 5

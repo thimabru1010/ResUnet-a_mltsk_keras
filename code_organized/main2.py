@@ -1,10 +1,11 @@
-import utils
+#import utils
 import time
 from utils import np, plt, load_tiff_image, load_SAR_image, compute_metrics, data_augmentation, unet, normalization, \
 RGB_image, extract_patches, patch_tiles, bal_aug_patches, extrac_patch2, test_FCN, pred_recostruction, \
 weighted_categorical_crossentropy, mask_no_considered, tf, Adam, prediction, load_model, confusion_matrix, \
 EarlyStopping, ModelCheckpoint, identity_block, ResNet50, color_map
 import os
+from utils2 import patch_tiles2, bal_aug_patches2, bal_aug_patches3
 
 root_path = 'dataset'
 img_t1_path = 'clipped_raster_004_66_2018.tif'
@@ -46,16 +47,24 @@ past_ref2 = load_tiff_image(os.path.join(root_path,'labels/binary_clipped_1988_2
 past_ref_sum = past_ref1 + past_ref2
 # Clip to fit tiles of your specific image
 past_ref_sum = past_ref_sum[:6100,:6600]
-past_ref_sum[img_mask_ref==-99] = -1
+#past_ref_sum[img_mask_ref==-99] = -1
 # Doing the sum, there are some pixels with value 2 (Case when both were deforastation).
 past_ref_sum[past_ref_sum==2] = 1
 # Same thing for background area (different from no deforastation)
-past_ref_sum[past_ref_sum==-2] = -1
+#past_ref_sum[past_ref_sum==-2] = -1
 print(f"Past reference shape: {past_ref_sum.shape}")
 
 #  Creation of buffer
 buffer = 2
 final_mask = mask_no_considered(image_ref, buffer, past_ref_sum)
+final_mask[img_mask_ref==-99] = -1
+unique, counts = np.unique(final_mask, return_counts=True)
+counts_dict = dict(zip(unique, counts))
+print(counts_dict)
+total_pixels = counts_dict[0] + counts_dict[1] + counts_dict[2]
+weight0 = total_pixels / counts_dict[0]
+weight1 = total_pixels / counts_dict[1]
+final_mask[img_mask_ref==-99] = 0
 #plt.imshow(final_mask)
 
 # Mask with tiles
@@ -86,16 +95,24 @@ mask_tr_val[mask_tiles == val2] = 2
 total_no_def = 0
 total_def = 0
 
+# Make this to count the deforastation area
+image_ref[img_mask_ref==-99] = -1
+
 total_no_def += len(image_ref[image_ref==0])
 total_def += len(image_ref[image_ref==1])
 # Print number of samples of each class
 print('Total no-deforestaion class is {}'.format(len(image_ref[image_ref==0])))
 print('Total deforestaion class is {}'.format(len(image_ref[image_ref==1])))
 print('Percentage of deforestaion class is {:.2f}'.format((len(image_ref[image_ref==1])*100)/len(image_ref[image_ref==0])))
+
+image_ref[img_mask_ref==-99] = 0
 #%% Patches extraction
 patch_size = 128
-#stride = patch_size//8
-stride = patch_size//1
+stride = patch_size//8
+#stride = patch_size//1
+
+print(f'Patche size: {patch_size}')
+print(f'Stride: {stride}')
 
 # Percent of class deforestation
 percent = 5
@@ -103,17 +120,23 @@ percent = 5
 number_class = 3
 
 # Trainig tiles
+print('extracting training patches....')
 tr_tiles = [tr1, tr2, tr3, tr4]
 patches_tr, patches_tr_ref = patch_tiles(tr_tiles, mask_tiles, image_array, final_mask, patch_size, stride)
-patches_tr_aug, patches_tr_ref_aug = bal_aug_patches(percent, patch_size, patches_tr, patches_tr_ref)
+print(patches_tr.shape)
+print(patches_tr_ref.shape)
+# patches_tr, patches_tr_ref = patch_tiles2(tr_tiles, mask_tiles, image_array, final_mask, img_mask_ref, patch_size, stride)
+patches_tr_aug, patches_tr_ref_aug = bal_aug_patches3(percent, patch_size, patches_tr, patches_tr_ref)
 patches_tr_ref_aug_h = tf.keras.utils.to_categorical(patches_tr_ref_aug, number_class)
 
 # Validation tiles
+print('extracting validation patches....')
 val_tiles = [val1, val2]
 patches_val, patches_val_ref = patch_tiles(val_tiles, mask_tiles, image_array, final_mask, patch_size, stride)
-print(debug2)
-print(patches_val_ref.shape)
-patches_val_aug, patches_val_ref_aug = bal_aug_patches(percent, patch_size, patches_val, patches_val_ref)
+# patches_val, patches_val_ref = patch_tiles2(val_tiles, mask_tiles, image_array, final_mask, img_mask_ref, patch_size, stride)
+# print(debug2)
+# print(patches_val_ref.shape)
+patches_val_aug, patches_val_ref_aug = bal_aug_patches3(percent, patch_size, patches_val, patches_val_ref)
 patches_val_ref_aug_h = tf.keras.utils.to_categorical(patches_val_ref_aug, number_class)
 
 #%%
@@ -124,13 +147,16 @@ cols = patch_size
 adam = Adam(lr = 0.0001 , beta_1=0.9)
 batch_size = 8
 
-weights = [0.5, 0.5, 0]
+#weights = [0.5, 0.5, 0]
+weights = [weight0, weight1, 0]
+print(f"Weights: {weights}")
+print('='*80)
 loss = weighted_categorical_crossentropy(weights)
 model = unet((rows, cols, channels))
 model.compile(optimizer=adam, loss=loss, metrics=['accuracy'])
 # print model information
 model.summary()
-filepath = root_path+'models/'
+filepath = './models_new/'
 # define early stopping callback
 earlystop = EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=10, verbose=1, mode='min')
 checkpoint = ModelCheckpoint(filepath+'unet_exp_'+str(exp)+'.h5', monitor='val_loss', verbose=1, save_best_only=True, mode='min')
