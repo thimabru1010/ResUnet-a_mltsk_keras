@@ -7,7 +7,13 @@ EarlyStopping, ModelCheckpoint, identity_block, ResNet50, color_map
 import os
 from utils2 import patch_tiles2, bal_aug_patches2, bal_aug_patches3
 
-root_path = 'dataset'
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("--dataset",
+    help="dataset path", type=str, default='dataset')
+args = parser.parse_args()
+
+root_path = args.dataset
 img_t1_path = 'clipped_raster_004_66_2018.tif'
 img_t2_path = 'clipped_raster_004_66_2019.tif'
 
