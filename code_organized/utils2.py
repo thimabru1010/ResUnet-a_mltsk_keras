@@ -34,8 +34,8 @@ def extract_patches_right_region(img_train, img_train_ref, img_mask_ref, patch_s
                         counts_dict[0] = 0
                     total_pixels = counts_dict[0] + counts_dict[1]
                     if counts_dict[1]/total_pixels >= 0.05:
-                        patches_train.append(patch_train)
-                        patches_train_ref.append(patch_train_ref)
+                        patches_train.append(np.asarray(patch_train))
+                        patches_train_ref.append(np.asarray(patch_train_ref))
                         #patches_past_ref.append(patch_past_ref)
             i = i + stride
             cont_l +=1
@@ -73,6 +73,8 @@ def patch_tiles2(tiles, mask_amazon, image_array, image_ref, img_mask_ref, patch
     print(len(label_out))
     patches_out = np.concatenate(patches_out)
     label_out = np.concatenate(label_out)
+    print(patches_out.shape)
+    print(label_out.shape)
     return patches_out, label_out
 
 def bal_aug_patches2(percent, patch_size, patches_img, patches_ref):
@@ -81,6 +83,7 @@ def bal_aug_patches2(percent, patch_size, patches_img, patches_ref):
     print('bal_aug_patches')
 
     print(len(patches_img))
+    print(patches_img.shape)
     for i in range(0,len(patches_img)):
         patch = patches_ref[i]
         class1 = patch[patch==1]

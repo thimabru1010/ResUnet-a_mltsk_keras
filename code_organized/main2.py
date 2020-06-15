@@ -113,12 +113,14 @@ print('Percentage of deforestaion class is {:.2f}'.format((len(image_ref[image_r
 
 image_ref[img_mask_ref==-99] = 0
 #%% Patches extraction
-patch_size = 128
-stride = patch_size//8
+patch_size = 64
+stride = patch_size//4
 #stride = patch_size//1
 
+print("="*40)
 print(f'Patche size: {patch_size}')
 print(f'Stride: {stride}')
+print("="*40)
 
 # Percent of class deforestation
 percent = 5
@@ -128,21 +130,21 @@ number_class = 3
 # Trainig tiles
 print('extracting training patches....')
 tr_tiles = [tr1, tr2, tr3, tr4]
-patches_tr, patches_tr_ref = patch_tiles(tr_tiles, mask_tiles, image_array, final_mask, patch_size, stride)
-print(patches_tr.shape)
-print(patches_tr_ref.shape)
-# patches_tr, patches_tr_ref = patch_tiles2(tr_tiles, mask_tiles, image_array, final_mask, img_mask_ref, patch_size, stride)
-patches_tr_aug, patches_tr_ref_aug = bal_aug_patches3(percent, patch_size, patches_tr, patches_tr_ref)
+# patches_tr, patches_tr_ref = patch_tiles(tr_tiles, mask_tiles, image_array, final_mask, patch_size, stride)
+# print(patches_tr.shape)
+# print(patches_tr_ref.shape)
+patches_tr, patches_tr_ref = patch_tiles2(tr_tiles, mask_tiles, image_array, final_mask, img_mask_ref, patch_size, stride)
+patches_tr_aug, patches_tr_ref_aug = bal_aug_patches2(percent, patch_size, patches_tr, patches_tr_ref)
 patches_tr_ref_aug_h = tf.keras.utils.to_categorical(patches_tr_ref_aug, number_class)
 
 # Validation tiles
 print('extracting validation patches....')
 val_tiles = [val1, val2]
-patches_val, patches_val_ref = patch_tiles(val_tiles, mask_tiles, image_array, final_mask, patch_size, stride)
-# patches_val, patches_val_ref = patch_tiles2(val_tiles, mask_tiles, image_array, final_mask, img_mask_ref, patch_size, stride)
+# patches_val, patches_val_ref = patch_tiles(val_tiles, mask_tiles, image_array, final_mask, patch_size, stride)
+patches_val, patches_val_ref = patch_tiles2(val_tiles, mask_tiles, image_array, final_mask, img_mask_ref, patch_size, stride)
 # print(debug2)
 # print(patches_val_ref.shape)
-patches_val_aug, patches_val_ref_aug = bal_aug_patches3(percent, patch_size, patches_val, patches_val_ref)
+patches_val_aug, patches_val_ref_aug = bal_aug_patches2(percent, patch_size, patches_val, patches_val_ref)
 patches_val_ref_aug_h = tf.keras.utils.to_categorical(patches_val_ref_aug, number_class)
 
 #%%
@@ -159,7 +161,8 @@ print(f"Weights: {weights}")
 print('='*80)
 loss = weighted_categorical_crossentropy(weights)
 model = unet((rows, cols, channels))
-model.compile(optimizer=adam, loss=loss, metrics=['accuracy'])
+#model.compile(optimizer=adam, loss=loss, metrics=['accuracy'])
+model.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['accuracy'])
 # print model information
 model.summary()
 filepath = './models_new/'
