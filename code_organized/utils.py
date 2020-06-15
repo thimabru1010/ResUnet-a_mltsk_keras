@@ -497,20 +497,25 @@ def prediction(model, image_array, image_ref, final_mask, mask_amazon_ts_, patch
     ref_reconstructed = pred_recostruction(patch_size, patches_lb, image_ref)
     img_reconstructed = pred_recostruction(patch_size, p_labels, image_ref)
     prob_recontructed = pred_recostruction(patch_size, probs, image_ref)
+    # Não precisava ????
     ref_clip = pred_recostruction(patch_size, clipping_ref, image_ref)
 
+    # ????
     clipping_mask = extrac_patch2(mask_amazon_ts_, patch_size, img_type = 1)
     clipping_mask_ = pred_recostruction(patch_size, clipping_mask, image_ref)
 
     mask_areas_pred = np.ones_like(ref_reconstructed)
+    # O que é isso?
     area = skimage.morphology.area_opening(img_reconstructed, area_threshold = area, connectivity=1)
     area_no_consider = img_reconstructed-area
     mask_areas_pred[area_no_consider==1] = 0
 
-    # Mask areas no considered reference
+    # Mask areas no considered reference (past deforastation)
     mask_borders = np.ones_like(img_reconstructed)
     mask_borders[ref_clip==2] = 0
 
+    # Transforma em 0 tudo que for past deforastation
+    # Porque não fazer mask_areas_pred[ref_clip==2] = 0
     mask_no_consider = mask_areas_pred * mask_borders
     ref_consider = mask_no_consider * ref_clip
     pred_consider = mask_no_consider*img_reconstructed
