@@ -103,11 +103,8 @@ percent = 5
 # 0 -> No-DEf, 1-> Def, 2 -> No considered
 number_class = 3
 
-# Trainig tiles
+# Trainig
 print('extracting training patches....')
-#tr_tiles = [tr1, tr2, tr3, tr4]
-
-# patches_tr, patches_tr_ref = patch_tiles2(tr_tiles, mask_tiles, image_array, final_mask, img_mask_ref, patch_size, stride)
 
 patches_train, patches_train_ref =extract_patches_right_region(image_array, final_mask, img_mask_ref, patch_size, stride)
 print(f'Number of patches: {len(patches_train)}, {len(patches_train_ref)}')
@@ -120,11 +117,8 @@ print(np.asarray(patches_tr).shape)
 patches_tr_aug, patches_tr_ref_aug = bal_aug_patches2(percent, patch_size, np.asarray(patches_tr), np.asarray(patches_tr_ref))
 patches_tr_ref_aug_h = tf.keras.utils.to_categorical(patches_tr_ref_aug, number_class)
 
-# Validation tiles
+# Validation
 print('extracting validation patches....')
-#val_tiles = [val1, val2]
-# patches_val, patches_val_ref = patch_tiles2(val_tiles, mask_tiles, image_array, final_mask, img_mask_ref, patch_size, stride)
-
 
 patches_val_aug, patches_val_ref_aug = bal_aug_patches2(percent, patch_size, np.asarray(patches_val), np.asarray(patches_val_ref))
 patches_val_ref_aug_h = tf.keras.utils.to_categorical(patches_val_ref_aug, number_class)
