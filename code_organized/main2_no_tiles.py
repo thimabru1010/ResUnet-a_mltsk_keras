@@ -10,6 +10,9 @@ from utils2 import patch_tiles2, bal_aug_patches2, bal_aug_patches3, extract_pat
 import argparse
 from sklearn.model_selection import train_test_split
 
+gpus= tf.config.experimental.list_physical_devices('GPU')
+tf.config.experimental.set_memory_growth(gpus[0], True)
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset",
     help="dataset path", type=str, default='dataset')
@@ -152,35 +155,39 @@ model_info = model.fit(patches_tr_aug, patches_tr_ref_aug_h, batch_size=batch_si
 end_training = time.time() - start_time
 #%% Test model
 # Creation of mask with test tiles
-mask_ts_ = np.zeros((mask_tiles.shape))
-ts1 = 2
-ts2 = 3
-ts3 = 4
-ts4 = 8
-ts5 = 9
-ts6 = 10
-ts7 = 11
-ts8 = 14
-ts9 = 15
-mask_ts_[mask_tiles == ts1] = 1
-mask_ts_[mask_tiles == ts2] = 1
-mask_ts_[mask_tiles == ts3] = 1
-mask_ts_[mask_tiles == ts4] = 1
-mask_ts_[mask_tiles == ts5] = 1
-mask_ts_[mask_tiles == ts6] = 1
-mask_ts_[mask_tiles == ts7] = 1
-mask_ts_[mask_tiles == ts8] = 1
-mask_ts_[mask_tiles == ts9] = 1
+# mask_ts_ = np.zeros((mask_tiles.shape))
+# ts1 = 2
+# ts2 = 3
+# ts3 = 4
+# ts4 = 8
+# ts5 = 9
+# ts6 = 10
+# ts7 = 11
+# ts8 = 14
+# ts9 = 15
+# mask_ts_[mask_tiles == ts1] = 1
+# mask_ts_[mask_tiles == ts2] = 1
+# mask_ts_[mask_tiles == ts3] = 1
+# mask_ts_[mask_tiles == ts4] = 1
+# mask_ts_[mask_tiles == ts5] = 1
+# mask_ts_[mask_tiles == ts6] = 1
+# mask_ts_[mask_tiles == ts7] = 1
+# mask_ts_[mask_tiles == ts8] = 1
+# mask_ts_[mask_tiles == ts9] = 1
 
 #% Load model
 model = load_model(filepath+'unet_exp_'+str(exp)+'.h5', compile=False)
-area = 11
+#area = 11
 # Prediction
-ref_final, pre_final, prob_recontructed, ref_reconstructed, mask_no_considered_, mask_ts, time_ts = prediction(model, image_array, image_ref, final_mask, mask_ts_, patch_size, area)
+# ref_final, pre_final, prob_recontructed, ref_reconstructed, mask_no_considered_, mask_ts, time_ts = prediction(model, image_array, image_ref, final_mask, mask_ts_, patch_size, area)
 
 # Metrics
-cm = confusion_matrix(ref_final, pre_final)
-metrics = compute_metrics(ref_final, pre_final)
+true_labels = np.reshape(patches_test_ref, (patches_test_ref.shape[0]* patches_test_ref.shape[1]*patches_test_ref.shape[2]))
+
+predicted_labels = np.reshape(patches_pred, (patches_pred.shape[0]* patches_pred.shape[1]*patches_pred.shape[2]))
+
+cm = confusion_matrix(true_labels, predicted_labels)
+metrics = compute_metrics(true_labels, predicted_labels)
 print('Confusion  matrix \n', cm)
 print('Accuracy: ', metrics[0])
 print('F1score: ', metrics[1])
@@ -188,7 +195,7 @@ print('Recall: ', metrics[2])
 print('Precision: ', metrics[3])
 
 # Alarm area
-total = (cm[1,1]+cm[0,1])/len(ref_final)*100
+total = (cm[1,1]+cm[0,1])/len(true_label)*100
 print('Area to be analyzed',total)
 
 print('training time', end_training)
@@ -198,6 +205,7 @@ print('test time', time_ts)
 # prediction of the whole image
 fig1 = plt.figure('whole prediction')
 plt.imshow(prob_recontructed)
+
 # Show the test tiles
-fig2 = plt.figure('prediction of test set')
-plt.imshow(prob_recontructed*mask_ts)
+# fig2 = plt.figure('prediction of test set')
+# plt.imshow(prob_recontructed*mask_ts)

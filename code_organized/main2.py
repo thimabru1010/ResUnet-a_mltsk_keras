@@ -5,7 +5,7 @@ RGB_image, extract_patches, patch_tiles, bal_aug_patches, extrac_patch2, test_FC
 weighted_categorical_crossentropy, mask_no_considered, tf, Adam, prediction, load_model, confusion_matrix, \
 EarlyStopping, ModelCheckpoint, identity_block, ResNet50, color_map
 import os
-from utils2 import patch_tiles2, bal_aug_patches2, bal_aug_patches3
+from utils2 import patch_tiles2, bal_aug_patches2, bal_aug_patches3, patch_tiles3
 
 import argparse
 parser = argparse.ArgumentParser()
@@ -84,12 +84,12 @@ mask_c_5 = np.concatenate((13*tile_number, 14*tile_number, 15*tile_number), axis
 mask_tiles = np.concatenate((mask_c_1, mask_c_2, mask_c_3 , mask_c_4, mask_c_5), axis=0)
 
 mask_tr_val = np.zeros((mask_tiles.shape))
-tr1 = 1
-tr2 = 6
-tr3 = 7
+tr1 = 5
+tr2 = 8
+tr3 = 10
 tr4 = 13
-val1 = 5
-val2 = 12
+val1 = 7
+val2 = 10
 
 mask_tr_val[mask_tiles == tr1] = 1
 mask_tr_val[mask_tiles == tr2] = 1
@@ -111,7 +111,7 @@ print('Total no-deforestaion class is {}'.format(len(image_ref[image_ref==0])))
 print('Total deforestaion class is {}'.format(len(image_ref[image_ref==1])))
 print('Percentage of deforestaion class is {:.2f}'.format((len(image_ref[image_ref==1])*100)/len(image_ref[image_ref==0])))
 
-image_ref[img_mask_ref==-99] = 0
+#image_ref[img_mask_ref==-99] = 0
 #%% Patches extraction
 patch_size = 64
 stride = patch_size//4
@@ -130,10 +130,13 @@ number_class = 3
 # Trainig tiles
 print('extracting training patches....')
 tr_tiles = [tr1, tr2, tr3, tr4]
-# patches_tr, patches_tr_ref = patch_tiles(tr_tiles, mask_tiles, image_array, final_mask, patch_size, stride)
+final_mask[img_mask_ref==-99] = -1
+test = list( range(1,16) )
+# patches_tr, patches_tr_ref = patch_tiles3(test, mask_tiles, image_array, final_mask, patch_size, stride)
 # print(patches_tr.shape)
 # print(patches_tr_ref.shape)
 patches_tr, patches_tr_ref = patch_tiles2(tr_tiles, mask_tiles, image_array, final_mask, img_mask_ref, patch_size, stride)
+
 patches_tr_aug, patches_tr_ref_aug = bal_aug_patches2(percent, patch_size, patches_tr, patches_tr_ref)
 patches_tr_ref_aug_h = tf.keras.utils.to_categorical(patches_tr_ref_aug, number_class)
 
