@@ -1,5 +1,6 @@
 import numpy as np
 from utils import data_augmentation
+import time
 
 def extract_patches_right_region(img_train, img_train_ref, img_mask_ref, patch_size, stride):
     shape = img_train_ref.shape
@@ -42,6 +43,43 @@ def extract_patches_right_region(img_train, img_train_ref, img_mask_ref, patch_s
         j = j + stride
         cont_c +=1
     return patches_train, patches_train_ref
+
+def extract_patches_right_region_prediction(img_train, img_train_ref, mask_amazon_ts_, final_mask, patch_size, stride):
+    shape = img_train_ref.shape
+    patches_train = []
+    patches_train_ref = []
+    patches_past_ref = []
+    patches_mask_amazon = []
+    cont_l = 0
+    cont_c = 0
+    i = 0
+    j = 0
+    while True:
+        if j > shape[1]:
+            break
+        i = 0
+        cont_l = 0
+        while True:
+            if i > shape[0]:
+                break
+            patch_mask_amazon = mask_amazon_ts_[i:i+patch_size, j:j+patch_size]
+            patch_train_ref = img_train_ref[i:i+patch_size, j:j+patch_size]
+            patch_train = img_train[i:i+patch_size, j:j+patch_size]
+            patch_past_ref = final_mask[i:i+patch_size, j:j+patch_size]
+            if np.all(patch_train_ref != -1) == True and patch_train_ref.shape == (patch_size, patch_size):
+                # if 0 not in counts_dict.keys():
+                #     counts_dict[0] = 0
+                # total_pixels = counts_dict[0] + counts_dict[1]
+                #if counts_dict[1]/total_pixels >= 0.05:
+                patches_train.append(np.asarray(patch_train))
+                patches_train_ref.append(np.asarray(patch_train_ref))
+                patches_past_ref.append(patch_past_ref)
+                patches_mask_amazon.append(patch_mask_amazon)
+            i = i + stride
+            cont_l +=1
+        j = j + stride
+        cont_c +=1
+    return patches_train, patches_train_ref, patches_past_ref, patches_mask_amazon
 
 
 def patch_tiles2(tiles, mask_amazon, image_array, image_ref, img_mask_ref, patch_size, stride):
@@ -182,7 +220,7 @@ def bal_aug_patches3(percent, patch_size, patches_img, patches_ref):
     labels_bal = np.concatenate(patches_labels).astype(np.float32)
     return patches_bal, labels_bal
 
-def test_FCN(net, patch_test):
+def test_FCN2(net, patch_test):
     ''' Function to test FCN model'''
     predictions = net.predict(patch_test)
     print(predictions.shape)
@@ -241,3 +279,104 @@ def output_prediction_FC(model, image_array, final_mask, patch_size):
     end_test =  time.time() - start_test
     prob_recontructed = pred_recostruction(patch_size, probs, final_mask)
     return prob_recontructed, end_test
+
+def matrics_AA_recall(thresholds, prob_map, reference, mask_amazon_ts, area):
+    metrics_all = []
+
+    for thr in thresholds:
+        print(thr)
+        img_reconstructed = prob_map.copy()
+        img_reconstructed[img_reconstructed >= thr] = 1
+        img_reconstructed[img_reconstructed < thr] = 0
+        #plt.imshow(img_reconstructed)
+
+        mask_areas_pred = np.ones_like(reference)
+        area = skimage.morphology.area_opening(img_reconstructed, area_threshold=area, connectivity=1)
+        area_no_consider = img_reconstructed-area
+        mask_areas_pred[area_no_consider==1] = 0
+
+        # Mask areas no considered reference
+        mask_borders = np.ones_like(img_reconstructed)
+        mask_borders[reference==2] = 0
+
+        mask_no_consider = mask_areas_pred * mask_borders
+        ref_consider = mask_no_consider * reference
+        pred_consider = mask_no_consider*img_reconstructed
+
+        ref_final = ref_consider[mask_amazon_ts==1]
+        pre_final = pred_consider[mask_amazon_ts==1]
+
+        # Metrics
+        cm = confusion_matrix(ref_final, pre_final)
+        #TN = cm[0,0]
+        FN = cm[1,0]
+        TP = cm[1,1]
+        FP = cm[0,1]
+        precision_ = TP/(TP+FP)
+        recall_ = TP/(TP+FN)
+        aa = (TP+FP)/len(ref_final)
+        mm = np.hstack((recall_, precision_, aa))
+        metrics_all.append(mm)
+    metrics_ = np.asarray(metrics_all)
+    return metrics_
+
+def test_FCN(net, patch_test, patch_test_ref):
+    predictions = net.predict(patch_test)
+    print(predictions.shape)
+    pred1 = predictions[:,:,:,1]
+
+    p_labels=predictions.argmax(axis=3)
+
+    t_vec=np.reshape(patch_test_ref,patch_test_ref.shape[0]*patch_test_ref.shape[1]*patch_test_ref.shape[2])
+    p_vec=np.reshape(p_labels,p_labels.shape[0]*p_labels.shape[1]*p_labels.shape[2])
+    #prob_vec=np.reshape(pred1,pred1.shape[0]*pred1.shape[1]*pred1.shape[2])
+    return p_labels, t_vec, p_vec, pred1
+
+def prediction2(model, image_array, image_ref, final_mask, mask_amazon_ts_, patch_size, area):
+    #% Test model
+    # patch_ts = extrac_patch2(image_array, patch_size, img_type = 2)
+    # patches_lb = extrac_patch2(image_ref, patch_size, img_type = 1)
+    # clipping_ref = extrac_patch2(final_mask, patch_size, img_type = 1)
+
+    patch_ts, patches_lb, clipping_ref, clipping_mask = extract_patches_right_region_prediction(image_array, image_ref, mask_amazon_ts_, final_mask, patch_size, stride=patch_size)
+    print('extraiu...')
+
+    patch_ts, patches_lb, clipping_ref, clipping_mask = np.asarray(patch_ts), np.asarray(patches_lb), np.asarray(clipping_ref), np.asarray(clipping_mask)
+
+
+    start_test = time.time()
+    p_labels, t_vec, p_vec, probs = test_FCN(model, patch_ts, patches_lb)
+    end_test =  time.time() - start_test
+    # Reconstruction
+    ref_reconstructed = pred_recostruction(patch_size, patches_lb, image_ref)
+    img_reconstructed = pred_recostruction(patch_size, p_labels, image_ref)
+    prob_recontructed = pred_recostruction(patch_size, probs, image_ref)
+    # Não precisava ????
+    ref_clip = pred_recostruction(patch_size, clipping_ref, image_ref)
+
+    # ????
+    #clipping_mask = extrac_patch2(mask_amazon_ts_, patch_size, img_type = 1)
+    clipping_mask_ = pred_recostruction(patch_size, clipping_mask, image_ref)
+
+    mask_areas_pred = np.ones_like(ref_reconstructed)
+    # O que é isso?
+    # Exclui regioes com menos de 69 pixels
+    # Sò considera desmatada regioes acima de 69 pixels de desmatamento
+    area = skimage.morphology.area_opening(img_reconstructed, area_threshold = area, connectivity=1)
+    area_no_consider = img_reconstructed-area
+    mask_areas_pred[area_no_consider==1] = 0
+
+    # Mask areas no considered reference (past deforastation)
+    mask_borders = np.ones_like(img_reconstructed)
+    mask_borders[ref_clip==2] = 0
+
+    # Transforma em 0 tudo que for past deforastation
+    # Porque não fazer mask_areas_pred[ref_clip==2] = 0
+    mask_no_consider = mask_areas_pred * mask_borders
+    ref_consider = mask_no_consider * ref_clip
+    pred_consider = mask_no_consider*img_reconstructed
+
+    ref_final = ref_consider[clipping_mask_*mask_no_consider==1]
+    pre_final = pred_consider[clipping_mask_*mask_no_consider==1]
+
+    return ref_final, pre_final, prob_recontructed, ref_reconstructed, ref_clip, clipping_mask_, end_test
