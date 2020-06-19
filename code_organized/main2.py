@@ -6,6 +6,8 @@ EarlyStopping, ModelCheckpoint, identity_block, ResNet50, color_map
 import os
 from utils2 import patch_tiles2, bal_aug_patches2, bal_aug_patches3, patch_tiles3
 
+from ResUnet_a.model import Resunet_a
+
 import argparse
 
 import gc
@@ -15,6 +17,8 @@ import gc
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset",
     help="dataset path", type=str, default='dataset')
+parser.add_argument("--resunet_a",
+    help="choose resunet-a model or not", type=bool, default=False)
 args = parser.parse_args()
 
 root_path = args.dataset
@@ -168,11 +172,20 @@ print(f"Weights: {weights}")
 print('='*80)
 #print(gc.get_count())
 loss = weighted_categorical_crossentropy(weights)
-model = unet((rows, cols, channels))
-#model.compile(optimizer=adam, loss=loss, metrics=['accuracy'])
-model.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['accuracy'])
-# print model information
-model.summary()
+if args.resunet_a == True:
+    '''
+        model already compiled
+    '''
+    model = Resunet_a((rows, cols, channels))
+    #model = Resunet_a((channels, cols, rows))
+    print('ResUnet-a compiled!')
+else:
+    model = unet((rows, cols, channels))
+    #model.compile(optimizer=adam, loss=loss, metrics=['accuracy'])
+    model.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['accuracy'])
+    # print model information
+    model.summary()
+
 filepath = './models_new/'
 # define early stopping callback
 earlystop = EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=10, verbose=1, mode='min')

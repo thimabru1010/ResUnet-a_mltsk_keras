@@ -65,7 +65,7 @@ def extract_patches_right_region_prediction(img_train, img_train_ref, mask_amazo
             patch_mask_amazon = mask_amazon_ts_[i:i+patch_size, j:j+patch_size]
             patch_train_ref = img_train_ref[i:i+patch_size, j:j+patch_size]
             patch_train = img_train[i:i+patch_size, j:j+patch_size]
-            patch_past_ref = final_mask[i:i+patch_size, j:j+patch_size]
+            #patch_past_ref = final_mask[i:i+patch_size, j:j+patch_size]
             if np.all(patch_train_ref != -1) == True and patch_train_ref.shape == (patch_size, patch_size):
                 # if 0 not in counts_dict.keys():
                 #     counts_dict[0] = 0
@@ -73,13 +73,51 @@ def extract_patches_right_region_prediction(img_train, img_train_ref, mask_amazo
                 #if counts_dict[1]/total_pixels >= 0.05:
                 patches_train.append(np.asarray(patch_train))
                 patches_train_ref.append(np.asarray(patch_train_ref))
-                patches_past_ref.append(patch_past_ref)
-                patches_mask_amazon.append(patch_mask_amazon)
+                #patches_past_ref.append(patch_past_ref)
+                #patches_mask_amazon.append(patch_mask_amazon)
             i = i + stride
             cont_l +=1
         j = j + stride
         cont_c +=1
     return patches_train, patches_train_ref, patches_past_ref, patches_mask_amazon
+
+def patch_tiles_prediction(tiles, mask_amazon, image_array, image_ref, img_mask_ref, patch_size, stride):
+    patches_out = []
+    label_out = []
+    label_past_out = []
+    for num_tile in tiles:
+        print(f"Num tile: {num_tile}")
+        rows, cols = np.where(mask_amazon==1)
+        print(rows, cols)
+        x1 = np.min(rows)
+        y1 = np.min(cols)
+        x2 = np.max(rows)
+        y2 = np.max(cols)
+
+        tile_img = image_array[x1:x2+1,y1:y2+1,:]
+        tile_ref = image_ref[x1:x2+1,y1:y2+1]
+        # patches_img, patch_ref = extract_patches(tile_img, tile_ref, patch_size, stride)
+        patches_img = patches_with_out_overlap(tile_img, stride, 2, tile_ref)
+        patch_ref = patches_with_out_overlap(tile_ref, stride, 1, tile_ref)
+
+        # patches_img, patch_ref, _, _ = extract_patches_right_region_prediction(tile_img, tile_ref, mask_amazon, img_mask_ref, patch_size, stride)
+
+        #if len(patch_ref) > 0:
+        patches_out.append(np.asarray(patches_img))
+        label_out.append(np.asarray(patch_ref))
+
+        print('patches tudo')
+        print(len(patches_img))
+        print(len(patch_ref))
+
+    print('tudo')
+    print(len(patches_out))
+    print(len(label_out))
+    patches_out = np.concatenate(patches_out)
+    label_out = np.concatenate(label_out)
+    print(patches_out.shape)
+    print(label_out.shape)
+    return patches_out, label_out
 
 
 def patch_tiles2(tiles, mask_amazon, image_array, image_ref, img_mask_ref, patch_size, stride):
@@ -223,13 +261,15 @@ def bal_aug_patches3(percent, patch_size, patches_img, patches_ref):
 def test_FCN2(net, patch_test):
     ''' Function to test FCN model'''
     predictions = net.predict(patch_test)
+
     print(predictions.shape)
     pred1 = predictions[:,:,:,1]
     p_labels=predictions.argmax(axis=-1)
     return p_labels, pred1
 
-def patches_with_out_overlap(img, stride, img_type):
+def patches_with_out_overlap(img, stride, img_type, img_ref=None):
     '''Extract patches without overlap to test models, img_type = 1 (reference image), img_type = 2 (images)'''
+    patch_size = stride
     if img_type == 1:
         h, w = img.shape
         num_patches_h = int(h/stride)
@@ -239,8 +279,10 @@ def patches_with_out_overlap(img, stride, img_type):
         for i in range(0,num_patches_w):
             for j in range(0,num_patches_h):
                 patch = img[stride*j:stride*(j+1), stride*i:stride*(i+1)]
-                counter=counter+1
-                patch_t.append(patch)
+                patch_ref = img_ref[stride*j:stride*(j+1), stride*i:stride*(i+1)]
+                if np.all(patch_ref != -1) == True and patch_ref.shape == (patch_size, patch_size):
+                    counter=counter+1
+                    patch_t.append(patch)
         patch_t1=np.asarray(patch_t)
 
     if img_type == 2:
@@ -252,8 +294,10 @@ def patches_with_out_overlap(img, stride, img_type):
         for i in range(0,num_patches_w):
             for j in range(0,num_patches_h):
                 patch = img[stride*j:stride*(j+1), stride*i:stride*(i+1), :]
-                counter=counter+1
-                patch_t.append(patch)
+                patch_ref = img_ref[stride*j:stride*(j+1), stride*i:stride*(i+1)]
+                if np.all(patch_ref != -1) == True and patch_ref.shape == (patch_size, patch_size):
+                    counter=counter+1
+                    patch_t.append(patch)
         patch_t1=np.asarray(patch_t)
 
     return patch_t1
@@ -275,7 +319,7 @@ def pred_recostruction(patch_size, pred_labels, image_ref):
 def output_prediction_FC(model, image_array, final_mask, patch_size):
     start_test = time.time()
     patch_ts = patches_with_out_overlap(image_array, patch_size, img_type = 2)
-    p_labels, probs = test_FCN(model, patch_ts)
+    p_labels, probs = test_FCN2(model, patch_ts)
     end_test =  time.time() - start_test
     prob_recontructed = pred_recostruction(patch_size, probs, final_mask)
     return prob_recontructed, end_test
@@ -308,6 +352,12 @@ def matrics_AA_recall(thresholds, prob_map, reference, mask_amazon_ts, area):
 
         # Metrics
         cm = confusion_matrix(ref_final, pre_final)
+        metrics = compute_metrics(ref_final, pre_final)
+        print('Confusion  matrix \n', cm)
+        print('Accuracy: ', metrics[0])
+        print('F1score: ', metrics[1])
+        print('Recall: ', metrics[2])
+        print('Precision: ', metrics[3])
         #TN = cm[0,0]
         FN = cm[1,0]
         TP = cm[1,1]
@@ -345,7 +395,7 @@ def prediction2(model, image_array, image_ref, final_mask, mask_amazon_ts_, patc
 
 
     start_test = time.time()
-    p_labels, t_vec, p_vec, probs = test_FCN(model, patch_ts, patches_lb)
+    p_labels, _, _, probs = test_FCN(model, patch_ts, patches_lb)
     end_test =  time.time() - start_test
     # Reconstruction
     ref_reconstructed = pred_recostruction(patch_size, patches_lb, image_ref)

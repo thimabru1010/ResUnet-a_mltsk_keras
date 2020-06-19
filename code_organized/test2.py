@@ -4,7 +4,7 @@ RGB_image, extract_patches, patch_tiles, bal_aug_patches, extrac_patch2, test_FC
 weighted_categorical_crossentropy, mask_no_considered, tf, Adam, prediction, load_model, confusion_matrix, \
 EarlyStopping, ModelCheckpoint, identity_block, ResNet50, color_map
 import os
-from utils2 import patch_tiles2, bal_aug_patches2, bal_aug_patches3, patch_tiles3, prediction2
+from utils2 import patch_tiles2, bal_aug_patches2, bal_aug_patches3, patch_tiles3, prediction2, output_prediction_FC, patch_tiles_prediction
 
 import argparse
 
@@ -118,29 +118,74 @@ model = load_model(filepath+'unet_exp_'+str(exp)+'.h5', compile=False)
 area = 11
 # Prediction
 patch_size = 64
-ref_final, pre_final, prob_recontructed, ref_reconstructed, mask_no_considered_, mask_ts, time_ts = prediction2(model, image_array, image_ref, final_mask, mask_ts_, patch_size, area)
-# prob_recontructed, time_ts = output_prediction_FC(model, image_array, final_mask, patch_size)
+ts_tiles = [ts1, ts2, ts3, ts4, ts5, ts6, ts7, ts8, ts9]
+patches_test, patches_test_ref = patch_tiles_prediction(ts_tiles, mask_ts_, image_array, image_ref, None, patch_size, stride=patch_size)
+
+
+result = model.predict(patches_test)
+patches_pred = np.argmax(result, axis=-1)
+
+true_labels = np.reshape(patches_test_ref, (patches_test_ref.shape[0]* patches_test_ref.shape[1]*patches_test_ref.shape[2]))
+predicted_labels = np.reshape(patches_pred, (patches_pred.shape[0]* patches_pred.shape[1]*patches_pred.shape[2]))
 
 # Metrics
-cm = confusion_matrix(ref_final, pre_final)
-metrics = compute_metrics(ref_final, pre_final)
+metrics = compute_metrics(true_labels,predicted_labels)
+cm = confusion_matrix(true_labels, predicted_labels)
+
 print('Confusion  matrix \n', cm)
+print()
 print('Accuracy: ', metrics[0])
 print('F1score: ', metrics[1])
 print('Recall: ', metrics[2])
 print('Precision: ', metrics[3])
 
-# Alarm area
-total = (cm[1,1]+cm[0,1])/len(ref_final)*100
-print('Area to be analyzed',total)
+# ref_final, pre_final, prob_recontructed, ref_reconstructed, mask_no_considered_, mask_ts, time_ts = prediction2(model, image_array, image_ref, final_mask, mask_ts_, patch_size, area)
+# prob_recontructed, time_ts = output_prediction_FC(model, image_array, final_mask, patch_size)
+# prob_recontructed, end_test = output_prediction_FC(model, image_array, final_mask, patch_size)
 
-print('training time', end_training)
-print('test time', time_ts)
+#%% Calculation of metrics
 
-#%% Show the results
-# prediction of the whole image
-fig1 = plt.figure('whole prediction')
-plt.imshow(prob_recontructed)
-# Show the test tiles
-fig2 = plt.figure('prediction of test set')
-plt.imshow(prob_recontructed*mask_ts)
+# ref1 = np.ones_like(image_ref).astype(np.float32)
+# ref1 [image_ref == 2] = 0
+# TileMask = mask_ts_ * ref1
+# GTTruePositives = image_ref == 1
+#
+# Npoints = 100
+# Pmax = np.max(mean_prob[GTTruePositives * TileMask == 1])
+# ProbList = np.linspace(Pmax,0,Npoints)
+# print(ProbList)
+# #area = 620
+# metrics_all = []
+# #
+# # for tm in range (0, 10):
+# #     print(tm)
+# #     prob_map = np.load(dirProbs+'/'+'prob_'+str(tm)+'.npy')
+#
+# metrics = matrics_AA_recall(ProbList, prob_recontructed, image_ref, mask_ts_, area)
+# metrics_all.append(metrics)
+#
+# metrics_ = np.asarray(metrics_all)
+
+# # Metrics
+# cm = confusion_matrix(ref_final, pre_final)
+#metrics = compute_metrics(ref_final, pre_final)
+# print('Confusion  matrix \n', cm)
+# print('Accuracy: ', metrics[0])
+# print('F1score: ', metrics[1])
+# print('Recall: ', metrics[2])
+# print('Precision: ', metrics[3])
+#
+# # Alarm area
+# total = (cm[1,1]+cm[0,1])/len(ref_final)*100
+# print('Area to be analyzed',total)
+#
+# print('training time', end_training)
+# print('test time', time_ts)
+#
+# #%% Show the results
+# # prediction of the whole image
+# fig1 = plt.figure('whole prediction')
+# plt.imshow(prob_recontructed)
+# # Show the test tiles
+# fig2 = plt.figure('prediction of test set')
+# plt.imshow(prob_recontructed*mask_ts)
