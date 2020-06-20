@@ -34,6 +34,12 @@ def load_tiff_image(patch):
    img = gdal_header.ReadAsArray()
    return img
 
+def load_npy_image(patch):
+  # Read npy Image converted from tiff
+   print (patch)
+   img = np.load(patch)
+   return img
+
 def load_SAR_image(patch):
     # Read SAR Image
     print (patch)
@@ -347,27 +353,27 @@ def patch_tiles(tiles, mask_amazon, image_array, image_ref, patch_size, stride):
 
         tile_img = image_array[x1:x2+1,y1:y2+1,:]
         tile_ref = image_ref[x1:x2+1,y1:y2+1]
-        #Alterado
-        unique, counts = np.unique(tile_ref, return_counts=True)
-        counts_dict = dict(zip(unique, counts))
-        print(counts_dict)
-        if 0 not in counts_dict.keys():
-            counts_dict[0] = 0
-        if 1 not in counts_dict.keys():
-            counts_dict[1] = 0
-        if 2 not in counts_dict.keys():
-            counts_dict[2] = 0
-        deforastation = counts_dict[1] / (counts_dict[0] + counts_dict[1] + counts_dict[2])
-        print(f"Deforastation: {deforastation * 100}")
-    #     patches_img, patch_ref = extract_patches(tile_img, tile_ref, patch_size, stride)
-    #     #print(type(patches_img))
-    #     # print(patches_img.shape)
-    #     # print(patch_ref.shape)
-    #     patches_out.append(patches_img)
-    #     label_out.append(patch_ref)
-    #
-    # patches_out = np.concatenate(patches_out)
-    # label_out = np.concatenate(label_out)
+        # #Alterado
+        # unique, counts = np.unique(tile_ref, return_counts=True)
+        # counts_dict = dict(zip(unique, counts))
+        # print(counts_dict)
+        # if 0 not in counts_dict.keys():
+        #     counts_dict[0] = 0
+        # if 1 not in counts_dict.keys():
+        #     counts_dict[1] = 0
+        # if 2 not in counts_dict.keys():
+        #     counts_dict[2] = 0
+        # deforastation = counts_dict[1] / (counts_dict[0] + counts_dict[1] + counts_dict[2])
+        # print(f"Deforastation: {deforastation * 100}")
+        patches_img, patch_ref = extract_patches(tile_img, tile_ref, patch_size, stride)
+        #print(type(patches_img))
+        # print(patches_img.shape)
+        # print(patch_ref.shape)
+        patches_out.append(patches_img)
+        label_out.append(patch_ref)
+
+    patches_out = np.concatenate(patches_out)
+    label_out = np.concatenate(label_out)
     return patches_out, label_out
 
 

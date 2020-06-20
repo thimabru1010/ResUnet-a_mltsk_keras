@@ -8,7 +8,7 @@ class UnetConfig(object):
     IMAGE_C = 3 # image channels
 
     EPOCHS = 5000
-    batch_size = 1
+    batch_size = 8
 
 
     def displayConfiguration(self):

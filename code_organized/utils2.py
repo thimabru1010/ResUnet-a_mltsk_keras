@@ -2,7 +2,7 @@ import numpy as np
 from utils import data_augmentation
 import time
 
-def extract_patches_right_region(img_train, img_train_ref, img_mask_ref, patch_size, stride):
+def extract_patches_right_region(img_train, img_train_ref, img_mask_ref, patch_size, stride, percent):
     shape = img_train_ref.shape
     patches_train = []
     patches_train_ref = []
@@ -30,11 +30,12 @@ def extract_patches_right_region(img_train, img_train_ref, img_mask_ref, patch_s
             if 1 in counts_dict.keys():
                 #print(counts_dict)
                 if np.all(patch == -1) == True and patch_train_ref.shape == (patch_size, patch_size):
-                #if np.all(patch_train_ref != -1) == True:
+                # if np.all(patch_train_ref != -1) == True and patch_train_ref.shape == (patch_size, patch_size):
                     if 0 not in counts_dict.keys():
                         counts_dict[0] = 0
                     total_pixels = counts_dict[0] + counts_dict[1]
-                    if counts_dict[1]/total_pixels >= 0.05:
+                    #print(counts_dict[1]/total_pixels)
+                    if counts_dict[1]/total_pixels >= percent/100:
                         patches_train.append(np.asarray(patch_train))
                         patches_train_ref.append(np.asarray(patch_train_ref))
                         #patches_past_ref.append(patch_past_ref)
@@ -120,7 +121,7 @@ def patch_tiles_prediction(tiles, mask_amazon, image_array, image_ref, img_mask_
     return patches_out, label_out
 
 
-def patch_tiles2(tiles, mask_amazon, image_array, image_ref, img_mask_ref, patch_size, stride):
+def patch_tiles2(tiles, mask_amazon, image_array, image_ref, img_mask_ref, patch_size, stride, percent):
     patches_out = []
     label_out = []
     label_past_out = []
@@ -133,8 +134,9 @@ def patch_tiles2(tiles, mask_amazon, image_array, image_ref, img_mask_ref, patch
 
         tile_img = image_array[x1:x2+1,y1:y2+1,:]
         tile_ref = image_ref[x1:x2+1,y1:y2+1]
+        tile_mask_ref = img_mask_ref[x1:x2+1,y1:y2+1]
         # patches_img, patch_ref = extract_patches(tile_img, tile_ref, patch_size, stride)
-        patches_img, patch_ref = extract_patches_right_region(tile_img, tile_ref, img_mask_ref, patch_size, stride)
+        patches_img, patch_ref = extract_patches_right_region(tile_img, tile_ref, tile_mask_ref, patch_size, stride, percent)
 
         if len(patch_ref) > 0:
             patches_out.append(np.asarray(patches_img))
