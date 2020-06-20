@@ -7,11 +7,19 @@ EarlyStopping, ModelCheckpoint, identity_block, ResNet50, color_map, SGD, \
 load_npy_image
 
 from ResUnet_a.model import Resunet_a
-from ResUnet_a.model2 import Resunet_a2
+from ResUnet_a.model2 import Resunet_a2, Resunet_a2_multitasking
+from multitasking_weighted_crossentropy import multitasking_weighted_categorical_crossentropy
 import argparse
+
+#tf.enable_eager_execution()
+print('[TFMERDA2]'*10)
+tf.compat.v1.enable_eager_execution()
+print( tf.executing_eagerly() )
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--resunet_a",
+    help="choose resunet-a model or not", type=bool, default=False)
+parser.add_argument("--multitasking",
     help="choose resunet-a model or not", type=bool, default=False)
 args = parser.parse_args()
 
@@ -119,7 +127,7 @@ rows = patch_size
 cols = patch_size
 adam = Adam(lr = 0.01 , beta_1=0.9)
 sgd = SGD(lr=0.01,momentum=0.8)
-batch_size = 2
+batch_size = 1
 
 unique, counts = np.unique(final_mask, return_counts=True)
 counts_dict = dict(zip(unique, counts))
@@ -132,14 +140,20 @@ weights = [0.5, 0.5, 0]
 #weights = [weight0, weight1, 0]
 print('='*60)
 print(weights)
+print( tf.executing_eagerly() )
 loss = weighted_categorical_crossentropy(weights)
+if args.multitasking:
+    loss = multitasking_weighted_categorical_crossentropy(weights)
 
 if args.resunet_a == True:
     '''
         model already compiled
     '''
     resuneta = Resunet_a2((rows, cols, channels))
+    if args.multitasking:
+        resuneta = Resunet_a2_multitasking((rows, cols, channels))
     model = resuneta.model
+    model.summary()
     #model = Resunet_a((channels, cols, rows))
     print('ResUnet-a compiled!')
 else:
@@ -148,7 +162,7 @@ else:
 model.compile(optimizer=adam, loss=loss, metrics=['accuracy'])
 #model.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['accuracy'])
 # print model information
-model.summary()
+#model.summary()
 
 filepath = root_path+'models/'
 # define early stopping callback

@@ -14,6 +14,10 @@ import utils
 import math
 import numpy as np
 
+print('[TFMERDA1]'*10)
+tf.compat.v1.enable_eager_execution()
+print( tf.executing_eagerly() )
+
 class Resunet_a2(object):
     def __init__(self, input_shape,config=UnetConfig()):
         self.config = config
@@ -351,12 +355,37 @@ class Resunet_a2_multitasking(object):
         x=combine(x,c2,32)
 
         x=ResBlock(x,32,(3,3),[1,3,15,31],1)
-        x=combine(x,c1,32)
+        x_comb=combine(x,c1,32)
 
-        x=PSPPooling(x,32)
-        x=KL.Conv2D(self.config.CLASSES_NUM,(1,1))(x)
-        x=KL.Activation('softmax')(x)
-        model=KM.Model(inputs=inputs,outputs=x)
+        x_psp=PSPPooling(x_comb,32)
+
+        # Segmentation
+        # OBS para o jeito de inserir o padding
+        x_seg=KL.Conv2D(32,(3,3), activation='relu', padding='valid')(x_psp)
+        x_seg=KL.Conv2D(32,(3,3), activation='relu', padding='valid')(x_seg)
+        x_seg=KL.Conv2D(self.config.CLASSES_NUM,(1,1), padding='same')(x_seg)
+        out_seg=KL.Activation('softmax')(x_seg)
+
+        # Boundary
+        x_bound=KL.Conv2D(32,(3,3), activation='relu', padding='valid')(x_psp)
+        x_bound=KL.Conv2D(self.config.CLASSES_NUM,(1,1), padding='same')(x_bound)
+        out_bound=KL.Activation('sigmoid')(x_bound)
+
+        # Distance
+        x_dist=KL.Conv2D(32,(3,3), activation='relu', padding='valid')(x_comb)
+        x_dist=KL.Conv2D(32,(3,3), activation='relu', padding='valid')(x_dist)
+        x_dist=KL.Conv2D(self.config.CLASSES_NUM,(1,1), padding='same')(x_dist)
+        out_dist=KL.Activation('softmax')(x_dist)
+
+        # Color
+        # Talvez mudar para same
+        out_color=KL.Conv2D(3,(1,1), activation='sigmoid', padding='same')(x_comb)
+
+        #out = [out_seg, out_bound, out_dist, out_color]
+
+        out = KB.concatenate((out_seg, out_bound, out_dist, out_color), axis=-1)
+
+        model=KM.Model(inputs=inputs,outputs=out)
         # Talvez mudar para Adam
         #adam = Adam(lr = 0.001 , beta_1=0.9)
         # model.compile(optimizer=SGD(lr=0.001,momentum=0.8),loss=Tanimoto_loss,metrics=['accuracy'])
