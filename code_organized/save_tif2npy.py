@@ -26,28 +26,41 @@ def load_tiff_image(patch):
 
 
 # Dataset TCC
-root_path = 'dataset'
-img_t1_path = 'clipped_raster_004_66_2018.tif'
-img_t2_path = 'clipped_raster_004_66_2019.tif'
+# root_path = 'dataset'
+# img_t1_path = 'clipped_raster_004_66_2018.tif'
+# img_t2_path = 'clipped_raster_004_66_2019.tif'
+#
+# # Load images
+# img_t1 = load_tiff_image(os.path.join(root_path,img_t1_path)).astype(np.float32)
+# np.save('dataset_npy/clipped_raster_004_66_2018.npy', img_t1)
+#
+# img_t2 = load_tiff_image(os.path.join(root_path,img_t2_path)).astype(np.float32)
+# np.save('dataset_npy/clipped_raster_004_66_2019.npy', img_t2)
+#
+# img_mask_ref_path = 'mask_ref.tif'
+# img_mask_ref = load_tiff_image(os.path.join(root_path, img_mask_ref_path))
+# np.save('dataset_npy/mask_ref.npy', img_mask_ref)
+#
+# # Load deforastation reference
+# image_ref = load_tiff_image(os.path.join(root_path,'labels/binary_clipped_2019.tif'))
+# np.save(os.path.join('dataset_npy','labels/binary_clipped_2019.npy'), image_ref)
+#
+# # Load past deforastation reference
+# past_ref1 = load_tiff_image(os.path.join(root_path,'labels/binary_clipped_2013_2018.tif'))
+# np.save(os.path.join('dataset_npy','labels/binary_clipped_2013_2018.npy'), past_ref1)
+#
+# past_ref2 = load_tiff_image(os.path.join(root_path,'labels/binary_clipped_1988_2012.tif'))
+# np.save(os.path.join('dataset_npy','labels/binary_clipped_1988_2012.tif'), past_ref2)
 
-# Load images
-img_t1 = load_tiff_image(os.path.join(root_path,img_t1_path)).astype(np.float32)
-np.save('dataset_npy/clipped_raster_004_66_2018.npy', img_t1)
+# Homework 3
+img_train = load_tiff_image('homework3/Image_Train.tif').astype(np.float32)
+np.save('homework3_npy/Image_Train.npy', img_train)
 
-img_t2 = load_tiff_image(os.path.join(root_path,img_t2_path)).astype(np.float32)
-np.save('dataset_npy/clipped_raster_004_66_2019.npy', img_t2)
+ref_train = load_tiff_image('homework3/Reference_Train.tif')
+np.save('homework3_npy/Reference_Train.npy', ref_train)
 
-img_mask_ref_path = 'mask_ref.tif'
-img_mask_ref = load_tiff_image(os.path.join(root_path, img_mask_ref_path))
-np.save('dataset_npy/mask_ref.npy', img_mask_ref)
+img_test = load_tiff_image('homework3/Image_Test.tif').astype(np.float32)
+np.save('homework3_npy/Image_Test.npy', img_test)
 
-# Load deforastation reference
-image_ref = load_tiff_image(os.path.join(root_path,'labels/binary_clipped_2019.tif'))
-np.save(os.path.join('dataset_npy','labels/binary_clipped_2019.npy'), image_ref)
-
-# Load past deforastation reference
-past_ref1 = load_tiff_image(os.path.join(root_path,'labels/binary_clipped_2013_2018.tif'))
-np.save(os.path.join('dataset_npy','labels/binary_clipped_2013_2018.npy'), past_ref1)
-
-past_ref2 = load_tiff_image(os.path.join(root_path,'labels/binary_clipped_1988_2012.tif'))
-np.save(os.path.join('dataset_npy','labels/binary_clipped_1988_2012.tif'), past_ref2)
+ref_test = load_tiff_image('homework3/Reference_Test.tif')
+np.save('homework3_npy/Reference_Test.npy', ref_test)

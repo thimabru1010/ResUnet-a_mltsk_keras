@@ -2,7 +2,7 @@ import os
 import numpy as np
 class UnetConfig(object):
     MEAN=np.array([82,92,88],dtype=float)
-    CLASSES_NUM = 3
+    CLASSES_NUM = 5
     IMAGE_W = 512 # image width
     IMAGE_H = 512 # image height
     IMAGE_C = 3 # image channels
