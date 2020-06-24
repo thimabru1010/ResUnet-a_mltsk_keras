@@ -8,7 +8,7 @@ load_npy_image
 
 from ResUnet_a.model import Resunet_a
 from ResUnet_a.model2 import Resunet_a2, Resunet_a2_multitasking
-from multitasking_weighted_crossentropy import multitasking_weighted_categorical_crossentropy
+from multitasking_utils import get_boundary_labels, get_distance_labels
 import argparse
 import os
 
@@ -142,8 +142,10 @@ for i in range(w):
         binary_img_train_ref[i][j] = label_dict[rgb_key]
 
 number_class = 5
-patch_size = 128
-stride = patch_size // 2
+patch_size = 256
+stride = patch_size
+
+
 #stride = patch_size
 patches_tr, patches_tr_ref = extract_patches_hw(img_train_normalized, binary_img_train_ref, patch_size, stride)
 
@@ -151,7 +153,16 @@ patches_tr, patches_tr_ref = extract_patches_hw(img_train_normalized, binary_img
 
 # patches_tr_aug, patches_tr_ref_aug = bal_aug_patches(percent, patch_size, patches_tr, patches_tr_ref)
 # patches_tr_ref_aug_h = tf.keras.utils.to_categorical(patches_tr_ref_aug, number_class)
+# Creates one-hot encoding for segmentation
 patches_tr_ref_h = tf.keras.utils.to_categorical(patches_tr_ref, number_class)
+
+print('[DEBUG LABELS]')
+# Create labels for boundary
+patches_bound_labels = get_boundary_labels(patches_tr)
+
+# Create labels for distance
+patches_dist_labels = get_distance_labels(patches_tr)
+
 patches_tr , patches_tr_ref_h = shuffle(patches_tr , patches_tr_ref_h , random_state = 42)
 
 patches_tr, patches_val, patches_tr_ref_h, patches_val_ref_h = train_test_split(patches_tr, patches_tr_ref_h, test_size=0.2, random_state=42)
