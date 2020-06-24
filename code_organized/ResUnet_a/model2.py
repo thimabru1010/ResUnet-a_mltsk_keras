@@ -172,15 +172,9 @@ class Resunet_a2(object):
         x=combine(x,c1,32)
 
         x=PSPPooling(x,32)
-        x=KL.Conv2D(self.config.CLASSES_NUM,(1,1))(x)
+        x=KL.Conv2D(self.num_classes,(1,1))(x)
         x=KL.Activation('softmax')(x)
         model=KM.Model(inputs=inputs,outputs=x)
-        # Talvez mudar para Adam
-        #adam = Adam(lr = 0.001 , beta_1=0.9)
-        # model.compile(optimizer=SGD(lr=0.001,momentum=0.8),loss=Tanimoto_loss,metrics=['accuracy'])
-        #model.compile(optimizer=adam,loss='categorical_crossentropy',metrics=['accuracy'])
-        #model.summary()
-        return model
 
     def train(self, data_path, model_file, restore_model_file=None):
         model = self.model
@@ -205,11 +199,12 @@ class Resunet_a2(object):
 
 
 class Resunet_a2_multitasking(object):
-    def __init__(self, input_shape,config=UnetConfig()):
+    def __init__(self, input_shape, num_classes, config=UnetConfig()):
         self.config = config
         print(f"Input shape: {input_shape}")
         self.img_height, self.img_width, self.img_channel = input_shape
         self.model = self.build_model_ResUneta()
+        self.num_classes = num_classes
 
     def build_model_ResUneta(self):
         def Tanimoto_loss(label,pred):
@@ -363,34 +358,29 @@ class Resunet_a2_multitasking(object):
         # OBS para o jeito de inserir o padding
         x_seg=KL.Conv2D(32,(3,3), activation='relu', padding='valid')(x_psp)
         x_seg=KL.Conv2D(32,(3,3), activation='relu', padding='valid')(x_seg)
-        x_seg=KL.Conv2D(self.config.CLASSES_NUM,(1,1), padding='same')(x_seg)
-        out_seg=KL.Activation('softmax')(x_seg)
+        x_seg=KL.Conv2D(self.num_classes,(1,1), padding='same')(x_seg)
+        out_seg=KL.Activation('softmax', name='segmentation')(x_seg)
 
         # Boundary
         x_bound=KL.Conv2D(32,(3,3), activation='relu', padding='valid')(x_psp)
-        x_bound=KL.Conv2D(self.config.CLASSES_NUM,(1,1), padding='same')(x_bound)
-        out_bound=KL.Activation('sigmoid')(x_bound)
+        x_bound=KL.Conv2D(self.num_classes,(1,1), padding='same')(x_bound)
+        out_bound=KL.Activation('sigmoid', name='boundary')(x_bound)
 
         # Distance
         x_dist=KL.Conv2D(32,(3,3), activation='relu', padding='valid')(x_comb)
         x_dist=KL.Conv2D(32,(3,3), activation='relu', padding='valid')(x_dist)
-        x_dist=KL.Conv2D(self.config.CLASSES_NUM,(1,1), padding='same')(x_dist)
-        out_dist=KL.Activation('softmax')(x_dist)
+        x_dist=KL.Conv2D(self.num_classes,(1,1), padding='same')(x_dist)
+        out_dist=KL.Activation('softmax', name='distance')(x_dist)
 
         # Color
         # Talvez mudar para same
-        out_color=KL.Conv2D(3,(1,1), activation='sigmoid', padding='same')(x_comb)
+        out_color=KL.Conv2D(3,(1,1), activation='sigmoid', padding='same', name='color')(x_comb)
 
-        #out = [out_seg, out_bound, out_dist, out_color]
+        out = [out_seg, out_bound, out_dist, out_color]
 
-        out = KB.concatenate((out_seg, out_bound, out_dist, out_color), axis=-1)
+        #out = KB.concatenate((out_seg, out_bound, out_dist, out_color), axis=-1)
 
         model=KM.Model(inputs=inputs,outputs=out)
-        # Talvez mudar para Adam
-        #adam = Adam(lr = 0.001 , beta_1=0.9)
-        # model.compile(optimizer=SGD(lr=0.001,momentum=0.8),loss=Tanimoto_loss,metrics=['accuracy'])
-        #model.compile(optimizer=adam,loss='categorical_crossentropy',metrics=['accuracy'])
-        #model.summary()
         return model
 
     def train(self, data_path, model_file, restore_model_file=None):

@@ -186,27 +186,43 @@ if args.multitasking:
 
 if args.resunet_a == True:
 
-    resuneta = Resunet_a2((rows, cols, channels))
     if args.multitasking:
         print('Multitasking enabled!')
         resuneta = Resunet_a2_multitasking((rows, cols, channels))
-    model = resuneta.model
-    model.summary()
+        model = resuneta.model
+        model.summary()
+        losses = {
+        	"segmentation": "categorical_crossentropy",
+        	"boundary": "categorical_crossentropy",
+            "distance": "categorical_crossentropy",
+            "color": "categorical_crossentropy",
+        }
+        lossWeights = {"segmentation": 1.0, "boundary": 1.0, "distance": 1.0,
+        "color": 1.0}
+        model.compile(optimizer=adam, loss=losses, loss_weights=lossWeights, metrics=['accuracy'])
+    else:
+        resuneta = Resunet_a2((rows, cols, channels))
+        model = resuneta.model
+        model.summary()
+        model.compile(optimizer=adam, loss=loss, metrics=['accuracy'])
+
     #model = Resunet_a((channels, cols, rows))
     print('ResUnet-a compiled!')
 else:
     model = unet((rows, cols, channels))
+    model.summary()
 
-model.compile(optimizer=adam, loss=loss, metrics=['accuracy'])
+    model.compile(optimizer=adam, loss=loss, metrics=['accuracy'])
 #model.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['accuracy'])
 # print model information
-#model.summary()
+
 
 filepath = './models/'
 # define early stopping callback
 earlystop = EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=10, verbose=1, mode='min')
 checkpoint = ModelCheckpoint(filepath+'unet_exp_'+str(exp)+'.h5', monitor='val_loss', verbose=1, save_best_only=True, mode='min')
 callbacks_list = [earlystop, checkpoint]
+
 # train the model
 start_training = time.time()
 model_info = model.fit(patches_tr, patches_tr_ref_h, batch_size=batch_size, epochs=100, callbacks=callbacks_list, verbose=2, validation_data= (patches_val, patches_val_ref_h) )
