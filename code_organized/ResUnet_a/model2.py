@@ -19,7 +19,8 @@ tf.compat.v1.enable_eager_execution()
 print( tf.executing_eagerly() )
 
 class Resunet_a2(object):
-    def __init__(self, input_shape,config=UnetConfig()):
+    def __init__(self, input_shape, num_classes, config=UnetConfig()):
+        self.num_classes = num_classes
         self.config = config
         print(f"Input shape: {input_shape}")
         self.img_height, self.img_width, self.img_channel = input_shape
@@ -176,6 +177,8 @@ class Resunet_a2(object):
         x=KL.Activation('softmax')(x)
         model=KM.Model(inputs=inputs,outputs=x)
 
+        return model
+
     def train(self, data_path, model_file, restore_model_file=None):
         model = self.model
         if restore_model_file:
@@ -200,11 +203,11 @@ class Resunet_a2(object):
 
 class Resunet_a2_multitasking(object):
     def __init__(self, input_shape, num_classes, config=UnetConfig()):
+        self.num_classes = num_classes
         self.config = config
         print(f"Input shape: {input_shape}")
         self.img_height, self.img_width, self.img_channel = input_shape
         self.model = self.build_model_ResUneta()
-        self.num_classes = num_classes
 
     def build_model_ResUneta(self):
         def Tanimoto_loss(label,pred):

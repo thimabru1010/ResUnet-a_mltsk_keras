@@ -25,8 +25,6 @@ def get_boundary_labels(patches):
     for i in range(amount):
         # Remember to convert to opencv color format (bgr) img = img[:,:,::-1]
         bound_patches[i,:,:] = get_boundary(patches[i,:,:,::-1])
-        # cv2.imshow('test', bound_patches[i,:,:])
-        # cv2.waitKey(0)
     return bound_patches
 
 
@@ -44,12 +42,20 @@ def get_distance(label):
 def get_distance_labels(patches):
     # Patch size shape: (amount, h, w, c)
     (amount, h, w, c) = patches.shape
-    bound_patches = np.zeros([amount, h, w])
+    dist_patches = np.zeros([amount, h, w])
     for i in range(amount):
         # Remember to convert to opencv color format (bgr) img = img[:,:,::-1]
         grayimg = cv2.cvtColor(patches[i,:,:,::-1], cv2.COLOR_BGR2GRAY)
-        bound_patches[i,:,:] = get_distance(grayimg)
-    return bound_patches
+        dist_patches[i,:,:] = get_distance(grayimg)
+    return dist_patches
+
+def get_color_labels(patches):
+    (amount, h, w, c) = patches.shape
+    color_patches = np.zeros([amount, h, w, c])
+    for i in range(amount):
+        # Remember to convert to opencv color format (bgr) img = img[:,:,::-1]
+        color_patches[i,:,:,:] = cv2.cvtColor(patches[i,:,:,::-1],cv2.COLOR_BGR2HSV)
+    return color_patches
 
 
 # img = cv2.imread('teste2.jpg')

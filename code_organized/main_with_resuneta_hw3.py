@@ -8,7 +8,7 @@ load_npy_image
 
 from ResUnet_a.model import Resunet_a
 from ResUnet_a.model2 import Resunet_a2, Resunet_a2_multitasking
-from multitasking_utils import get_boundary_labels, get_distance_labels
+from multitasking_utils import get_boundary_labels, get_distance_labels, get_color_labels
 import argparse
 import os
 
@@ -163,18 +163,18 @@ patches_bound_labels = get_boundary_labels(patches_tr)
 # Create labels for distance
 patches_dist_labels = get_distance_labels(patches_tr)
 
+# Create labels for color
+patches_color_labels = get_color_labels(patches_tr)
+
 patches_tr , patches_tr_ref_h = shuffle(patches_tr , patches_tr_ref_h , random_state = 42)
 
-patches_tr, patches_val, patches_tr_ref_h, patches_val_ref_h = train_test_split(patches_tr, patches_tr_ref_h, test_size=0.2, random_state=42)
+patches_tr, patches_val, patches_tr_ref_h, patches_val_ref_h, patches_bound_labels_tr, patches_bound_labels_val, patches_dist_labels_tr, patches_dist_labels_val, patches_color_labels_tr, patches_color_labels_val   = train_test_split(patches_tr, patches_tr_ref_h, patches_bound_labels, patches_dist_labels, patches_color_labels,  test_size=0.2, random_state=42)
 print(patches_tr.shape, patches_val.shape)
 print(patches_tr_ref_h.shape, patches_val_ref_h.shape)
 
+y_fit={"segmentation": patches_tr_ref_h, "boundary": patches_bound_labels_tr, "distance":  patches_dist_labels_tr, "color": patches_color_labels_tr}
 
-# Validation tiles
-
-# patches_val_aug, patches_val_ref_aug = bal_aug_patches(percent, patch_size, patches_val, patches_val_ref)
-#
-# patches_val_ref_aug_h = tf.keras.utils.to_categorical(patches_val_ref_aug, number_class)
+val_fit={"segmentation": patches_val_ref_h, "boundary": patches_bound_labels_val, "distance":  patches_dist_labels_val, "color": patches_color_labels_val}
 
 #%%
 start_time = time.time()
@@ -193,26 +193,27 @@ print('='*60)
 print(weights)
 loss = weighted_categorical_crossentropy(weights)
 if args.multitasking:
-    loss = multitasking_weighted_categorical_crossentropy(weights)
+    #loss = weighted_categorical_crossentropy(weights)
+    loss = "categorical_crossentropy"
 
 if args.resunet_a == True:
 
     if args.multitasking:
         print('Multitasking enabled!')
-        resuneta = Resunet_a2_multitasking((rows, cols, channels))
+        resuneta = Resunet_a2_multitasking((rows, cols, channels), number_class)
         model = resuneta.model
         model.summary()
         losses = {
-        	"segmentation": "categorical_crossentropy",
-        	"boundary": "categorical_crossentropy",
-            "distance": "categorical_crossentropy",
-            "color": "categorical_crossentropy",
+        	"segmentation": loss,
+        	"boundary": loss,
+            "distance": loss,
+            "color": loss,
         }
         lossWeights = {"segmentation": 1.0, "boundary": 1.0, "distance": 1.0,
         "color": 1.0}
         model.compile(optimizer=adam, loss=losses, loss_weights=lossWeights, metrics=['accuracy'])
     else:
-        resuneta = Resunet_a2((rows, cols, channels))
+        resuneta = Resunet_a2((rows, cols, channels), number_class)
         model = resuneta.model
         model.summary()
         model.compile(optimizer=adam, loss=loss, metrics=['accuracy'])
@@ -235,9 +236,14 @@ checkpoint = ModelCheckpoint(filepath+'unet_exp_'+str(exp)+'.h5', monitor='val_l
 callbacks_list = [earlystop, checkpoint]
 
 # train the model
-start_training = time.time()
-model_info = model.fit(patches_tr, patches_tr_ref_h, batch_size=batch_size, epochs=100, callbacks=callbacks_list, verbose=2, validation_data= (patches_val, patches_val_ref_h) )
-end_training = time.time() - start_time
+if args.multitasking:
+    start_training = time.time()
+    model_info = model.fit(x=patches_tr, y=y_fit, batch_size=batch_size, epochs=100, callbacks=callbacks_list, verbose=2, validation_data= (patches_val, val_fit) )
+    end_training = time.time() - start_time
+else:
+    start_training = time.time()
+    model_info = model.fit(patches_tr, patches_tr_ref_h, batch_size=batch_size, epochs=100, callbacks=callbacks_list, verbose=2, validation_data= (patches_val, patches_val_ref_h) )
+    end_training = time.time() - start_time
 
 #%% Test model
 # Creation of mask with test tiles
