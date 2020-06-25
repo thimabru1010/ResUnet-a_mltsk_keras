@@ -23,7 +23,8 @@ def get_boundary_labels(patches):
     (amount, h, w, c) = patches.shape
     bound_patches = np.zeros([amount, h, w])
     for i in range(amount):
-        # Remember to convert to opencv color format (bgr) img = img[:,:,::-1]
+        # Remember to convert the input to opencv color format (bgr) img = img[:,:,::-1]
+        # Convert the output from bgr to rgb
         bound_patches[i,:,:] = get_boundary(patches[i,:,:,::-1])
     return bound_patches
 
@@ -46,6 +47,7 @@ def get_distance_labels(patches):
     for i in range(amount):
         # Remember to convert to opencv color format (bgr) img = img[:,:,::-1]
         grayimg = cv2.cvtColor(patches[i,:,:,::-1], cv2.COLOR_BGR2GRAY)
+        # Convert the output from bgr to rgb
         dist_patches[i,:,:] = get_distance(grayimg)
     return dist_patches
 

@@ -159,6 +159,7 @@ patches_tr_ref_h = tf.keras.utils.to_categorical(patches_tr_ref, number_class)
 print('[DEBUG LABELS]')
 # Create labels for boundary
 patches_bound_labels = get_boundary_labels(patches_tr)
+print(patches_bound_labels.shape)
 
 # Create labels for distance
 patches_dist_labels = get_distance_labels(patches_tr)

@@ -356,32 +356,33 @@ class Resunet_a2_multitasking(object):
         x_comb=combine(x,c1,32)
 
         x_psp=PSPPooling(x_comb,32)
+        print('PSPPooling')
+        print(x_psp.shape)
 
         # Segmentation
         # OBS para o jeito de inserir o padding
-        x_seg=KL.Conv2D(32,(3,3), activation='relu', padding='valid')(x_psp)
-        x_seg=KL.Conv2D(32,(3,3), activation='relu', padding='valid')(x_seg)
-        x_seg=KL.Conv2D(self.num_classes,(1,1), padding='same')(x_seg)
+
+        x_seg=KL.Conv2D(32,(3,3), activation='relu', padding='same', name='seg1')(x_psp)
+        x_seg=KL.Conv2D(32,(3,3), activation='relu', padding='same', name='seg2')(x_seg)
+        x_seg=KL.Conv2D(self.num_classes,(1,1), padding='valid', name='seg3')(x_seg)
         out_seg=KL.Activation('softmax', name='segmentation')(x_seg)
 
         # Boundary
-        x_bound=KL.Conv2D(32,(3,3), activation='relu', padding='valid')(x_psp)
-        x_bound=KL.Conv2D(self.num_classes,(1,1), padding='same')(x_bound)
+        x_bound=KL.Conv2D(32,(3,3), activation='relu', padding='same')(x_psp)
+        x_bound=KL.Conv2D(1,(1,1), padding='valid')(x_bound)
         out_bound=KL.Activation('sigmoid', name='boundary')(x_bound)
 
         # Distance
-        x_dist=KL.Conv2D(32,(3,3), activation='relu', padding='valid')(x_comb)
-        x_dist=KL.Conv2D(32,(3,3), activation='relu', padding='valid')(x_dist)
-        x_dist=KL.Conv2D(self.num_classes,(1,1), padding='same')(x_dist)
+        x_dist=KL.Conv2D(32,(3,3), activation='relu', padding='same')(x_comb)
+        x_dist=KL.Conv2D(32,(3,3), activation='relu', padding='same')(x_dist)
+        x_dist=KL.Conv2D(1,(1,1), padding='valid')(x_dist)
         out_dist=KL.Activation('softmax', name='distance')(x_dist)
 
         # Color
         # Talvez mudar para same
-        out_color=KL.Conv2D(3,(1,1), activation='sigmoid', padding='same', name='color')(x_comb)
+        out_color=KL.Conv2D(3,(1,1), activation='sigmoid', padding='valid', name='color')(x_comb)
 
         out = [out_seg, out_bound, out_dist, out_color]
-
-        #out = KB.concatenate((out_seg, out_bound, out_dist, out_color), axis=-1)
 
         model=KM.Model(inputs=inputs,outputs=out)
         return model
