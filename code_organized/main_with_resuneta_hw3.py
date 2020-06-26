@@ -159,20 +159,24 @@ patches_tr_ref_h = tf.keras.utils.to_categorical(patches_tr_ref, number_class)
 if args.multitasking:
     print('[DEBUG LABELS]')
     # Create labels for boundary
-    patches_bound_labels = get_boundary_labels(patches_tr)
+    patches_bound_labels = get_boundary_labels(patches_tr_ref_h)
     print(patches_bound_labels.shape)
 
     # Create labels for distance
-    patches_dist_labels = get_distance_labels(patches_tr)
+    patches_dist_labels = get_distance_labels(patches_tr_ref_h)
+    print(patches_dist_labels.shape)
 
     # Create labels for color
     patches_color_labels = get_color_labels(patches_tr)
+    print(patches_color_labels.shape)
 
-    patches_tr , patches_tr_ref_h = shuffle(patches_tr , patches_tr_ref_h , random_state = 42)
+    print(patches_tr.shape)
+
+    print(patches_tr_ref_h.shape)
+
+    # patches_tr , patches_tr_ref_h = shuffle(patches_tr , patches_tr_ref_h , random_state = 42)
 
     patches_tr, patches_val, patches_tr_ref_h, patches_val_ref_h, patches_bound_labels_tr, patches_bound_labels_val, patches_dist_labels_tr, patches_dist_labels_val, patches_color_labels_tr, patches_color_labels_val   = train_test_split(patches_tr, patches_tr_ref_h, patches_bound_labels, patches_dist_labels, patches_color_labels,  test_size=0.2, random_state=42)
-    print(patches_tr.shape, patches_val.shape)
-    print(patches_tr_ref_h.shape, patches_val_ref_h.shape)
 
     y_fit={"segmentation": patches_tr_ref_h, "boundary": patches_bound_labels_tr, "distance":  patches_dist_labels_tr, "color": patches_color_labels_tr}
 

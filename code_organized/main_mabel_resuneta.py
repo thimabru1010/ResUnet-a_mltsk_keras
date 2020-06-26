@@ -144,7 +144,7 @@ rows = patch_size
 cols = patch_size
 adam = Adam(lr = 0.0001 , beta_1=0.9)
 sgd = SGD(lr=0.01,momentum=0.8)
-batch_size = 1
+batch_size = 8
 
 weights = [0.5, 0.5, 0]
 

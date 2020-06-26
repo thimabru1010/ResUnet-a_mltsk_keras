@@ -124,13 +124,13 @@ class Resunet_a2(object):
 
             # Boundary
             x_bound=KL.Conv2D(32,(3,3), activation='relu', padding='same')(x_psp)
-            x_bound=KL.Conv2D(1,(1,1), padding='valid')(x_bound)
+            x_bound=KL.Conv2D(self.num_classes,(1,1), padding='valid')(x_bound)
             out_bound=KL.Activation('sigmoid', name='boundary')(x_bound)
 
             # Distance
             x_dist=KL.Conv2D(32,(3,3), activation='relu', padding='same')(x_comb)
             x_dist=KL.Conv2D(32,(3,3), activation='relu', padding='same')(x_dist)
-            x_dist=KL.Conv2D(1,(1,1), padding='valid')(x_dist)
+            x_dist=KL.Conv2D(self.num_classes,(1,1), padding='valid')(x_dist)
             out_dist=KL.Activation('softmax', name='distance')(x_dist)
 
             # Color
