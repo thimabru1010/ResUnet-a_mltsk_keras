@@ -7,23 +7,19 @@ EarlyStopping, ModelCheckpoint, identity_block, ResNet50, color_map, SGD, \
 load_npy_image
 
 from ResUnet_a.model import Resunet_a
-from ResUnet_a.model2 import Resunet_a2, Resunet_a2_multitasking
-from multitasking_weighted_crossentropy import multitasking_weighted_categorical_crossentropy
+from ResUnet_a.model2 import Resunet_a2
+from multitasking_utils import get_boundary_labels, get_distance_labels, get_color_labels
 import argparse
-
-#tf.enable_eager_execution()
-print('[TFMERDA2]'*10)
-tf.compat.v1.enable_eager_execution()
-print( tf.executing_eagerly() )
+import os
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--resunet_a",
-    help="choose resunet-a model or not", type=bool, default=False)
+    help="choose resunet-a model or not", type=int, default=0)
 parser.add_argument("--multitasking",
-    help="choose resunet-a model or not", type=bool, default=False)
+    help="choose resunet-a model or not", type=int, default=0)
 args = parser.parse_args()
 
-root_path = './'
+root_path = './DATASETS/'
 
 # Load images
 # img_t1 = load_tiff_image(root_path+'images/18_08_2017_image'+'.tif').astype(np.float32)
@@ -96,7 +92,7 @@ print('Total deforestaion class is {}'.format(len(image_ref[image_ref==1])))
 print('Percentage of deforestaion class is {:.2f}'.format((len(image_ref[image_ref==1])*100)/len(image_ref[image_ref==0])))
 #%% Patches extraction
 patch_size = 128
-stride = patch_size//8
+stride = patch_size//16
 
 print("="*40)
 print(f'Patche size: {patch_size}')
@@ -111,14 +107,35 @@ number_class = 3
 # Trainig tiles
 tr_tiles = [tr1, tr2, tr3, tr4]
 patches_tr, patches_tr_ref = patch_tiles(tr_tiles, mask_tiles, image_array, final_mask, patch_size, stride)
+
 patches_tr_aug, patches_tr_ref_aug = bal_aug_patches(percent, patch_size, patches_tr, patches_tr_ref)
+
 patches_tr_ref_aug_h = tf.keras.utils.to_categorical(patches_tr_ref_aug, number_class)
 
 # Validation tiles
 val_tiles = [val1, val2]
 patches_val, patches_val_ref = patch_tiles(val_tiles, mask_tiles, image_array, final_mask, patch_size, stride)
 patches_val_aug, patches_val_ref_aug = bal_aug_patches(percent, patch_size, patches_val, patches_val_ref)
+
 patches_val_ref_aug_h = tf.keras.utils.to_categorical(patches_val_ref_aug, number_class)
+
+if args.multitasking:
+    print('[DEBUG LABELS]')
+    # Create labels for boundary
+    patches_bound_labels = get_boundary_labels(patches_tr_aug)
+    print(patches_bound_labels.shape)
+
+    # Create labels for distance
+    patches_dist_labels = get_distance_labels(patches_tr_aug)
+
+    # Create labels for color
+    patches_color_labels = get_color_labels(patches_tr_aug)
+
+    patches_tr , patches_tr_ref_h = shuffle(patches_tr , patches_tr_ref_h , random_state = 42)
+
+    y_fit={"segmentation": patches_tr_ref_aug_h, "boundary": patches_bound_labels_tr, "distance":  patches_dist_labels_tr, "color": patches_color_labels_tr}
+
+    val_fit={"segmentation": patches_val_ref_aug_h, "boundary": patches_bound_labels_val, "distance":  patches_dist_labels_val, "color": patches_color_labels_val}
 
 #%%
 start_time = time.time()
@@ -129,50 +146,60 @@ adam = Adam(lr = 0.01 , beta_1=0.9)
 sgd = SGD(lr=0.01,momentum=0.8)
 batch_size = 1
 
-unique, counts = np.unique(final_mask, return_counts=True)
-counts_dict = dict(zip(unique, counts))
-print(counts_dict)
-total_pixels = counts_dict[0] + counts_dict[1] + counts_dict[2]
-weight0 = total_pixels / counts_dict[0]
-weight1 = total_pixels / counts_dict[1]
-
 weights = [0.5, 0.5, 0]
-#weights = [weight0, weight1, 0]
+
 print('='*60)
-print(weights)
-print( tf.executing_eagerly() )
-loss = weighted_categorical_crossentropy(weights)
+
 if args.multitasking:
-    loss = multitasking_weighted_categorical_crossentropy(weights)
+    #loss = weighted_categorical_crossentropy(weights)
+    loss = 'categorical_crossentropy'
 
 if args.resunet_a == True:
-    '''
-        model already compiled
-    '''
-    resuneta = Resunet_a2((rows, cols, channels))
+
     if args.multitasking:
-        resuneta = Resunet_a2_multitasking((rows, cols, channels))
-    model = resuneta.model
-    model.summary()
-    #model = Resunet_a((channels, cols, rows))
+        print('Multitasking enabled!')
+        resuneta = Resunet_a2((rows, cols, channels), number_class, args)
+        model = resuneta.model
+        model.summary()
+        losses = {
+        	"segmentation": loss,
+        	"boundary": loss,
+            "distance": loss,
+            "color": loss,
+        }
+        lossWeights = {"segmentation": 1.0, "boundary": 1.0, "distance": 1.0,
+        "color": 1.0}
+        model.compile(optimizer=adam, loss=losses, loss_weights=lossWeights, metrics=['accuracy'])
+    else:
+        resuneta = Resunet_a2((rows, cols, channels), number_class, args)
+        model = resuneta.model
+        model.summary()
+        model.compile(optimizer=adam, loss=loss, metrics=['accuracy'])
+
     print('ResUnet-a compiled!')
 else:
     model = unet((rows, cols, channels))
+    model.summary()
 
-model.compile(optimizer=adam, loss=loss, metrics=['accuracy'])
-#model.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['accuracy'])
-# print model information
-#model.summary()
+    model.compile(optimizer=adam, loss=loss, metrics=['accuracy'])
+    #model.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['accuracy'])
 
-filepath = root_path+'models/'
+filepath = 'models/'
 # define early stopping callback
 earlystop = EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=10, verbose=1, mode='min')
 checkpoint = ModelCheckpoint(filepath+'unet_exp_'+str(exp)+'.h5', monitor='val_loss', verbose=1, save_best_only=True, mode='min')
 callbacks_list = [earlystop, checkpoint]
+
 # train the model
-start_training = time.time()
-model_info = model.fit(patches_tr_aug, patches_tr_ref_aug_h, batch_size=batch_size, epochs=100, callbacks=callbacks_list, verbose=2, validation_data= (patches_val_aug, patches_val_ref_aug_h) )
-end_training = time.time() - start_time
+if args.multitasking:
+    start_training = time.time()
+    model_info = model.fit(x=patches_tr, y=y_fit, batch_size=batch_size, epochs=100, callbacks=callbacks_list, verbose=2, validation_data= (patches_val, val_fit) )
+    end_training = time.time() - start_time
+else:
+    start_training = time.time()
+    model_info = model.fit(patches_tr, patches_tr_ref_h, batch_size=batch_size, epochs=100, callbacks=callbacks_list, verbose=2, validation_data= (patches_val, patches_val_ref_h) )
+    end_training = time.time() - start_time
+    
 #%% Test model
 # Creation of mask with test tiles
 mask_ts_ = np.zeros((mask_tiles.shape))

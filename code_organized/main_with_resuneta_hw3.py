@@ -178,9 +178,9 @@ if args.multitasking:
 
     val_fit={"segmentation": patches_val_ref_h, "boundary": patches_bound_labels_val, "distance":  patches_dist_labels_val, "color": patches_color_labels_val}
 else:
-        patches_tr, patches_val, patches_tr_ref_h, patches_val_ref_h = train_test_split(patches_tr, patches_tr_ref_h, test_size=0.2, random_state=42)
-        print(patches_tr.shape, patches_val.shape)
-        print(patches_tr_ref_h.shape, patches_val_ref_h.shape)
+    patches_tr, patches_val, patches_tr_ref_h, patches_val_ref_h = train_test_split(patches_tr, patches_tr_ref_h, test_size=0.2, random_state=42)
+    print(patches_tr.shape, patches_val.shape)
+    print(patches_tr_ref_h.shape, patches_val_ref_h.shape)
 
 #%%
 start_time = time.time()
