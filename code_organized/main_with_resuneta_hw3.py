@@ -97,7 +97,10 @@ def extract_patches_train(img_test_normalized, patch_size):
 
 def Test(model, patch_test):
     result = model.predict(patch_test)
-    predicted_class = np.argmax(result, axis=-1)
+    if args.multitasking:
+        predicted_class = np.argmax(result[0], axis=-1)
+    else:
+        predicted_class = np.argmax(result, axis=-1)
     return predicted_class
 
 def compute_metrics_hw(true_labels, predicted_labels):
@@ -299,7 +302,7 @@ model = load_model(filepath+'unet_exp_'+str(exp)+'.h5', compile=False)
 area = 11
 # Prediction
 # Test the model
-patches_pred = Test(model, patches_test)
+patches_pred = Test(model, patches_test, args)
 print(patches_pred.shape)
 
 # Metrics
