@@ -7,7 +7,7 @@ EarlyStopping, ModelCheckpoint, identity_block, ResNet50, color_map, SGD, \
 load_npy_image
 
 from ResUnet_a.model import Resunet_a
-from ResUnet_a.model2 import Resunet_a2, Resunet_a2_multitasking, UNet_test
+from ResUnet_a.model2 import Resunet_a2
 from multitasking_utils import get_boundary_labels, get_distance_labels, get_color_labels
 import argparse
 import os
