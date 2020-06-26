@@ -92,7 +92,7 @@ print('Total deforestaion class is {}'.format(len(image_ref[image_ref==1])))
 print('Percentage of deforestaion class is {:.2f}'.format((len(image_ref[image_ref==1])*100)/len(image_ref[image_ref==0])))
 #%% Patches extraction
 patch_size = 128
-stride = patch_size//16
+stride = patch_size//8
 
 print("="*40)
 print(f'Patche size: {patch_size}')
@@ -150,9 +150,9 @@ weights = [0.5, 0.5, 0]
 
 print('='*60)
 
-if args.multitasking:
-    #loss = weighted_categorical_crossentropy(weights)
-    loss = 'categorical_crossentropy'
+
+#loss = weighted_categorical_crossentropy(weights)
+loss = 'categorical_crossentropy'
 
 if args.resunet_a == True:
 
@@ -193,13 +193,13 @@ callbacks_list = [earlystop, checkpoint]
 # train the model
 if args.multitasking:
     start_training = time.time()
-    model_info = model.fit(x=patches_tr, y=y_fit, batch_size=batch_size, epochs=100, callbacks=callbacks_list, verbose=2, validation_data= (patches_val, val_fit) )
+    model_info = model.fit(x=patches_tr, y=y_fit, batch_size=batch_size, epochs=100, callbacks=callbacks_list, verbose=2, validation_data= (patches_val_aug, val_fit) )
     end_training = time.time() - start_time
 else:
     start_training = time.time()
-    model_info = model.fit(patches_tr, patches_tr_ref_h, batch_size=batch_size, epochs=100, callbacks=callbacks_list, verbose=2, validation_data= (patches_val, patches_val_ref_h) )
+    model_info = model.fit(patches_tr_aug, patches_tr_ref_aug_h, batch_size=batch_size, epochs=100, callbacks=callbacks_list, verbose=2, validation_data= (patches_val_aug, patches_val_ref_aug_h) )
     end_training = time.time() - start_time
-    
+
 #%% Test model
 # Creation of mask with test tiles
 mask_ts_ = np.zeros((mask_tiles.shape))
