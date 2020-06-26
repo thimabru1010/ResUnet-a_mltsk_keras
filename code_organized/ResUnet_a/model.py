@@ -173,27 +173,6 @@ class Resunet_a(object):
         model.summary()
         return model
 
-    def train(self, data_path, model_file, restore_model_file=None):
-        model = self.model
-        if restore_model_file:
-            model.load_weights(restore_model_file)
-        callbacks = [
-            keras.callbacks.TensorBoard(log_dir=model_file,
-                                        histogram_freq=0, write_graph=True, write_images=False),
-            keras.callbacks.ModelCheckpoint(model_file+"/Unet{epoch:02d}.h5",
-                                            verbose=0, save_weights_only=True),
-        ]
-
-
-        train_datasets=utils.DataGenerator_wqw(data_path+"/train/image",data_path+"/train/label",self.config.IMAGE_H,self.config.IMAGE_H,self.config.batch_size,self.config.CLASSES_NUM,self.config)
-        val_datasets=utils.DataGenerator_wqw(data_path+"/val/image",data_path+"/val/label",self.config.IMAGE_H,self.config.IMAGE_H,self.config.batch_size,self.config.CLASSES_NUM,self.config)
-
-        print ("the number of train data is", len(train_datasets))
-        print ("the number of val data is", len(val_datasets))
-        trainCounts = len(train_datasets)
-        valCounts = len(val_datasets)
-        model.fit_generator(generator=train_datasets,epochs=self.config.EPOCHS,validation_data=val_datasets,callbacks=callbacks, max_queue_size=10,workers=8,use_multiprocessing=True)
-
     def loadWeight(self,path):
         self.model.load_weights(path)
 
@@ -204,23 +183,3 @@ class Resunet_a(object):
         img=img[0]
         result=np.argmax(img,axis=-1)
         return result
-
-    def visual(self,img,path):
-        sub_class=math.ceil(pow(self.config.CLASSES_NUM,1/3))
-        delta=int(255/sub_class)
-        color=[]
-        curcolor=[0,0,0]
-        result=np.zeros(shape(self.config.IMAGE_H,self.config.IMAGE_W,3),dtype="uint8")
-        for i in range(sub_class):
-            curcolor[0]=curcolor[0]+delta
-            for j in range(sub_class):
-                curcolor[1]=curcolor[1]+delta
-                for k in range(sub_class):
-                    curcolor[2]=curcolor[2]+delta
-                    color.append([curcolor[0],curcolor[1],curcolor[2]])
-                curcolor[2]=0
-            curcolor[1]=0
-        for y in range(img.shape[0]):
-            for x in range(img.shape[1]):
-                result[y,x,:]=np.asarray(color[int(img[y,x])],dtype="uint8")
-        cv2.imwrite(path,result)

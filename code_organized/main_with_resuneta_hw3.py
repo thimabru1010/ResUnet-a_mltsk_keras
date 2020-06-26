@@ -7,7 +7,7 @@ EarlyStopping, ModelCheckpoint, identity_block, ResNet50, color_map, SGD, \
 load_npy_image
 
 from ResUnet_a.model import Resunet_a
-from ResUnet_a.model2 import Resunet_a2, Resunet_a2_multitasking
+from ResUnet_a.model2 import Resunet_a2, Resunet_a2_multitasking, UNet_test
 from multitasking_utils import get_boundary_labels, get_distance_labels, get_color_labels
 import argparse
 import os
@@ -183,8 +183,8 @@ exp = 1
 rows = patch_size
 cols = patch_size
 channels = 3
-adam = Adam(lr = 0.01 , beta_1=0.9)
-sgd = SGD(lr=0.01,momentum=0.8)
+adam = Adam(lr = 0.001 , beta_1=0.9)
+sgd = SGD(lr=0.001,momentum=0.8)
 batch_size = 1
 
 #weights = [0.5, 0.5, 0]
@@ -201,7 +201,7 @@ if args.resunet_a == True:
 
     if args.multitasking:
         print('Multitasking enabled!')
-        resuneta = Resunet_a2_multitasking((rows, cols, channels), number_class)
+        resuneta = Resunet_a2((rows, cols, channels), number_class, args)
         model = resuneta.model
         model.summary()
         losses = {
@@ -214,20 +214,18 @@ if args.resunet_a == True:
         "color": 1.0}
         model.compile(optimizer=adam, loss=losses, loss_weights=lossWeights, metrics=['accuracy'])
     else:
-        resuneta = Resunet_a2((rows, cols, channels), number_class)
+        resuneta = Resunet_a2((rows, cols, channels), number_class, args)
         model = resuneta.model
         model.summary()
         model.compile(optimizer=adam, loss=loss, metrics=['accuracy'])
 
-    #model = Resunet_a((channels, cols, rows))
     print('ResUnet-a compiled!')
 else:
     model = unet((rows, cols, channels))
     model.summary()
 
     model.compile(optimizer=adam, loss=loss, metrics=['accuracy'])
-#model.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['accuracy'])
-# print model information
+    #model.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['accuracy'])
 
 
 filepath = './models/'
