@@ -142,7 +142,7 @@ start_time = time.time()
 exp = 1
 rows = patch_size
 cols = patch_size
-adam = Adam(lr = 0.01 , beta_1=0.9)
+adam = Adam(lr = 0.0001 , beta_1=0.9)
 sgd = SGD(lr=0.01,momentum=0.8)
 batch_size = 1
 
@@ -151,8 +151,8 @@ weights = [0.5, 0.5, 0]
 print('='*60)
 
 
-#loss = weighted_categorical_crossentropy(weights)
-loss = 'categorical_crossentropy'
+loss = weighted_categorical_crossentropy(weights)
+#loss = 'categorical_crossentropy'
 
 if args.resunet_a == True:
 
@@ -248,6 +248,8 @@ print('test time', time_ts)
 # prediction of the whole image
 fig1 = plt.figure('whole prediction')
 plt.imshow(prob_recontructed)
+plt.imsave('whole_pred.jpg', prob_recontructed)
 # Show the test tiles
 fig2 = plt.figure('prediction of test set')
 plt.imshow(prob_recontructed*mask_ts)
+plt.imsave('pred_test_set.jpg', prob_recontructed*mask_ts)
