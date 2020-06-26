@@ -20,8 +20,9 @@ class Resunet_a2(object):
         self.num_classes = num_classes
         self.img_height, self.img_width, self.img_channel = input_shape
         self.args = args
-        self.model = self.build_model_resUnet()
+        self.model = self.build_model_ResUneta()
 
+    def build_model_ResUneta(self):
         def ResBlock(input,filter,kernel_size,dilation_rates,stride):
             def branch(dilation_rate):
                 x=KL.BatchNormalization()(input)
