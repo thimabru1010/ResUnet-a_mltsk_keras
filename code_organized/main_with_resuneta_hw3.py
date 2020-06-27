@@ -206,8 +206,8 @@ print('='*60)
 print(weights)
 loss = weighted_categorical_crossentropy(weights)
 if args.multitasking:
-    #loss = weighted_categorical_crossentropy(weights)
-    loss = "categorical_crossentropy"
+    weighted_cross_entropy = weighted_categorical_crossentropy(weights)
+    cross_entropy = "categorical_crossentropy"
 
 if args.resunet_a == True:
 
@@ -217,10 +217,10 @@ if args.resunet_a == True:
         model = resuneta.model
         model.summary()
         losses = {
-        	"segmentation": loss,
-        	"boundary": loss,
-            "distance": loss,
-            "color": loss,
+        	"segmentation": weighted_cross_entropy,
+        	"boundary": weighted_cross_entropy,
+            "distance": weighted_cross_entropy,
+            "color": cross_entropy,
         }
         lossWeights = {"segmentation": 1.0, "boundary": 1.0, "distance": 1.0,
         "color": 1.0}

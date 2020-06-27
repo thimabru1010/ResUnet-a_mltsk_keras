@@ -142,17 +142,9 @@ def patch_tiles2(tiles, mask_amazon, image_array, image_ref, img_mask_ref, patch
             patches_out.append(np.asarray(patches_img))
             label_out.append(np.asarray(patch_ref))
 
-        print('patches tudo')
-        print(len(patches_img))
-        print(len(patch_ref))
 
-    print('tudo')
-    print(len(patches_out))
-    print(len(label_out))
     patches_out = np.concatenate(patches_out)
     label_out = np.concatenate(label_out)
-    print(patches_out.shape)
-    print(label_out.shape)
     return patches_out, label_out
 
 def patch_tiles3(tiles, mask_amazon, image_array, image_ref, patch_size, stride):

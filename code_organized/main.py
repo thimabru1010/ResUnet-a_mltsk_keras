@@ -5,7 +5,7 @@ RGB_image, extract_patches, patch_tiles, bal_aug_patches, extrac_patch2, test_FC
 weighted_categorical_crossentropy, mask_no_considered, tf, Adam, prediction, load_model, confusion_matrix, \
 EarlyStopping, ModelCheckpoint, identity_block, ResNet50, color_map
 
-root_path = './'
+root_path = './DATASETS/'
 
 # Load images
 img_t1 = load_tiff_image(root_path+'images/18_08_2017_image'+'.tif').astype(np.float32)
@@ -107,7 +107,7 @@ model = unet((rows, cols, channels))
 model.compile(optimizer=adam, loss=loss, metrics=['accuracy'])
 # print model information
 model.summary()
-filepath = root_path+'models/'
+filepath = 'models/'
 # define early stopping callback
 earlystop = EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=10, verbose=1, mode='min')
 checkpoint = ModelCheckpoint(filepath+'unet_exp_'+str(exp)+'.h5', monitor='val_loss', verbose=1, save_best_only=True, mode='min')

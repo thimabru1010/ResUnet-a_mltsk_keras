@@ -22,8 +22,8 @@ from contextlib import redirect_stdout
 import time
 import tensorflow.keras.backend as K
 
-physical_devices = tf.config.experimental.list_physical_devices('GPU')
-tf.config.experimental.set_memory_growth(physical_devices[0], True)
+# physical_devices = tf.config.experimental.list_physical_devices('GPU')
+# tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
 
 # Functions
@@ -380,17 +380,11 @@ def patch_tiles(tiles, mask_amazon, image_array, image_ref, patch_size, stride):
 def bal_aug_patches(percent, patch_size, patches_img, patches_ref):
     patches_images = []
     patches_labels = []
-    print('bal_aug_patches')
 
-    print(len(patches_img))
     for i in range(0,len(patches_img)):
         patch = patches_ref[i]
         class1 = patch[patch==1]
 
-        # o que é esse cálculo
-        #print('class1')
-        # print(len(class1))
-        # print(int((patch_size**2)*(percent/100)))
         if len(class1) >= int((patch_size**2)*(percent/100)):
             patch_img = patches_img[i]
             patch_label = patches_ref[i]
@@ -398,7 +392,6 @@ def bal_aug_patches(percent, patch_size, patches_img, patches_ref):
             patches_images.append(img_aug)
             patches_labels.append(label_aug)
 
-    print(len(patches_images))
     patches_bal = np.concatenate(patches_images).astype(np.float32)
     labels_bal = np.concatenate(patches_labels).astype(np.float32)
     return patches_bal, labels_bal

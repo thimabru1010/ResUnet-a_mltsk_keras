@@ -40,29 +40,6 @@ def get_distance_labels(labels):
 
     return dists
 
-
-# def get_distance(label):
-#     tlabel = label.astype(np.uint8)
-#     dist = cv2.distanceTransform(tlabel,
-#                                  cv2.DIST_L2,
-#                                  0)
-#     dist = cv2.normalize(dist,
-#                          dist,
-#                          0, 1.0,
-#                          cv2.NORM_MINMAX)
-#     return dist
-
-# def get_distance_labels(patches):
-#     # Patch size shape: (amount, h, w, c)
-#     (amount, h, w, c) = patches.shape
-#     dist_patches = np.zeros([amount, h, w])
-#     for i in range(amount):
-#         # Remember to convert to opencv color format (bgr) img = img[:,:,::-1]
-#         grayimg = cv2.cvtColor(patches[i,:,:,::-1], cv2.COLOR_BGR2GRAY)
-#         # Convert the output from bgr to rgb
-#         dist_patches[i,:,:] = get_distance(grayimg)
-#     return dist_patches
-
 def get_color_labels(patches):
     (amount, h, w, c) = patches.shape
     color_patches = np.zeros([amount, h, w, c])
@@ -73,10 +50,3 @@ def get_color_labels(patches):
         color_patches[i,:,:,:] = cv2.normalize(hsv_patch, hsv_patch, 0, 1.0, cv2.NORM_MINMAX)
         #print(color_patches[i,:,:,:])
     return color_patches
-
-
-# img = cv2.imread('teste2.jpg')
-# print(img.shape)
-# img_b = get_boundary(img)
-# cv2.imshow('teste', img_b)
-# cv2.waitKey(0)

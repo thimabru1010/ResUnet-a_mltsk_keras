@@ -7,6 +7,7 @@ import os
 from utils2 import patch_tiles2, bal_aug_patches2, bal_aug_patches3, patch_tiles3
 
 from ResUnet_a.model import Resunet_a
+from ResUnet_a.model2 import Resunet_a2
 
 import argparse
 
@@ -15,13 +16,13 @@ import gc
 # print(gc.get_count())
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--dataset",
-    help="dataset path", type=str, default='dataset')
 parser.add_argument("--resunet_a",
-    help="choose resunet-a model or not", type=bool, default=False)
+    help="choose resunet-a model or not", type=int, default=0)
+parser.add_argument("--multitasking",
+    help="choose resunet-a model or not", type=int, default=0)
 args = parser.parse_args()
 
-root_path = args.dataset
+root_path = './DATASETS/dataset'
 img_t1_path = 'clipped_raster_004_66_2018.tif'
 img_t2_path = 'clipped_raster_004_66_2019.tif'
 
@@ -40,7 +41,7 @@ print(f"Input image shape: {image_array1.shape}")
 # Normalization
 type_norm = 1
 image_array = normalization(image_array1, type_norm)
-print(np.min(image_array), np.max(image_array))
+#print(np.min(image_array), np.max(image_array))
 
 # Load Mask area
 img_mask_ref_path = 'mask_ref.tif'
@@ -75,12 +76,11 @@ final_mask[img_mask_ref==-99] = -1
 
 unique, counts = np.unique(final_mask, return_counts=True)
 counts_dict = dict(zip(unique, counts))
-print(counts_dict)
+print(f'Pixels of final mask: {counts_dict}')
 total_pixels = counts_dict[0] + counts_dict[1] + counts_dict[2]
 weight0 = total_pixels / counts_dict[0]
 weight1 = total_pixels / counts_dict[1]
 final_mask[img_mask_ref==-99] = 0
-#plt.imshow(final_mask)
 
 # Mask with tiles
 # Divide tiles in 5 rows and 3 columns. Total = 15 tiles
@@ -124,7 +124,7 @@ print('Percentage of deforestaion class is {:.2f}'.format((len(image_ref[image_r
 #%% Patches extraction
 patch_size = 128
 #stride = patch_size
-stride = patch_size//4
+stride = patch_size//8
 
 print("="*40)
 print(f'Patche size: {patch_size}')
@@ -132,7 +132,7 @@ print(f'Stride: {stride}')
 print("="*40)
 
 # Percent of class deforestation
-percent = 0
+percent = 2
 # 0 -> No-DEf, 1-> Def, 2 -> No considered
 number_class = 3
 
@@ -140,24 +140,36 @@ number_class = 3
 print('extracting training patches....')
 tr_tiles = [tr1, tr2, tr3, tr4]
 final_mask[img_mask_ref==-99] = -1
-test = list(range(1,16))
+#test = list(range(1,16))
 # patches_tr, patches_tr_ref = patch_tiles3(test, mask_tiles, image_array, final_mask, patch_size, stride)
 # print(patches_tr.shape)
 # print(patches_tr_ref.shape)
 patches_tr, patches_tr_ref = patch_tiles2(tr_tiles, mask_tiles, image_array, final_mask, img_mask_ref, patch_size, stride, percent)
 
+print(f"Trainig patches size: {patches_tr.shape}")
+print(f"Trainig ref patches size: {patches_tr_ref.shape}")
+
 patches_tr_aug, patches_tr_ref_aug = bal_aug_patches2(percent, patch_size, patches_tr, patches_tr_ref)
+
+print(f"Trainig patches size with data aug: {patches_tr_aug.shape}")
+print(f"Trainig ref patches sizewith data aug: {patches_tr_ref_aug.shape}")
+
 patches_tr_ref_aug_h = tf.keras.utils.to_categorical(patches_tr_ref_aug, number_class)
 
 # Validation tiles
 print('extracting validation patches....')
 val_tiles = [val1, val2]
 # patches_val, patches_val_ref = patch_tiles(val_tiles, mask_tiles, image_array, final_mask, patch_size, stride)
-patches_val, patches_val_ref = patch_tiles2(val_tiles, mask_tiles, image_array, final_mask, img_mask_ref, patch_size, stride)
-# print(debug2)
-# print(patches_val_ref.shape)
+patches_val, patches_val_ref = patch_tiles2(val_tiles, mask_tiles, image_array, final_mask, img_mask_ref, patch_size, stride, percent)
+
+print(f"Validation patches size: {patches_val.shape}")
+print(f"Validation ref patches size: {patches_val_ref.shape}")
+
 patches_val_aug, patches_val_ref_aug = bal_aug_patches2(percent, patch_size, patches_val, patches_val_ref)
 patches_val_ref_aug_h = tf.keras.utils.to_categorical(patches_val_ref_aug, number_class)
+
+print(f"Validation patches size with data aug: {patches_val_aug.shape}")
+print(f"Validation ref patches sizewith data aug: {patches_val_ref_aug.shape}")
 
 #%%
 start_time = time.time()
@@ -167,19 +179,18 @@ cols = patch_size
 adam = Adam(lr = 0.0001 , beta_1=0.9)
 batch_size = 8
 
-#weights = [0.5, 0.5, 0]
 weights = [weight0, weight1, 0]
 print(f"Weights: {weights}")
-print('='*80)
+#print('='*80)
 #print(gc.get_count())
 loss = weighted_categorical_crossentropy(weights)
 if args.resunet_a == True:
     '''
         model already compiled
     '''
-    resuneta = Resunet_a((rows, cols, channels))
-    model = resuneta.model
     #model = Resunet_a((channels, cols, rows))
+    resuneta = Resunet_a2((rows, cols, channels), number_class, args)
+    model = resuneta.model
     print('ResUnet-a compiled!')
 else:
     model = unet((rows, cols, channels))
@@ -188,11 +199,12 @@ else:
     # print model information
     model.summary()
 
-filepath = './models_new/'
+filepath = './models/'
 # define early stopping callback
 earlystop = EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=10, verbose=1, mode='min')
 checkpoint = ModelCheckpoint(filepath+'unet_exp_'+str(exp)+'.h5', monitor='val_loss', verbose=1, save_best_only=True, mode='min')
 callbacks_list = [earlystop, checkpoint]
+
 # train the model
 start_training = time.time()
 model_info = model.fit(patches_tr_aug, patches_tr_ref_aug_h, batch_size=batch_size, epochs=10, callbacks=callbacks_list, verbose=2, validation_data= (patches_val_aug, patches_val_ref_aug_h) )
