@@ -80,19 +80,19 @@ tr1 = 1
 tr2 = 6
 tr3 = 7
 tr4 = 13
-# val1 = 5
-# val2 = 12
-tr5 = 5
-tr6 = 12
+val1 = 5
+val2 = 12
+# tr5 = 5
+# tr6 = 12
 
 mask_tr_val[mask_tiles == tr1] = 1
 mask_tr_val[mask_tiles == tr2] = 1
 mask_tr_val[mask_tiles == tr3] = 1
 mask_tr_val[mask_tiles == tr4] = 1
-# mask_tr_val[mask_tiles == val1] = 2
-# mask_tr_val[mask_tiles == val2] = 2
-mask_tr_val[mask_tiles == tr5] = 1
-mask_tr_val[mask_tiles == tr6] = 1
+mask_tr_val[mask_tiles == val1] = 2
+mask_tr_val[mask_tiles == val2] = 2
+# mask_tr_val[mask_tiles == tr5] = 1
+# mask_tr_val[mask_tiles == tr6] = 1
 
 total_no_def = 0
 total_def = 0
@@ -118,7 +118,7 @@ percent = 5
 number_class = 3
 
 # Trainig tiles
-tr_tiles = [tr1, tr2, tr3, tr4, tr5, tr6]
+tr_tiles = [tr1, tr2, tr3, tr4]
 patches_tr, patches_tr_ref = patch_tiles(tr_tiles, mask_tiles, image_array, final_mask, patch_size, stride)
 
 print(f"Trainig patches size: {patches_tr.shape}")
@@ -132,21 +132,21 @@ print(f"Trainig ref patches sizewith data aug: {patches_tr_ref_aug.shape}")
 patches_tr_ref_aug_h = tf.keras.utils.to_categorical(patches_tr_ref_aug, number_class)
 
 # Validation train_test_split
-patches_tr_aug, patches_val_aug, patches_tr_ref_aug_h, patches_val_ref_aug_h   = train_test_split(patches_tr_aug, patches_tr_ref_aug_h, test_size=0.2, random_state=42)
+# patches_tr_aug, patches_val_aug, patches_tr_ref_aug_h, patches_val_ref_aug_h   = train_test_split(patches_tr_aug, patches_tr_ref_aug_h, test_size=0.2, random_state=42)
 
 # Validation tiles
-# val_tiles = [val1, val2]
-# patches_val, patches_val_ref = patch_tiles(val_tiles, mask_tiles, image_array, final_mask, patch_size, stride)
-#
-# print(f"Validation patches size: {patches_val.shape}")
-# print(f"Validation ref patches size: {patches_val_ref.shape}")
-#
-# patches_val_aug, patches_val_ref_aug = bal_aug_patches(percent, patch_size, patches_val, patches_val_ref)
-#
-# print(f"Validation patches size with data aug: {patches_val_aug.shape}")
-# print(f"Validation ref patches sizewith data aug: {patches_val_ref_aug.shape}")
-#
-# patches_val_ref_aug_h = tf.keras.utils.to_categorical(patches_val_ref_aug, number_class)
+val_tiles = [val1, val2]
+patches_val, patches_val_ref = patch_tiles(val_tiles, mask_tiles, image_array, final_mask, patch_size, stride)
+
+print(f"Validation patches size: {patches_val.shape}")
+print(f"Validation ref patches size: {patches_val_ref.shape}")
+
+patches_val_aug, patches_val_ref_aug = bal_aug_patches(percent, patch_size, patches_val, patches_val_ref)
+
+print(f"Validation patches size with data aug: {patches_val_aug.shape}")
+print(f"Validation ref patches sizewith data aug: {patches_val_ref_aug.shape}")
+
+patches_val_ref_aug_h = tf.keras.utils.to_categorical(patches_val_ref_aug, number_class)
 
 if args.multitasking:
     print('[DEBUG LABELS]')
@@ -168,7 +168,7 @@ if args.multitasking:
 
 #%%
 start_time = time.time()
-exp = 1
+exp = 2
 rows = patch_size
 cols = patch_size
 adam = Adam(lr = 0.0001 , beta_1=0.9)

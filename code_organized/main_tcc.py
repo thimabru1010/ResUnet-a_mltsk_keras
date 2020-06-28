@@ -2,7 +2,7 @@ import time
 from utils import np, plt, load_tiff_image, load_SAR_image, compute_metrics, data_augmentation, unet, normalization, \
 RGB_image, extract_patches, patch_tiles, bal_aug_patches, extrac_patch2, test_FCN, pred_recostruction, \
 weighted_categorical_crossentropy, mask_no_considered, tf, Adam, prediction, load_model, confusion_matrix, \
-EarlyStopping, ModelCheckpoint, identity_block, ResNet50, color_map
+EarlyStopping, ModelCheckpoint, identity_block, ResNet50, color_map, load_npy_image
 import os
 from utils2 import patch_tiles2, bal_aug_patches2, bal_aug_patches3, patch_tiles3
 
@@ -22,14 +22,14 @@ parser.add_argument("--multitasking",
     help="choose resunet-a model or not", type=int, default=0)
 args = parser.parse_args()
 
-root_path = './DATASETS/dataset'
-img_t1_path = 'clipped_raster_004_66_2018.tif'
-img_t2_path = 'clipped_raster_004_66_2019.tif'
+root_path = './DATASETS/dataset_npy'
+img_t1_path = 'clipped_raster_004_66_2018.npy'
+img_t2_path = 'clipped_raster_004_66_2019.npy'
 
 # Load images
-img_t1 = load_tiff_image(os.path.join(root_path,img_t1_path)).astype(np.float32)
+img_t1 = load_npy_image(os.path.join(root_path,img_t1_path)).astype(np.float32)
 img_t1 = img_t1.transpose((1,2,0))
-img_t2 = load_tiff_image(os.path.join(root_path,img_t2_path)).astype(np.float32)
+img_t2 = load_npy_image(os.path.join(root_path,img_t2_path)).astype(np.float32)
 img_t2 = img_t2.transpose((1,2,0))
 
 # Concatenation of images
@@ -44,21 +44,21 @@ image_array = normalization(image_array1, type_norm)
 #print(np.min(image_array), np.max(image_array))
 
 # Load Mask area
-img_mask_ref_path = 'mask_ref.tif'
-img_mask_ref = load_tiff_image(os.path.join(root_path, img_mask_ref_path))
+img_mask_ref_path = 'mask_ref.npy'
+img_mask_ref = load_npy_image(os.path.join(root_path, img_mask_ref_path))
 img_mask_ref = img_mask_ref[:6100,:6600]
 print(f"Mask area reference shape: {img_mask_ref.shape}")
 
 # Load deforastation reference
-image_ref = load_tiff_image(os.path.join(root_path,'labels/binary_clipped_2019.tif'))
+image_ref = load_npy_image(os.path.join(root_path,'labels/binary_clipped_2019.npy'))
 # Clip to fit tiles of your specific image
 image_ref = image_ref[:6100,:6600]
 image_ref[img_mask_ref==-99] = -1
 print(f"Image reference shape: {image_ref.shape}")
 
 # Load past deforastation reference
-past_ref1 = load_tiff_image(os.path.join(root_path,'labels/binary_clipped_2013_2018.tif'))
-past_ref2 = load_tiff_image(os.path.join(root_path,'labels/binary_clipped_1988_2012.tif'))
+past_ref1 = load_npy_image(os.path.join(root_path,'labels/binary_clipped_2013_2018.npy'))
+past_ref2 = load_npy_image(os.path.join(root_path,'labels/binary_clipped_1988_2012.npy'))
 past_ref_sum = past_ref1 + past_ref2
 # Clip to fit tiles of your specific image
 past_ref_sum = past_ref_sum[:6100,:6600]
@@ -132,7 +132,7 @@ print(f'Stride: {stride}')
 print("="*40)
 
 # Percent of class deforestation
-percent = 2
+percent = 5
 # 0 -> No-DEf, 1-> Def, 2 -> No considered
 number_class = 3
 
