@@ -240,6 +240,7 @@ mask_ts_[mask_tiles == ts9] = 1
 
 #% Load model
 model = load_model(filepath+'unet_exp_'+str(exp)+'.h5', compile=False)
+model.summary()
 area = 11
 # Prediction
 ref_final, pre_final, prob_recontructed, ref_reconstructed, mask_no_considered_, mask_ts, time_ts = prediction(model, image_array, image_ref, final_mask, mask_ts_, patch_size, area)

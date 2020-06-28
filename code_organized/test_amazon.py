@@ -13,16 +13,16 @@ print('[DEBUG]')
 gc.set_debug(gc.DEBUG_SAVEALL)
 print(gc.get_count())
 
-filepath = './models_new/'
+filepath = './models_amazon/models/'
 exp=1
-root_path = 'dataset'
-img_t1_path = 'clipped_raster_004_66_2018.tif'
-img_t2_path = 'clipped_raster_004_66_2019.tif'
+root_path = './DATASETS/dataset_npy'
+img_t1_path = 'clipped_raster_004_66_2018.npy'
+img_t2_path = 'clipped_raster_004_66_2019.npy'
 
 # Load images
-img_t1 = load_tiff_image(os.path.join(root_path,img_t1_path)).astype(np.float32)
+img_t1 = load_npy_image(os.path.join(root_path,img_t1_path)).astype(np.float32)
 img_t1 = img_t1.transpose((1,2,0))
-img_t2 = load_tiff_image(os.path.join(root_path,img_t2_path)).astype(np.float32)
+img_t2 = load_npy_image(os.path.join(root_path,img_t2_path)).astype(np.float32)
 img_t2 = img_t2.transpose((1,2,0))
 
 # Concatenation of images
@@ -34,24 +34,24 @@ print(f"Input image shape: {image_array1.shape}")
 # Normalization
 type_norm = 1
 image_array = normalization(image_array1, type_norm)
-print(np.min(image_array), np.max(image_array))
+#print(np.min(image_array), np.max(image_array))
 
 # Load Mask area
-img_mask_ref_path = 'mask_ref.tif'
-img_mask_ref = load_tiff_image(os.path.join(root_path, img_mask_ref_path))
+img_mask_ref_path = 'mask_ref.npy'
+img_mask_ref = load_npy_image(os.path.join(root_path, img_mask_ref_path))
 img_mask_ref = img_mask_ref[:6100,:6600]
 print(f"Mask area reference shape: {img_mask_ref.shape}")
 
 # Load deforastation reference
-image_ref = load_tiff_image(os.path.join(root_path,'labels/binary_clipped_2019.tif'))
+image_ref = load_npy_image(os.path.join(root_path,'labels/binary_clipped_2019.npy'))
 # Clip to fit tiles of your specific image
 image_ref = image_ref[:6100,:6600]
 image_ref[img_mask_ref==-99] = -1
 print(f"Image reference shape: {image_ref.shape}")
 
 # Load past deforastation reference
-past_ref1 = load_tiff_image(os.path.join(root_path,'labels/binary_clipped_2013_2018.tif'))
-past_ref2 = load_tiff_image(os.path.join(root_path,'labels/binary_clipped_1988_2012.tif'))
+past_ref1 = load_npy_image(os.path.join(root_path,'labels/binary_clipped_2013_2018.npy'))
+past_ref2 = load_npy_image(os.path.join(root_path,'labels/binary_clipped_1988_2012.npy'))
 past_ref_sum = past_ref1 + past_ref2
 # Clip to fit tiles of your specific image
 past_ref_sum = past_ref_sum[:6100,:6600]
@@ -65,21 +65,16 @@ print(f"Past reference shape: {past_ref_sum.shape}")
 #  Creation of buffer
 buffer = 2
 final_mask = mask_no_considered(image_ref, buffer, past_ref_sum)
-final_mask[img_mask_ref==-99] = -1
-unique, counts = np.unique(final_mask, return_counts=True)
-counts_dict = dict(zip(unique, counts))
-print(counts_dict)
-total_pixels = counts_dict[0] + counts_dict[1] + counts_dict[2]
-weight0 = total_pixels / counts_dict[0]
-weight1 = total_pixels / counts_dict[1]
-final_mask[img_mask_ref==-99] = 0
+# final_mask[img_mask_ref==-99] = -1
+#
+# final_mask[img_mask_ref==-99] = 0
 #plt.imshow(final_mask)
 
-print('[DEBUG]')
-print(gc.get_count())
-del img_mask_ref
-gc.collect()
-print(gc.get_count())
+# print('[DEBUG]')
+# print(gc.get_count())
+# del img_mask_ref
+# gc.collect()
+# print(gc.get_count())
 
 # Mask with tiles
 # Divide tiles in 5 rows and 3 columns. Total = 15 tiles
@@ -117,7 +112,7 @@ mask_ts_[mask_tiles == ts9] = 1
 model = load_model(filepath+'unet_exp_'+str(exp)+'.h5', compile=False)
 area = 11
 # Prediction
-patch_size = 64
+patch_size = 128
 ts_tiles = [ts1, ts2, ts3, ts4, ts5, ts6, ts7, ts8, ts9]
 patches_test, patches_test_ref = patch_tiles_prediction(ts_tiles, mask_ts_, image_array, image_ref, None, patch_size, stride=patch_size)
 
