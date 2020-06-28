@@ -8,6 +8,7 @@ from utils2 import patch_tiles2, bal_aug_patches2, bal_aug_patches3, patch_tiles
 
 from ResUnet_a.model import Resunet_a
 from ResUnet_a.model2 import Resunet_a2
+from sklearn.model_selection import train_test_split
 
 import argparse
 
@@ -97,15 +98,19 @@ tr1 = 5
 tr2 = 8
 tr3 = 10
 tr4 = 13
-val1 = 7
-val2 = 10
+# val1 = 7
+# val2 = 10
+tr5 = 7
+tr6 = 10
 
 mask_tr_val[mask_tiles == tr1] = 1
 mask_tr_val[mask_tiles == tr2] = 1
 mask_tr_val[mask_tiles == tr3] = 1
 mask_tr_val[mask_tiles == tr4] = 1
-mask_tr_val[mask_tiles == val1] = 2
-mask_tr_val[mask_tiles == val2] = 2
+# mask_tr_val[mask_tiles == val1] = 2
+# mask_tr_val[mask_tiles == val2] = 2
+mask_tr_val[mask_tiles == tr5] = 1
+mask_tr_val[mask_tiles == tr6] = 1
 
 total_no_def = 0
 total_def = 0
@@ -138,7 +143,7 @@ number_class = 3
 
 # Trainig tiles
 print('extracting training patches....')
-tr_tiles = [tr1, tr2, tr3, tr4]
+tr_tiles = [tr1, tr2, tr3, tr4, tr5, tr6]
 final_mask[img_mask_ref==-99] = -1
 #test = list(range(1,16))
 # patches_tr, patches_tr_ref = patch_tiles3(test, mask_tiles, image_array, final_mask, patch_size, stride)
@@ -158,18 +163,20 @@ patches_tr_ref_aug_h = tf.keras.utils.to_categorical(patches_tr_ref_aug, number_
 
 # Validation tiles
 print('extracting validation patches....')
-val_tiles = [val1, val2]
-# patches_val, patches_val_ref = patch_tiles(val_tiles, mask_tiles, image_array, final_mask, patch_size, stride)
-patches_val, patches_val_ref = patch_tiles2(val_tiles, mask_tiles, image_array, final_mask, img_mask_ref, patch_size, stride, percent)
-
-print(f"Validation patches size: {patches_val.shape}")
-print(f"Validation ref patches size: {patches_val_ref.shape}")
-
-patches_val_aug, patches_val_ref_aug = bal_aug_patches2(percent, patch_size, patches_val, patches_val_ref)
-patches_val_ref_aug_h = tf.keras.utils.to_categorical(patches_val_ref_aug, number_class)
+#Validation train_test_split
+patches_tr_aug, patches_val_aug, patches_tr_ref_aug_h, patches_val_ref_aug_h   = train_test_split(patches_tr_aug, patches_tr_ref_aug_h, test_size=0.2, random_state=42)
+# val_tiles = [val1, val2]
+# # patches_val, patches_val_ref = patch_tiles(val_tiles, mask_tiles, image_array, final_mask, patch_size, stride)
+# patches_val, patches_val_ref = patch_tiles2(val_tiles, mask_tiles, image_array, final_mask, img_mask_ref, patch_size, stride, percent)
+#
+# print(f"Validation patches size: {patches_val.shape}")
+# print(f"Validation ref patches size: {patches_val_ref.shape}")
+#
+# patches_val_aug, patches_val_ref_aug = bal_aug_patches2(percent, patch_size, patches_val, patches_val_ref)
+# patches_val_ref_aug_h = tf.keras.utils.to_categorical(patches_val_ref_aug, number_class)
 
 print(f"Validation patches size with data aug: {patches_val_aug.shape}")
-print(f"Validation ref patches sizewith data aug: {patches_val_ref_aug.shape}")
+print(f"Validation ref patches sizewith data aug: {patches_val_ref_aug_h.shape}")
 
 #%%
 start_time = time.time()
@@ -257,6 +264,9 @@ print('test time', time_ts)
 # prediction of the whole image
 fig1 = plt.figure('whole prediction')
 plt.imshow(prob_recontructed)
+plt.imsave('whole_pred.jpg', prob_recontructed)
 # Show the test tiles
 fig2 = plt.figure('prediction of test set')
 plt.imshow(prob_recontructed*mask_ts)
+plt.imsave('pred_test_set.jpg', prob_recontructed*mask_ts)
+plt.show()
