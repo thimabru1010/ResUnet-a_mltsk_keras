@@ -94,7 +94,7 @@ def data_augmentation(image, labels):
     return aug_imgs, aug_lbs
 
 # Original model
-def unet(input_shape):
+def unet(input_shape, num_classes):
     input_img = Input(input_shape)
 
     f1 = 32
@@ -125,7 +125,7 @@ def unet(input_shape):
     upsample4 = Conv2D(f1, (3 , 3), activation = 'relu', padding = 'same', name = 'upsampling4')(UpSampling2D(size = (2,2))(merged3))
     merged4 = concatenate([conv1, upsample4], name='concatenate4')
 
-    output = Conv2D(3,(1,1), activation = 'softmax')(merged4)
+    output = Conv2D(num_classes,(1,1), activation = 'softmax')(merged4)
 
     return Model(input_img , output)
 

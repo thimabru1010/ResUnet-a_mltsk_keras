@@ -17,6 +17,11 @@ from sklearn.utils import shuffle
 from sklearn.metrics import confusion_matrix, f1_score, precision_score, recall_score, accuracy_score
 from sklearn.model_selection import train_test_split
 
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+
+import gc
+import psutil
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--resunet_a",
     help="choose resunet-a model or not", type=int, default=0)
@@ -95,7 +100,7 @@ def extract_patches_train(img_test_normalized, patch_size):
 
     return new_img
 
-def Test(model, patch_test):
+def Test(model, patch_test, args):
     result = model.predict(patch_test)
     if args.multitasking:
         predicted_class = np.argmax(result[0], axis=-1)
@@ -110,6 +115,25 @@ def compute_metrics_hw(true_labels, predicted_labels):
     recall = 100*recall_score(true_labels, predicted_labels, average=None)
     precision = 100*precision_score(true_labels, predicted_labels, average=None)
     return accuracy, f1score, recall, precision
+
+def binarize_matrix(img_train_ref, label_dict):
+    # Create binarized matrix
+    w = img_train_ref.shape[0]
+    h = img_train_ref.shape[1]
+    c = img_train_ref.shape[2]
+    #binary_img_train_ref = np.zeros((1,w,h))
+    binary_img_train_ref = np.full((w,h), -1)
+    for i in range(w):
+        for j in range(h):
+            r = img_train_ref[i][j][0]
+            g = img_train_ref[i][j][1]
+            b = img_train_ref[i][j][2]
+            rgb = (r,g,b)
+            rgb_key = str(rgb)
+            binary_img_train_ref[i][j] = label_dict[rgb_key]
+
+    return binary_img_train_ref
+
 
 root_path = './DATASETS/homework3_npy'
 # Load images
@@ -127,37 +151,41 @@ img_train_ref = load_npy_image(os.path.join(root_path, img_train_ref_path))
 img_train_ref = img_train_ref.transpose((1,2,0))
 print(img_train_ref.shape)
 
-
-# Create binarized matrix
-w = img_train_ref.shape[0]
-h = img_train_ref.shape[1]
-c = img_train_ref.shape[2]
-#binary_img_train_ref = np.zeros((1,w,h))
-binary_img_train_ref = np.full((w,h), -1)
 label_dict = {'(255, 255, 255)': 0, '(0, 255, 0)': 1, '(0, 255, 255)': 2, '(0, 0, 255)': 3, '(255, 255, 0)': 4}
-for i in range(w):
-    for j in range(h):
-        r = img_train_ref[i][j][0]
-        g = img_train_ref[i][j][1]
-        b = img_train_ref[i][j][2]
-        rgb = (r,g,b)
-        rgb_key = str(rgb)
-        binary_img_train_ref[i][j] = label_dict[rgb_key]
+
+binary_img_train_ref = binarize_matrix(img_train_ref, label_dict)
+del img_train_ref
 
 number_class = 5
 patch_size = 256
-stride = patch_size
+stride = patch_size // 4
 
 
 #stride = patch_size
 patches_tr, patches_tr_ref = extract_patches_hw(img_train_normalized, binary_img_train_ref, patch_size, stride)
-
+process = psutil.Process(os.getpid())
+print('[CHECKING MEMORY]')
+#print(process.memory_info().rss)
+print(process.memory_percent())
+del binary_img_train_ref, img_train_normalized, img_train
+#print(process.memory_info().rss)
+print(process.memory_percent())
+gc.collect()
+print('[GC COLLECT]')
+print(process.memory_percent())
 # Load images
 
 # patches_tr_aug, patches_tr_ref_aug = bal_aug_patches(percent, patch_size, patches_tr, patches_tr_ref)
 # patches_tr_ref_aug_h = tf.keras.utils.to_categorical(patches_tr_ref_aug, number_class)
+
 # Creates one-hot encoding for segmentation
 patches_tr_ref_h = tf.keras.utils.to_categorical(patches_tr_ref, number_class)
+print(process.memory_percent())
+del patches_tr_ref
+print(process.memory_percent())
+gc.collect()
+print('[GC COLLECT]')
+print(process.memory_percent())
 
 if args.multitasking:
     print('[DEBUG LABELS]')
@@ -189,6 +217,23 @@ else:
     print(patches_tr.shape, patches_val.shape)
     print(patches_tr_ref_h.shape, patches_val_ref_h.shape)
 
+datagen = ImageDataGenerator(rotation_range=90, horizontal_flip=True, vertical_flip=True)
+batch_size = 16
+train_data = datagen.flow(patches_tr, patches_tr_ref_h, batch_size=batch_size)
+print(len(train_data))
+val_data = datagen.flow(patches_val, patches_val_ref_h, batch_size=batch_size)
+
+print('[CHECKING MEMORY]')
+print(process.memory_percent())
+
+del patches_tr, patches_tr_ref_h, patches_val, patches_val_ref_h
+
+print(process.memory_percent())
+gc.collect()
+print('[GC COLLECT]')
+print(process.memory_percent())
+
+
 #%%
 start_time = time.time()
 exp = 1
@@ -197,10 +242,8 @@ cols = patch_size
 channels = 3
 adam = Adam(lr = 0.001 , beta_1=0.9)
 sgd = SGD(lr=0.001,momentum=0.8)
-batch_size = 1
 
-#weights = [0.5, 0.5, 0]
-#weights = [weight0, weight1, 0]
+
 weights = [  4.34558461   ,2.97682037   ,3.92124661   ,5.67350328 ,374.0300152 ]
 print('='*60)
 print(weights)
@@ -233,7 +276,7 @@ if args.resunet_a == True:
 
     print('ResUnet-a compiled!')
 else:
-    model = unet((rows, cols, channels))
+    model = unet((rows, cols, channels), number_class)
     model.summary()
 
     model.compile(optimizer=adam, loss=loss, metrics=['accuracy'])
@@ -253,7 +296,22 @@ if args.multitasking:
     end_training = time.time() - start_time
 else:
     start_training = time.time()
-    model_info = model.fit(patches_tr, patches_tr_ref_h, batch_size=batch_size, epochs=100, callbacks=callbacks_list, verbose=2, validation_data= (patches_val, patches_val_ref_h) )
+    # model_info = model.fit(patches_tr, patches_tr_ref_h, batch_size=batch_size, epochs=100, callbacks=callbacks_list, verbose=2, validation_data= (patches_val, patches_val_ref_h) )
+    # epochs = 100
+    # for e in range(epochs):
+    #     #print('Epoch', e)
+    #     batches = 0
+    #     for x_batch, y_batch in train_data:
+    #         #x_batch_val, y_batch_val = val_data[i]
+    #         model.fit(x=x_batch, y=y_batch, epochs=100, callbacks=callbacks_list, verbose=2, validation_data= val_data[batches])
+    #         #model.fit(x_batch, y_batch)
+    #         batches += 1
+    #         if batches >= len(patches_tr) / batch_size:
+    #             # we need to break the loop by hand because
+    #             # the generator loops indefinitely
+    #             break
+    model_info = model.fit(x=train_data, epochs=100, callbacks=callbacks_list, verbose=2, validation_data= val_data)
+    # model.fit_generator(train_data, epochs=100, callbacks=callbacks_list, verbose=2, validation_data=val_data, samples_per_epoch=len(patches_tr) // batch_size)
     end_training = time.time() - start_time
 
 #%% Test model
