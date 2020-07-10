@@ -22,6 +22,9 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import gc
 import psutil
 
+from CustomDataGenerator import Mygenerator
+import ast
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--resunet_a",
     help="choose resunet-a model or not", type=int, default=0)
@@ -217,21 +220,30 @@ else:
     print(patches_tr.shape, patches_val.shape)
     print(patches_tr_ref_h.shape, patches_val_ref_h.shape)
 
-datagen = ImageDataGenerator(rotation_range=90, horizontal_flip=True, vertical_flip=True)
-batch_size = 16
-train_data = datagen.flow(patches_tr, patches_tr_ref_h, batch_size=batch_size)
-print(len(train_data))
-val_data = datagen.flow(patches_val, patches_val_ref_h, batch_size=batch_size)
+# Create generator
+batch_size = 4
+train_generator = Mygenerator(patches_tr, patches_tr_ref_h, batch_size=batch_size)
+val_generator = Mygenerator(patches_val, patches_val_ref_h, batch_size=batch_size)
+# train_samples = [patches_tr, patches_tr]
+# validation_samples = [patches_val, patches_val_ref_h]
+# train_generator = generator(train_samples, batch_size=batch_size)
+# val_generator = generator(validation_samples, batch_size=batch_size)
 
-print('[CHECKING MEMORY]')
-print(process.memory_percent())
+# datagen = ImageDataGenerator(rotation_range=90, horizontal_flip=True, vertical_flip=True)
+# train_data = datagen.flow(patches_tr, patches_tr_ref_h, batch_size=batch_size)
+# print(len(train_data))
+# val_data = datagen.flow(patches_val, patches_val_ref_h, batch_size=batch_size)
+#
+# print('[CHECKING MEMORY]')
+# print(process.memory_percent())
+#
+# del patches_tr, patches_tr_ref_h, patches_val, patches_val_ref_h
+#
+# print(process.memory_percent())
+# gc.collect()
+# print('[GC COLLECT]')
+# print(process.memory_percent())
 
-del patches_tr, patches_tr_ref_h, patches_val, patches_val_ref_h
-
-print(process.memory_percent())
-gc.collect()
-print('[GC COLLECT]')
-print(process.memory_percent())
 
 
 #%%
@@ -310,8 +322,8 @@ else:
     #             # we need to break the loop by hand because
     #             # the generator loops indefinitely
     #             break
-    model_info = model.fit(x=train_data, epochs=100, callbacks=callbacks_list, verbose=2, validation_data= val_data)
-    # model.fit_generator(train_data, epochs=100, callbacks=callbacks_list, verbose=2, validation_data=val_data, samples_per_epoch=len(patches_tr) // batch_size)
+    # model_info = model.fit(x=train_generator, epochs=100, callbacks=callbacks_list, verbose=2, validation_data= val_generator)
+    model.fit_generator(train_generator, epochs=100, callbacks=callbacks_list, verbose=2, validation_data=val_generator, steps_per_epoch=len(patches_tr) // batch_size)
     end_training = time.time() - start_time
 
 #%% Test model
