@@ -190,6 +190,8 @@ gc.collect()
 print('[GC COLLECT]')
 print(process.memory_percent())
 
+#patches_tr_ref_h = patches_tr_ref
+
 if args.multitasking:
     print('[DEBUG LABELS]')
     # Create labels for boundary
@@ -215,34 +217,33 @@ if args.multitasking:
     y_fit={"segmentation": patches_tr_ref_h, "boundary": patches_bound_labels_tr, "distance":  patches_dist_labels_tr, "color": patches_color_labels_tr}
 
     val_fit={"segmentation": patches_val_ref_h, "boundary": patches_bound_labels_val, "distance":  patches_dist_labels_val, "color": patches_color_labels_val}
+
+    # Create generator
+    batch_size = 4
+    train_generator = Mygenerator_multitasking(patches_tr, y_fit, batch_size=batch_size)
+    val_generator = Mygenerator_multitasking(patches_val, val_fit, batch_size=batch_size)
 else:
     patches_tr, patches_val, patches_tr_ref_h, patches_val_ref_h = train_test_split(patches_tr, patches_tr_ref_h, test_size=0.2, random_state=42)
     print(patches_tr.shape, patches_val.shape)
     print(patches_tr_ref_h.shape, patches_val_ref_h.shape)
 
-# Create generator
-batch_size = 4
-train_generator = Mygenerator(patches_tr, patches_tr_ref_h, batch_size=batch_size)
-val_generator = Mygenerator(patches_val, patches_val_ref_h, batch_size=batch_size)
-# train_samples = [patches_tr, patches_tr]
-# validation_samples = [patches_val, patches_val_ref_h]
-# train_generator = generator(train_samples, batch_size=batch_size)
-# val_generator = generator(validation_samples, batch_size=batch_size)
+    # Create generator
+    batch_size = 4
+    train_generator = Mygenerator(patches_tr, patches_tr_ref_h, batch_size=batch_size)
+    val_generator = Mygenerator(patches_val, patches_val_ref_h, batch_size=batch_size)
 
-# datagen = ImageDataGenerator(rotation_range=90, horizontal_flip=True, vertical_flip=True)
-# train_data = datagen.flow(patches_tr, patches_tr_ref_h, batch_size=batch_size)
-# print(len(train_data))
-# val_data = datagen.flow(patches_val, patches_val_ref_h, batch_size=batch_size)
-#
-# print('[CHECKING MEMORY]')
-# print(process.memory_percent())
-#
-# del patches_tr, patches_tr_ref_h, patches_val, patches_val_ref_h
-#
-# print(process.memory_percent())
-# gc.collect()
-# print('[GC COLLECT]')
-# print(process.memory_percent())
+print('[CHECKING MEMORY]')
+print(process.memory_percent())
+
+print('='*40)
+print(f'Total training images: {len(patches_tr)*5}')
+print(f'Total validation images: {len(patches_val)*5}')
+del patches_tr, patches_tr_ref_h, patches_val, patches_val_ref_h
+
+print(process.memory_percent())
+gc.collect()
+print('[GC COLLECT]')
+print(process.memory_percent())
 
 
 
@@ -308,22 +309,8 @@ if args.multitasking:
     end_training = time.time() - start_time
 else:
     start_training = time.time()
-    # model_info = model.fit(patches_tr, patches_tr_ref_h, batch_size=batch_size, epochs=100, callbacks=callbacks_list, verbose=2, validation_data= (patches_val, patches_val_ref_h) )
-    # epochs = 100
-    # for e in range(epochs):
-    #     #print('Epoch', e)
-    #     batches = 0
-    #     for x_batch, y_batch in train_data:
-    #         #x_batch_val, y_batch_val = val_data[i]
-    #         model.fit(x=x_batch, y=y_batch, epochs=100, callbacks=callbacks_list, verbose=2, validation_data= val_data[batches])
-    #         #model.fit(x_batch, y_batch)
-    #         batches += 1
-    #         if batches >= len(patches_tr) / batch_size:
-    #             # we need to break the loop by hand because
-    #             # the generator loops indefinitely
-    #             break
-    # model_info = model.fit(x=train_generator, epochs=100, callbacks=callbacks_list, verbose=2, validation_data= val_generator)
-    model.fit_generator(train_generator, epochs=100, callbacks=callbacks_list, verbose=2, validation_data=val_generator, steps_per_epoch=len(patches_tr) // batch_size)
+    model_info = model.fit(x=train_generator, epochs=100, callbacks=callbacks_list, verbose=2, validation_data= val_generator)
+    # model.fit_generator(train_generator, epochs=100, callbacks=callbacks_list, verbose=2, validation_data=val_generator, steps_per_epoch=len(patches_tr) // batch_size)
     end_training = time.time() - start_time
 
 #%% Test model
@@ -426,4 +413,4 @@ def reconstruction_rgb_prdiction_patches(img_reconstructed, label_dict):
 img_reconstructed = pred_recostruction(patch_size, patches_pred, binary_img_test_ref)
 img_reconstructed_rgb = reconstruction_rgb_prdiction_patches(img_reconstructed, label_dict)
 
-plt.imsave('img_reconstructed_rgb.jpeg', img_reconstructed_rgb)
+plt.imsave(f'img_reconstructed_rgb_exp{exp}.jpeg', img_reconstructed_rgb)

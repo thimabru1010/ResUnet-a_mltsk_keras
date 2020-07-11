@@ -2,7 +2,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import f1_score, precision_score, recall_score, accuracy_score
-from osgeo import ogr, gdal
+#from osgeo import ogr, gdal
 import os
 from skimage.util.shape import view_as_windows
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
