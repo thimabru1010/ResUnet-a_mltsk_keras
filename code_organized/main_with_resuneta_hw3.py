@@ -238,6 +238,7 @@ print(process.memory_percent())
 print('='*40)
 print(f'Total training images: {len(patches_tr)*5}')
 print(f'Total validation images: {len(patches_val)*5}')
+print('='*40)
 del patches_tr, patches_tr_ref_h, patches_val, patches_val_ref_h
 
 print(process.memory_percent())
@@ -305,7 +306,8 @@ callbacks_list = [earlystop, checkpoint]
 # train the model
 if args.multitasking:
     start_training = time.time()
-    model_info = model.fit(x=patches_tr, y=y_fit, batch_size=batch_size, epochs=100, callbacks=callbacks_list, verbose=2, validation_data= (patches_val, val_fit) )
+    # model_info = model.fit(x=patches_tr, y=y_fit, batch_size=batch_size, epochs=100, callbacks=callbacks_list, verbose=2, validation_data= (patches_val, val_fit) )
+    model_info = model.fit(x=train_generator, batch_size=batch_size, epochs=100, callbacks=callbacks_list, verbose=2, validation_data=val_generator )
     end_training = time.time() - start_time
 else:
     start_training = time.time()
@@ -314,7 +316,6 @@ else:
     end_training = time.time() - start_time
 
 #%% Test model
-# Creation of mask with test tiles
 
 # Load images
 img_test_path = 'Image_Test.npy'

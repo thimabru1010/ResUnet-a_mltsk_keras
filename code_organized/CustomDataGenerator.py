@@ -138,4 +138,4 @@ class Mygenerator_multitasking(Sequence):
         y_train_color = np.concatenate(y_train_color).astype(np.float32)
 
         y_fit={"segmentation": y_train_seg, "boundary": y_train_bound, "distance":  y_train_dist, "color": y_train_color}
-        return X_train, y_train
+        return X_train, y_fit
