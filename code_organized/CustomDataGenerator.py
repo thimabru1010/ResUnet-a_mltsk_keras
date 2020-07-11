@@ -32,7 +32,7 @@ def data_augmentation(image, labels):
 
     return aug_imgs, aug_lbs
 
-def data_augmentation_single(image, labels):
+def data_augmentation_single(image):
     aug_imgs = np.zeros((5, image.shape[0], image.shape[1], image.shape[2]))
 
     for i in range(0, len(aug_imgs)):
