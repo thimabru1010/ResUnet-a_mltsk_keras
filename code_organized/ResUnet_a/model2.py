@@ -15,8 +15,8 @@ import math
 import numpy as np
 
 class Resunet_a2(object):
-    def __init__(self, input_shape, num_classes, args, config=UnetConfig()):
-        self.config = config
+    def __init__(self, input_shape, num_classes, args, strategy_keras):
+        self.strategy_keras = strategy_keras
         self.num_classes = num_classes
         self.img_height, self.img_width, self.img_channel = input_shape
         self.args = args
@@ -138,6 +138,10 @@ class Resunet_a2(object):
 
             out = [out_seg, out_bound, out_dist, out_color]
 
-            model=KM.Model(inputs=inputs,outputs=out)
+            if args.gpu_parallel:
+                with self.strategy_keras.scope():
+                    model=KM.Model(inputs=inputs,outputs=out)
+            else:
+                model=KM.Model(inputs=inputs,outputs=out)
 
         return model

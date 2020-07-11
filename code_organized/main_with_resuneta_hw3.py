@@ -30,6 +30,8 @@ parser.add_argument("--resunet_a",
     help="choose resunet-a model or not", type=int, default=0)
 parser.add_argument("--multitasking",
     help="choose resunet-a model or not", type=int, default=0)
+    parser.add_argument("--gpu_parallel",
+        help="choose 1 to train one multiple gpu", type=int, default=0)
 args = parser.parse_args()
 
 def extract_patches_hw(image, reference, patch_size, stride):
@@ -137,6 +139,11 @@ def binarize_matrix(img_train_ref, label_dict):
 
     return binary_img_train_ref
 
+if args.gpu_parallel:
+    strategy = tf.distribute.MirroredStrategy()
+    print(f'Number of devices: {strategy.num_replicas_in_sync}')
+else:
+    strategy = None
 
 root_path = './DATASETS/homework3_npy'
 # Load images
@@ -270,7 +277,7 @@ if args.resunet_a == True:
 
     if args.multitasking:
         print('Multitasking enabled!')
-        resuneta = Resunet_a2((rows, cols, channels), number_class, args)
+        resuneta = Resunet_a2((rows, cols, channels), number_class, args, strategy)
         model = resuneta.model
         model.summary()
         losses = {
@@ -281,7 +288,11 @@ if args.resunet_a == True:
         }
         lossWeights = {"segmentation": 1.0, "boundary": 1.0, "distance": 1.0,
         "color": 1.0}
-        model.compile(optimizer=adam, loss=losses, loss_weights=lossWeights, metrics=['accuracy'])
+        if args.gpu_parallel:
+            with strategy.scope():
+                model.compile(optimizer=adam, loss=losses, loss_weights=lossWeights, metrics=['accuracy'])
+        else:
+            model.compile(optimizer=adam, loss=losses, loss_weights=lossWeights, metrics=['accuracy'])
     else:
         resuneta = Resunet_a2((rows, cols, channels), number_class, args)
         model = resuneta.model
