@@ -307,7 +307,7 @@ callbacks_list = [earlystop, checkpoint]
 if args.multitasking:
     start_training = time.time()
     # model_info = model.fit(x=patches_tr, y=y_fit, batch_size=batch_size, epochs=100, callbacks=callbacks_list, verbose=2, validation_data= (patches_val, val_fit) )
-    model_info = model.fit(x=train_generator, batch_size=batch_size, epochs=100, callbacks=callbacks_list, verbose=2, validation_data=val_generator )
+    model_info = model.fit(x=train_generator, epochs=100, callbacks=callbacks_list, verbose=2, validation_data=val_generator )
     end_training = time.time() - start_time
 else:
     start_training = time.time()
