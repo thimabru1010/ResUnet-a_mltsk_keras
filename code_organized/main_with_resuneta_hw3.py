@@ -168,7 +168,7 @@ del img_train_ref
 
 number_class = 5
 patch_size = 256
-stride = patch_size // 4
+stride = patch_size // 8
 
 
 #stride = patch_size
@@ -226,7 +226,7 @@ if args.multitasking:
     val_fit={"segmentation": patches_val_ref_h, "boundary": patches_bound_labels_val, "distance":  patches_dist_labels_val, "color": patches_color_labels_val}
 
     # Create generator
-    batch_size = 4
+    batch_size = 1
     train_generator = Mygenerator_multitasking(patches_tr, y_fit, batch_size=batch_size)
     val_generator = Mygenerator_multitasking(patches_val, val_fit, batch_size=batch_size)
 else:

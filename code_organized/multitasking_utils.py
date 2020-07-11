@@ -53,11 +53,16 @@ def get_color_labels(patches):
 
 
 def Tanimoto_loss(label,pred):
-    square=tf.square(pred)
-    sum_square=tf.reduce_sum(square,axis=-1)
+    square_pred=tf.square(pred)
+    square_label=tf.square(label)
+    add_squared_label_pred = tf.add(square_pred,square_label)
+    # Ver isso aqui
+    sum_square=tf.reduce_sum(add_squared_label_pred,axis=-1)
+
     product=tf.multiply(pred,label)
     sum_product=tf.reduce_sum(product,axis=-1)
-    denomintor=tf.subtract(tf.add(sum_square,1),sum_product)
+    
+    denomintor=tf.subtract(sum_square,sum_product)
     loss=tf.divide(sum_product,denomintor)
     loss=tf.reduce_mean(loss)
     return 1.0-loss
