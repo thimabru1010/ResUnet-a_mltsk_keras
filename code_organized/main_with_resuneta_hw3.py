@@ -22,7 +22,7 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import gc
 import psutil
 
-from CustomDataGenerator import Mygenerator
+from CustomDataGenerator import Mygenerator, Mygenerator_multitasking
 import ast
 
 parser = argparse.ArgumentParser()
