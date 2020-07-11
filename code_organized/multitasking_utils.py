@@ -50,3 +50,23 @@ def get_color_labels(patches):
         color_patches[i,:,:,:] = cv2.normalize(hsv_patch, hsv_patch, 0, 1.0, cv2.NORM_MINMAX)
         #print(color_patches[i,:,:,:])
     return color_patches
+
+
+def Tanimoto_loss(label,pred):
+    square=tf.square(pred)
+    sum_square=tf.reduce_sum(square,axis=-1)
+    product=tf.multiply(pred,label)
+    sum_product=tf.reduce_sum(product,axis=-1)
+    denomintor=tf.subtract(tf.add(sum_square,1),sum_product)
+    loss=tf.divide(sum_product,denomintor)
+    loss=tf.reduce_mean(loss)
+    return 1.0-loss
+def Tanimoto_dual_loss():
+    def loss(label,pred):
+        loss1=Tanimoto_loss(pred,label)
+        pred=tf.subtract(1.0,pred)
+        label=tf.subtract(1.0,label)
+        loss2=Tanimoto_loss(label,pred)
+        loss=(loss1+loss2)/2
+        return loss
+    return loss

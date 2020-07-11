@@ -8,6 +8,7 @@ Stride = patch_size//8 = 32
 batch size = 4
 Adam
 lr = 1e-2
+data aug = True
 
 Confusion  matrix
  [[ 930060   37219   92230   37568    2695]
