@@ -270,8 +270,8 @@ print('='*60)
 print(weights)
 loss = weighted_categorical_crossentropy(weights)
 if args.multitasking:
-    # weighted_cross_entropy = weighted_categorical_crossentropy(weights)
-    # cross_entropy = "categorical_crossentropy"
+    weighted_cross_entropy = weighted_categorical_crossentropy(weights)
+    cross_entropy = "categorical_crossentropy"
     tanimoto = Tanimoto_dual_loss()
 
 if args.resunet_a == True:
@@ -281,18 +281,18 @@ if args.resunet_a == True:
         resuneta = Resunet_a2((rows, cols, channels), number_class, args, strategy)
         model = resuneta.model
         model.summary()
-        # losses = {
-        # 	"segmentation": weighted_cross_entropy,
-        # 	"boundary": weighted_cross_entropy,
-        #     "distance": weighted_cross_entropy,
-        #     "color": cross_entropy,
-        # }
         losses = {
-        	"segmentation": tanimoto,
-        	"boundary": tanimoto,
-            "distance": tanimoto,
-            "color": tanimoto,
+        	"segmentation": weighted_cross_entropy,
+        	"boundary": weighted_cross_entropy,
+            "distance": weighted_cross_entropy,
+            "color": cross_entropy,
         }
+        # losses = {
+        # 	"segmentation": tanimoto,
+        # 	"boundary": tanimoto,
+        #     "distance": tanimoto,
+        #     "color": tanimoto,
+        # }
         lossWeights = {"segmentation": 1.0, "boundary": 1.0, "distance": 1.0,
         "color": 1.0}
         if args.gpu_parallel:
