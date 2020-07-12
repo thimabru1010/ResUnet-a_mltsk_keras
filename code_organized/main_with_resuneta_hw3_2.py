@@ -229,7 +229,7 @@ if args.multitasking:
     patches_tr, patches_val, patches_tr_ref_h, patches_val_ref_h = train_test_split(patches_tr, patches_tr_ref_h, test_size=0.2, random_state=42)
 
     # Create generator
-    batch_size = 4
+    batch_size = 1
     train_generator = Mygenerator_multitasking(patches_tr, patches_tr_ref_h, batch_size=batch_size)
     val_generator = Mygenerator_multitasking(patches_val, patches_val_ref_h, batch_size=batch_size)
 else:
