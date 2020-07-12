@@ -15,8 +15,7 @@ import math
 import numpy as np
 
 class Resunet_a2(object):
-    def __init__(self, input_shape, num_classes, args, strategy_keras):
-        self.strategy_keras = strategy_keras
+    def __init__(self, input_shape, num_classes, args):
         self.num_classes = num_classes
         self.img_height, self.img_width, self.img_channel = input_shape
         self.args = args

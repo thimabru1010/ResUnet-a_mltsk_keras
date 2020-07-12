@@ -265,7 +265,6 @@ rows = patch_size
 cols = patch_size
 channels = 3
 adam = Adam(lr = 0.001 , beta_1=0.9)
-sgd = SGD(lr=0.001,momentum=0.8)
 
 
 weights = [  4.34558461   ,2.97682037   ,3.92124661   ,5.67350328 ,374.0300152 ]
@@ -281,7 +280,7 @@ if args.resunet_a == True:
 
     if args.multitasking:
         print('Multitasking enabled!')
-        resuneta = Resunet_a2((rows, cols, channels), number_class, args, strategy)
+        resuneta = Resunet_a2((rows, cols, channels), number_class, args)
         if not args.gpu_parallel:
             model = resuneta.model
             model.summary()
@@ -303,6 +302,7 @@ if args.resunet_a == True:
         "color": 1.0}
         if args.gpu_parallel:
             with strategy.scope():
+                sgd = SGD(lr=0.001,momentum=0.8)
                 model=KM.Model(inputs=inputs,outputs=outputs)
                 # Talvez seja um bom teste mudar para o Adam
                 model.compile(optimizer=sgd, loss=losses, loss_weights=lossWeights, metrics=['accuracy'])
