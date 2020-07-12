@@ -265,7 +265,7 @@ rows = patch_size
 cols = patch_size
 channels = 3
 adam = Adam(lr = 0.001 , beta_1=0.9)
-
+sgd = SGD(lr=0.001,momentum=0.8)
 
 weights = [  4.34558461   ,2.97682037   ,3.92124661   ,5.67350328 ,374.0300152 ]
 print('='*60)
@@ -304,13 +304,13 @@ if args.resunet_a == True:
             with strategy.scope():
                 resuneta = Resunet_a2((rows, cols, channels), number_class, args)
                 inputs, outputs = resuneta.model
-                sgd = SGD(lr=0.001,momentum=0.8)
+                sgd2 = SGD(lr=0.001,momentum=0.8)
                 model=KM.Model(inputs=inputs,outputs=outputs)
                 # Talvez seja um bom teste mudar para o Adam
-                model.compile(optimizer=sgd, loss=losses, loss_weights=lossWeights, metrics=['accuracy'])
+                model.compile(optimizer=sgd2, loss=losses, loss_weights=lossWeights, metrics=['accuracy'])
             model.summary()
         else:
-            model.compile(optimizer=adam, loss=losses, loss_weights=lossWeights, metrics=['accuracy'])
+            model.compile(optimizer=sgd, loss=losses, loss_weights=lossWeights, metrics=['accuracy'])
     else:
         resuneta = Resunet_a2((rows, cols, channels), number_class, args)
         model = resuneta.model
