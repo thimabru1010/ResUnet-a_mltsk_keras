@@ -139,8 +139,8 @@ class Resunet_a2(object):
             out = [out_seg, out_bound, out_dist, out_color]
 
             if self.args.gpu_parallel:
-                with self.strategy_keras.scope():
-                    model=KM.Model(inputs=inputs,outputs=out)
+                return inputs, out
+                #model=KM.Model(inputs=inputs,outputs=out)
             else:
                 model=KM.Model(inputs=inputs,outputs=out)
 

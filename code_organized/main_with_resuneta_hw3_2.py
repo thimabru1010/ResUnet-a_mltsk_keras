@@ -24,6 +24,7 @@ import psutil
 
 from CustomDataGenerator_2 import Mygenerator, Mygenerator_multitasking
 import ast
+import tensorflow.keras.models as KM
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--resunet_a",
@@ -281,25 +282,31 @@ if args.resunet_a == True:
     if args.multitasking:
         print('Multitasking enabled!')
         resuneta = Resunet_a2((rows, cols, channels), number_class, args, strategy)
-        model = resuneta.model
-        model.summary()
-        losses = {
-        	"segmentation": weighted_cross_entropy,
-        	"boundary": weighted_cross_entropy,
-            "distance": weighted_cross_entropy,
-            "color": cross_entropy,
-        }
+        if not args.gpu_parallel:
+            model = resuneta.model
+            model.summary()
+        else:
+            inputs, outputs = resuneta.model
         # losses = {
-        # 	"segmentation": tanimoto,
-        # 	"boundary": tanimoto,
-        #     "distance": tanimoto,
-        #     "color": tanimoto,
+        # 	"segmentation": weighted_cross_entropy,
+        # 	"boundary": weighted_cross_entropy,
+        #     "distance": weighted_cross_entropy,
+        #     "color": cross_entropy,
         # }
+        losses = {
+        	"segmentation": tanimoto,
+        	"boundary": tanimoto,
+            "distance": tanimoto,
+            "color": tanimoto,
+        }
         lossWeights = {"segmentation": 1.0, "boundary": 1.0, "distance": 1.0,
         "color": 1.0}
         if args.gpu_parallel:
             with strategy.scope():
-                model.compile(optimizer=adam, loss=losses, loss_weights=lossWeights, metrics=['accuracy'])
+                model=KM.Model(inputs=inputs,outputs=outputs)
+                # Talvez seja um bom teste mudar para o Adam
+                model.compile(optimizer=sgd, loss=losses, loss_weights=lossWeights, metrics=['accuracy'])
+            model.summary()
         else:
             model.compile(optimizer=adam, loss=losses, loss_weights=lossWeights, metrics=['accuracy'])
     else:
