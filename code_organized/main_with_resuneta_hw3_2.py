@@ -280,12 +280,12 @@ if args.resunet_a == True:
 
     if args.multitasking:
         print('Multitasking enabled!')
-        resuneta = Resunet_a2((rows, cols, channels), number_class, args)
         if not args.gpu_parallel:
+            resuneta = Resunet_a2((rows, cols, channels), number_class, args)
             model = resuneta.model
             model.summary()
-        else:
-            inputs, outputs = resuneta.model
+        # else:
+        #     inputs, outputs = resuneta.model
         # losses = {
         # 	"segmentation": weighted_cross_entropy,
         # 	"boundary": weighted_cross_entropy,
@@ -302,6 +302,8 @@ if args.resunet_a == True:
         "color": 1.0}
         if args.gpu_parallel:
             with strategy.scope():
+                resuneta = Resunet_a2((rows, cols, channels), number_class, args)
+                inputs, outputs = resuneta.model
                 sgd = SGD(lr=0.001,momentum=0.8)
                 model=KM.Model(inputs=inputs,outputs=outputs)
                 # Talvez seja um bom teste mudar para o Adam
