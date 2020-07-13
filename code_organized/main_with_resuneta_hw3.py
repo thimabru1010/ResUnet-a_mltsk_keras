@@ -283,7 +283,7 @@ if args.resunet_a == True:
 
     if args.multitasking:
         print('Multitasking enabled!')
-        resuneta = Resunet_a2((rows, cols, channels), number_class, args, strategy)
+        resuneta = Resunet_a2((rows, cols, channels), number_class, args)
         model = resuneta.model
         model.summary()
         # losses = {
