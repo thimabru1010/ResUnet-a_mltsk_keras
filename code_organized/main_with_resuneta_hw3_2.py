@@ -28,7 +28,7 @@ import tensorflow.keras.models as KM
 
 gpu_devices = tf.config.experimental.list_physical_devices('GPU')
 tf.config.experimental.set_memory_growth(gpu_devices[0], True)
-tf.config.experimental.set_memory_growth(gpu_devices[1], True)
+#tf.config.experimental.set_memory_growth(gpu_devices[1], True)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--resunet_a",

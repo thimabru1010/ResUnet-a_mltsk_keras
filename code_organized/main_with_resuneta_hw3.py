@@ -25,6 +25,8 @@ import psutil
 from CustomDataGenerator import Mygenerator, Mygenerator_multitasking
 import ast
 
+from multitasking_utils import get_boundary_labels, get_distance_labels, get_color_labels
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--resunet_a",
     help="choose resunet-a model or not", type=int, default=0)
@@ -281,18 +283,18 @@ if args.resunet_a == True:
         resuneta = Resunet_a2((rows, cols, channels), number_class, args, strategy)
         model = resuneta.model
         model.summary()
-        losses = {
-        	"segmentation": weighted_cross_entropy,
-        	"boundary": weighted_cross_entropy,
-            "distance": weighted_cross_entropy,
-            "color": cross_entropy,
-        }
         # losses = {
-        # 	"segmentation": tanimoto,
-        # 	"boundary": tanimoto,
-        #     "distance": tanimoto,
-        #     "color": tanimoto,
+        # 	"segmentation": weighted_cross_entropy,
+        # 	"boundary": weighted_cross_entropy,
+        #     "distance": weighted_cross_entropy,
+        #     "color": cross_entropy,
         # }
+        losses = {
+        	"segmentation": tanimoto,
+        	"boundary": tanimoto,
+            "distance": tanimoto,
+            "color": tanimoto,
+        }
         lossWeights = {"segmentation": 1.0, "boundary": 1.0, "distance": 1.0,
         "color": 1.0}
         if args.gpu_parallel:

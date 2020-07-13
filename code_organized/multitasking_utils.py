@@ -8,20 +8,22 @@ def get_boundary_labels(labels, _kernel_size = (3,3)):
 
     labels = labels.copy()
     num_patches, h, w, c = labels.shape
+    bounds = np.empty_like(labels,dtype=np.float32)
     for n in range(num_patches):
         label = labels[n,:,:,:]
         for channel in range(c):
             #print(label)
             label = label.astype(np.uint8)
             #print(label)
-            temp = cv2.Canny(label[:,:,channel],0,1)
-            label[:,:,channel] = cv2.dilate(temp, cv2.getStructuringElement(cv2.MORPH_CROSS,_kernel_size) ,iterations = 1)
+            #temp = cv2.Canny(label[:,:,channel],0,1)
+            bound = cv2.Canny(label[:,:,channel],0,1)
+            bound = cv2.dilate(bound, cv2.getStructuringElement(cv2.MORPH_CROSS,_kernel_size) ,iterations = 1)
 
-        labels[n,:,:,:] = label
+            bounds[n,:,:,channel] = bound
 
-        labels = labels.astype(np.float32)
-        labels /= 255.
-        return labels
+    bounds = bounds.astype(np.float32)
+    bounds /= 255.
+    return bounds
 
 def get_distance_labels(labels):
     labels = labels.copy()

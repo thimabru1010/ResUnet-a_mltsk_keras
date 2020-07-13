@@ -19,10 +19,22 @@ from sklearn.model_selection import train_test_split
 
 import ast
 
-def Test(model, patch_test):
+gpu_devices = tf.config.experimental.list_physical_devices('GPU')
+tf.config.experimental.set_memory_growth(gpu_devices[0], True)
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--multitasking",
+    help="choose resunet-a model or not", type=int, default=0)
+args = parser.parse_args()
+
+def Test(model, patch_test, args):
     result = model.predict(patch_test)
-    print(result.shape)
-    #predicted_class = np.argmax(result, axis=-1)
+    print(len(result))
+    if args.multitasking:
+        print('Multitasking Enabled!')
+        predicted_class = np.argmax(result[1], axis=-1)
+    else:
+        predicted_class = np.argmax(result, axis=-1)
     return predicted_class
 
 def compute_metrics_hw(true_labels, predicted_labels):
@@ -33,25 +45,44 @@ def compute_metrics_hw(true_labels, predicted_labels):
     precision = 100*precision_score(true_labels, predicted_labels, average=None)
     return accuracy, f1score, recall, precision
 
-def pred_recostruction(patch_size, pred_labels, binary_img_test_ref):
+def pred_recostruction(patch_size, pred_labels, binary_img_test_ref, img_type=1):
     # Patches Reconstruction
-    stride = patch_size
+    if img_type == 1:
+        stride = patch_size
 
-    height, width = binary_img_test_ref.shape
+        height, width = binary_img_test_ref.shape
 
-    num_patches_h = height // stride
-    num_patches_w = width // stride
+        num_patches_h = height // stride
+        num_patches_w = width // stride
 
-    new_shape = (height, width)
-    img_reconstructed = np.zeros(new_shape)
-    cont = 0
-    # rows
-    for h in range(num_patches_h):
-        # columns
-        for w in range(num_patches_w):
-            img_reconstructed[h*stride:(h+1)*stride, w*stride:(w+1)*stride] = patches_pred[cont]
-            cont += 1
-    print('Reconstruction Done!')
+        new_shape = (height, width)
+        img_reconstructed = np.zeros(new_shape)
+        cont = 0
+        # rows
+        for h in range(num_patches_h):
+            # columns
+            for w in range(num_patches_w):
+                img_reconstructed[h*stride:(h+1)*stride, w*stride:(w+1)*stride] = patches_pred[cont]
+                cont += 1
+        print('Reconstruction Done!')
+    if img_type == 2:
+        stride = patch_size
+
+        height, width = binary_img_test_ref.shape
+
+        num_patches_h = height // stride
+        num_patches_w = width // stride
+
+        new_shape = (height, width, 3)
+        img_reconstructed = np.zeros(new_shape)
+        cont = 0
+        # rows
+        for h in range(num_patches_h):
+            # columns
+            for w in range(num_patches_w):
+                img_reconstructed[h*stride:(h+1)*stride, w*stride:(w+1)*stride, :] = patches_pred[cont]
+                cont += 1
+        print('Reconstruction Done!')
     return img_reconstructed
 
 def reconstruction_rgb_prdiction_patches(img_reconstructed, label_dict):
@@ -162,21 +193,24 @@ patches_test_ref = extract_patches_test(binary_img_test_ref, patch_size)
 
 #% Load model
 filepath = './models/'
-exp=1
+exp=4
 model = load_model(filepath+'unet_exp_'+str(exp)+'.h5', compile=False)
-area = 11
+model.summary()
 # Prediction
 # Test the model
-#patches_pred = Test(model, patches_test)
-result = model.predict(patches_test)
-patches_pred = np.argmax(result[0], axis=-1)
-print(len(result))
-print('[TEST]'*10)
+patches_pred = Test(model, patches_test, args)
+# result = model.predict(patches_test)
+# patches_pred = np.argmax(result[0], axis=-1)
+print('='*40)
+#print(len(result))
+print('[TEST]')
 print()
 print(patches_pred.shape)
 
 # Metrics
 true_labels = np.reshape(patches_test_ref, (patches_test_ref.shape[0]* patches_test_ref.shape[1]*patches_test_ref.shape[2]))
+# true_labels = np.reshape(patches_test_ref, (patches_test_ref.shape[0]* patches_test_ref.shape[1]*patches_test_ref.shape[2]))
+
 predicted_labels = np.reshape(patches_pred, (patches_pred.shape[0]* patches_pred.shape[1]*patches_pred.shape[2]))
 
 # Metrics
@@ -190,7 +224,21 @@ print('F1score: ', metrics[1])
 print('Recall: ', metrics[2])
 print('Precision: ', metrics[3])
 
-img_reconstructed = pred_recostruction(patch_size, patches_pred, binary_img_test_ref)
-img_reconstructed_rgb = reconstruction_rgb_prdiction_patches(img_reconstructed, label_dict)
+# #patches_test_ref_h = tf.keras.utils.to_categorical(patches_test_ref, 5)
+# patches_test_ref_h = tf.keras.utils.to_categorical(patches_pred, 5)
+# # patches_pred = np.sum(get_distance_labels(patches_test_ref_h), axis=-1)/5
+# # print(patches_pred.shape)
+# bounds = get_boundary_labels(patches_test_ref_h)
+# for i in range(len(bounds)):
+#     print(bounds[i])
+# patches_pred = np.sum(bounds, axis=-1)/5
+# print(patches_pred.shape)
+print(patches_test.shape)
+patches_pred = get_color_labels(patches_test.astype(np.uint8))
+print(patches_pred.shape)
 
-plt.imsave('img_reconstructed_rgb.jpeg', img_reconstructed_rgb)
+img_reconstructed = pred_recostruction(patch_size, patches_pred, binary_img_test_ref, 2)
+img_reconstructed_rgb = img_reconstructed
+# img_reconstructed_rgb = reconstruction_rgb_prdiction_patches(img_reconstructed, label_dict)
+
+plt.imsave(f'img_reconstructed_rgb_exp{exp}.jpeg', img_reconstructed_rgb)

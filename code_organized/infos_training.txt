@@ -1,5 +1,6 @@
 =====================================
 ---- Resunet-a w/o multitasking
+exp = 1
 HOMEWORK 3 - RGB
 
             [PARAMETROS]
@@ -24,7 +25,8 @@ Precision:  [72.67956164 73.40006925 74.49916536 85.16738558 67.40937097]
 =====================================
 
 =====================================
----- Unet 
+---- Unet
+exp = 2
 HOMEWORK 3 - RGB
 
             [PARAMETROS]
@@ -33,6 +35,7 @@ Stride = patch_size//8 = 32
 batch size = 16
 Adam
 lr = 1e-3
+data aug = True
 
 Confusion  matrix
  [[ 921627   35243   96832   43915    2155]
