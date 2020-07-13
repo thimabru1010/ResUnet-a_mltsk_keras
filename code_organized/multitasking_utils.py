@@ -19,10 +19,13 @@ def get_boundary_labels(labels, _kernel_size = (3,3)):
             bound = cv2.Canny(label[:,:,channel],0,1)
             bound = cv2.dilate(bound, cv2.getStructuringElement(cv2.MORPH_CROSS,_kernel_size) ,iterations = 1)
 
+            bound = bound.astype(np.float32)
+            bounds /= 255.
+
             bounds[n,:,:,channel] = bound
 
-    bounds = bounds.astype(np.float32)
-    bounds /= 255.
+    # bounds = bounds.astype(np.float32)
+    # bounds /= 255.
     return bounds
 
 def get_distance_labels(labels):
