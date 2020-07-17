@@ -60,6 +60,7 @@ def pred_recostruction(patch_size, pred_labels, binary_img_test_ref, img_type=1)
 
         num_patches_h = height // stride
         num_patches_w = width // stride
+        #print(num_patches_h, num_patches_w)
 
         new_shape = (height, width)
         img_reconstructed = np.zeros(new_shape)
@@ -154,6 +155,25 @@ def extract_patches_train(img_test_normalized, patch_size):
 
     return new_img
 
+def colorbar(mappable, ax, fig):
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
+    last_axes = plt.gca()
+    # ax = mappable.axes
+    # fig = ax.figure
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+    cbar = fig.colorbar(mappable, cax=cax)
+    plt.sca(last_axes)
+    return cbar
+
+def convert_hsvpatches2rgb(patches):
+    (amount, h, w, c) = patches.shape
+    color_patches = np.full([amount, h, w, c], -1)
+    for i in range(amount):
+        color_patches[i] = hsv_to_rgb(patches[i])*255
+
+    return color_patches
+
 #%% Test model
 # Creation of mask with test tiles
 root_path = './DATASETS/homework3_npy'
@@ -199,7 +219,7 @@ patches_test_ref = extract_patches_test(binary_img_test_ref, patch_size)
 
 #% Load model
 filepath = './models/'
-exp=4
+exp=5
 model = load_model(filepath+'unet_exp_'+str(exp)+'.h5', compile=False)
 model.summary()
 # Prediction
@@ -230,30 +250,19 @@ print()
 # print('Recall: ', metrics[2])
 # print('Precision: ', metrics[3])
 
-print(patches_test_ref.shape)
-#patches_test_ref_h = tf.keras.utils.to_categorical(patches_test_ref, 5)
-#patches_test_ref_h = tf.keras.utils.to_categorical(patches_pred, 5)
-# patches_pred = np.sum(get_pred_distance_labels(patches_test_ref_h), axis=-1)/5
-# print(patches_pred.shape)
-#bounds = get_boundary_labels(patches_test_ref_h)
-# for i in range(len(bounds)):
-#     print(bounds[i])
-# patches_pred = np.sum(bounds, axis=-1)/5
-# print(patches_pred.shape)
-# print(patches_test.shape)
-# patches_pred = get_color_labels(patches_test.astype(np.uint8))
-# print(patches_pred.shape)
-#patches_pred = get_pred_distance_labels(patches_test_ref_h)[:,:,:,0]
-#patches_pred = np.max(patches_pred, axis=-1)
-# for i in range(len(patches_pred)):
-#     print(patches_pred[i])
-# patches_pred = cv2.normalize(patches_pred, patches_pred, 0, 1.0, cv2.NORM_MINMAX)
 if not args.multitasking:
     img_reconstructed = pred_recostruction(patch_size, patches_pred, binary_img_test_ref, 1)
     img_reconstructed_rgb = reconstruction_rgb_prdiction_patches(img_reconstructed, label_dict)
 
     plt.imsave(f'img_reconstructed_rgb_exp{exp}.jpeg', img_reconstructed_rgb)
 else:
+    # segmentation
+    patches_seg = np.argmax(patches_pred[0], axis=-1)
+    img_reconstructed = pred_recostruction(patch_size, patches_seg, binary_img_test_ref, 1)
+    img_reconstructed_rgb = reconstruction_rgb_prdiction_patches(img_reconstructed, label_dict)
+
+    plt.imsave(f'img_reconstructed_rgb_seg_exp{exp}.jpeg', img_reconstructed_rgb)
+
     # Boundaries
     print(patches_pred[1].shape)
     pred_bound = np.sum(patches_pred[1],axis=-1)
@@ -261,11 +270,23 @@ else:
     print(pred_bound.shape)
     img_reconstructed = pred_recostruction(patch_size, pred_bound, binary_img_test_ref, 1)
 
-    fig1, ax1 = plt.subplots()
+    fig1, (ax1, ax2) = plt.subplots(ncols=2, figsize=(13, 4))
     im = ax1.imshow(img_reconstructed,cmap=cm.Greys_r)
-    fig1.colorbar(im, ax=ax1)
-    plt.savefig('teste1.jpg')
+    ax1.set_title('Prediction')
+
+    # Creates Boundaries label
+    patches_test_ref_h = tf.keras.utils.to_categorical(patches_test_ref, 5)
+    bounds = get_boundary_labels(patches_test_ref_h)
+    bounds = np.sum(bounds, axis=-1)/5
+    img_reconstructed = pred_recostruction(patch_size, bounds, binary_img_test_ref, 1)
+    im = ax2.imshow(img_reconstructed,cmap=cm.Greys_r)
+    ax2.set_title('Reference')
+    colorbar(im, ax2, fig1)
+    #fig1.colorbar(im, ax=ax2)
+
+    plt.savefig('boundaries_pred_label.jpg')
     plt.show()
+    print('Boundaries image saved!')
 
     #plt.imsave(f'img_reconstructed_pred_bound_exp{exp}.jpeg', img_reconstructed)
 
@@ -275,18 +296,35 @@ else:
     pred_dist = (pred_dist - pred_dist.min())/(pred_dist.max() - pred_dist.min())
     img_reconstructed = pred_recostruction(patch_size, pred_dist, binary_img_test_ref, 1)
 
-    fig2, ax2 = plt.subplots()
+    fig2, (ax1, ax2) = plt.subplots(ncols=2, figsize=(13, 4))
+    im = ax1.imshow(img_reconstructed,cmap=cm.Greys_r)
+    ax1.set_title('Prediction')
+    fig2.colorbar(im, ax=ax1)
+    # Label creation
+    patches_test_ref_h = tf.keras.utils.to_categorical(patches_test_ref, 5)
+    dists = get_distance_labels(patches_test_ref_h)
+    dists = np.sum(dists, axis=-1)/5
+    img_reconstructed = pred_recostruction(patch_size, dists, binary_img_test_ref, 1)
     im = ax2.imshow(img_reconstructed,cmap=cm.Greys_r)
+    ax2.set_title('Reference')
     fig2.colorbar(im, ax=ax2)
-    plt.savefig('teste2.jpg')
+    plt.savefig('distance_pred_label.jpg')
     plt.show()
+    print('Distance image saved!')
 
     # Color transform
-    hsv_patches_label = get_color_labels(patches_test.astype(np.uint8))
-    fig3, (ax3, ax4, ax5, ax6) = plt.subplots(1, 4)
-    rgb_img = hsv_to_rgb(patches_pred[3])
+    fig3, (ax1, ax2, ax3) = plt.subplots(ncols=3, figsize=(13, 4))
+    ax1.imshow(img_test.transpose((1,2,0)).astype(np.uint8))
+    ax1.set_title('Original Image')
+
+    #rgb_img = hsv_to_rgb(patches_pred[3][10,:,:,:])*255
+    rgb_img = convert_hsvpatches2rgb(patches_pred[3])
     img_reconstructed_rgb = pred_recostruction(patch_size, rgb_img, binary_img_test_ref, 2)
-    ax3.imshow(img_reconstructed_rgb.astype(np.uint8),rasterized=True)
+    #,rasterized=True
+    ax2.imshow(img_reconstructed_rgb.astype(np.uint8))
+    ax2.set_title('Prediction Reconstructed')
+
+    hsv_patches_label = get_color_labels(patches_test.astype(np.uint8))
     diff = np.mean(patches_pred[3] - hsv_patches_label ,axis=-1)
     diff =  2*(diff-diff.min())/(diff.max()-diff.min()) - np.ones_like(diff)
     #
@@ -296,17 +334,12 @@ else:
     # plt.savefig('teste3.jpg')
 
     img_reconstructed = pred_recostruction(patch_size, diff, binary_img_test_ref, 1)
-    im = ax4.imshow(img_reconstructed,cmap=cm.Greys_r)
-    fig3.colorbar(im, ax=ax4)
+    im = ax3.imshow(img_reconstructed,cmap=cm.Greys_r)
+    ax3.set_title('Difference between both')
+    #fig3.colorbar(im, ax=ax6)
+    colorbar(im, ax3, fig3)
 
-    ax5.imshow(img_test.transpose((1,2,0)).astype(np.uint8))
 
-    img_reconstructed_rgb = pred_recostruction(patch_size, hsv_to_rgb(hsv_patches_label), binary_img_test_ref, 2)
-    ax6.imshow(img_reconstructed_rgb)
 
+    plt.savefig('color_pred_label.jpg')
     plt.show()
-
-    plt.imshow(img_reconstructed_rgb)
-    plt.show()
-
-    #plt.imsave(f'img_reconstructed_pred_dist_exp{exp}.jpeg', img_reconstructed)

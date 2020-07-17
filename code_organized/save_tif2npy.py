@@ -1,6 +1,7 @@
 import numpy as np
 from osgeo import ogr, gdal
 import os
+import cv2
 
 # Functions
 def load_tiff_image(patch):
@@ -51,16 +52,25 @@ def load_tiff_image(patch):
 #
 # past_ref2 = load_tiff_image(os.path.join(root_path,'labels/binary_clipped_1988_2012.tif'))
 # np.save(os.path.join('dataset_npy','labels/binary_clipped_1988_2012.tif'), past_ref2)
-
+from skimage.transform import resize
+#bottle_resized = resize(bottle, (140, 54))
 # Homework 3
-img_train = load_tiff_image('homework3/Image_Train.tif').astype(np.float32)
-np.save('homework3_npy/Image_Train.npy', img_train)
+img_train = load_tiff_image('DATASETS/homework3/Image_Train.tif')
+img_train = resize(img_train, (4500, 4000))
+img_train = cv2.imencode(".jpeg", img_train)
+cv2.imwrite('img_train.jpeg', img_train)
+#np.save('homework3_npy/Image_Train.jpg', img_train)
 
-ref_train = load_tiff_image('homework3/Reference_Train.tif')
-np.save('homework3_npy/Reference_Train.npy', ref_train)
+del img_train
 
-img_test = load_tiff_image('homework3/Image_Test.tif').astype(np.float32)
-np.save('homework3_npy/Image_Test.npy', img_test)
+ref_train = load_tiff_image('DATASETS/homework3/Reference_Train.tif')
+ref_train = resize(ref_train, (4500, 4000))
+ref_train = cv2.imencode(".jpeg", ref_train)
+cv2.imwrite('img_ref.jpeg', ref_train)
+#np.save('homework3_npy/Reference_Train.jpg', ref_train)
 
-ref_test = load_tiff_image('homework3/Reference_Test.tif')
-np.save('homework3_npy/Reference_Test.npy', ref_test)
+# img_test = load_tiff_image('homework3/Image_Test.tif').astype(np.float32)
+# np.save('homework3_npy/Image_Test.npy', img_test)
+#
+# ref_test = load_tiff_image('homework3/Reference_Test.tif')
+# np.save('homework3_npy/Reference_Test.npy', ref_test)
