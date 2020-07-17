@@ -76,24 +76,54 @@ def get_color_labels(patches):
 #     loss=tf.divide(sum_product,denomintor)
 #     loss=tf.reduce_mean(loss)
 #     return 1.0-loss
-def Tanimoto_loss(label,pred):
+
+
+def Tanimoto_loss2(label,pred):
     print('[DEBUG LOSS]')
     print(label.shape)
     print(pred.shape)
     square_pred=KB.square(pred)
     square_label=KB.square(label)
+    print('soma')
     #add_squared_label_pred = tf.add(square_pred,square_label)
     add_squared_label_pred = square_pred + square_label
     # Ver isso aqui
+    print('sum square')
+    #sum_square=tf.reduce_sum(add_squared_label_pred,axis=-1)
     sum_square=KB.sum(add_squared_label_pred,axis=-1)
 
-    product=KB.dot(pred,label)
+    print('product')
+    # Tem q ser element-wise
+    #product=KB.dot(pred,label)
+    product=tf.multiply(pred,label)
+    print('sum product')
     sum_product=KB.sum(product,axis=-1)
 
-    #denomintor=tf.subtract(sum_square,sum_product)
+    print('subtract')
     denomintor=sum_square - sum_product
+    #denomintor=tf.subtract(sum_square,sum_product)
+    print('division')
     loss=tf.divide(sum_product,denomintor)
     #loss=tf.reduce_mean(loss)
+    return loss
+
+
+def Tanimoto_loss(label,pred):
+    # print('[DEBUG LOSS]')
+    # print(label.shape)
+    # print(pred.shape)
+
+    square_pred=tf.square(pred)
+    square_label=tf.square(label)
+    add_squared_label_pred = tf.add(square_pred,square_label)
+    # Ver isso aqui
+    sum_square=tf.reduce_sum(add_squared_label_pred,axis=-1)
+
+    product=tf.multiply(pred,label)
+    sum_product=tf.reduce_sum(product,axis=-1)
+
+    denomintor=tf.subtract(sum_square,sum_product)
+    loss=tf.divide(sum_product,denomintor)
     return loss
 
 def Tanimoto_dual_loss():
