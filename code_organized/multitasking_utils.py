@@ -4,6 +4,25 @@ import tensorflow as tf
 import cv2
 import numpy as np
 
+def get_boundary_labels_old(labels, _kernel_size = (3,3)):
+
+    labels = labels.copy()
+    num_patches, h, w, c = labels.shape
+    for n in range(num_patches):
+        label = labels[n,:,:,:]
+        for channel in range(c):
+            #print(label)
+            label = label.astype(np.uint8)
+            #print(label)
+            temp = cv2.Canny(label[:,:,channel],0,1)
+            label[:,:,channel] = cv2.dilate(temp, cv2.getStructuringElement(cv2.MORPH_CROSS,_kernel_size) ,iterations = 1)
+
+        labels[n,:,:,:] = label
+
+        labels = labels.astype(np.float32)
+        labels /= 255.
+    return labels
+
 def get_boundary_labels(labels, _kernel_size = (3,3)):
 
     labels = labels.copy()
@@ -78,37 +97,42 @@ def get_color_labels(patches):
 #     return 1.0-loss
 
 
-def Tanimoto_loss2(label,pred):
+def Tanimoto_loss(label,pred):
     print('[DEBUG LOSS]')
     print(label.shape)
     print(pred.shape)
-    square_pred=KB.square(pred)
-    square_label=KB.square(label)
-    print('soma')
-    #add_squared_label_pred = tf.add(square_pred,square_label)
-    add_squared_label_pred = square_pred + square_label
+
+    square_pred=tf.square(pred)
+    square_label=tf.square(label)
+    add_squared_label_pred = tf.add(square_pred,square_label)
     # Ver isso aqui
+    sum_square=tf.reduce_sum(add_squared_label_pred,axis=[1,2])
     print('sum square')
-    #sum_square=tf.reduce_sum(add_squared_label_pred,axis=-1)
-    sum_square=KB.sum(add_squared_label_pred,axis=-1)
+    print(sum_square.shape)
 
-    print('product')
-    # Tem q ser element-wise
-    #product=KB.dot(pred,label)
     product=tf.multiply(pred,label)
+    sum_product=tf.reduce_sum(product,axis=[1,2])
     print('sum product')
-    sum_product=KB.sum(product,axis=-1)
+    print(sum_product.shape)
+    # Teria que multiplicar pelo peso wj. Simulando com wj=1
+    sum_product_labels = tf.reduce_sum(sum_product, axis=-1)
+    print('sum product labels')
+    print(sum_product_labels.shape)
 
-    print('subtract')
-    denomintor=sum_square - sum_product
-    #denomintor=tf.subtract(sum_square,sum_product)
-    print('division')
-    loss=tf.divide(sum_product,denomintor)
-    #loss=tf.reduce_mean(loss)
+    denomintor=tf.subtract(sum_square,sum_product)
+    print('denominator')
+    print(denomintor.shape)
+    # Teria que multiplicar pelo peso wj. Simulando com wj=1
+    denomintor_sum_labels = tf.reduce_sum(denomintor, axis=-1)
+    print('denominator sum labels')
+    print(denomintor_sum_labels.shape)
+    loss=tf.divide(sum_product_labels,denomintor_sum_labels)
+    print('loss')
+    print(loss.shape)
     return loss
 
 
-def Tanimoto_loss(label,pred):
+def Tanimoto_loss2(label,pred):
     # print('[DEBUG LOSS]')
     # print(label.shape)
     # print(pred.shape)
@@ -117,10 +141,11 @@ def Tanimoto_loss(label,pred):
     square_label=tf.square(label)
     add_squared_label_pred = tf.add(square_pred,square_label)
     # Ver isso aqui
-    sum_square=tf.reduce_sum(add_squared_label_pred,axis=-1)
+    sum_square=tf.reduce_sum(add_squared_label_pred,axis=[0,1])
 
     product=tf.multiply(pred,label)
-    sum_product=tf.reduce_sum(product,axis=-1)
+    sum_product=tf.reduce_sum(product,axis=[0,1])
+    # Teria que multiplicar pelo peso wj. Simulando com wj=1
 
     denomintor=tf.subtract(sum_square,sum_product)
     loss=tf.divide(sum_product,denomintor)
