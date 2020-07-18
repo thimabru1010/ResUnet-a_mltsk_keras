@@ -98,6 +98,17 @@ def get_color_labels(patches):
 
 
 def Tanimoto_loss(label,pred):
+    Vli = tf.reduce_mean(tf.reduce_sum(label,axis=[1,2]),axis=0)
+    #wli =  1.0/Vli**2 # weighting scheme
+    wli = tf.reciprocal(Vli**2) # weighting scheme
+
+    # ---------------------This line is taken from niftyNet package --------------
+    # ref: https://github.com/NifTK/NiftyNet/blob/dev/niftynet/layer/loss_segmentation.py, lines:170 -- 172
+    # First turn inf elements to zero, then replace that with the maximum weight value  
+    new_weights = tf.where(tf.is_inf(wli), tf.zeros_like(wli), wli)
+    wli = tf.where(tf.is_inf(wli), tf.ones_like(wli) * tf.reduce_max(new_weights), wli)
+    # --------------------------------------------------------------------
+
     print('[DEBUG LOSS]')
     print(label.shape)
     print(pred.shape)
@@ -115,7 +126,7 @@ def Tanimoto_loss(label,pred):
     print('sum product')
     print(sum_product.shape)
     # Teria que multiplicar pelo peso wj. Simulando com wj=1
-    sum_product_labels = tf.reduce_sum(sum_product, axis=-1)
+    sum_product_labels = tf.reduce_sum(tf.multiply(wli, sum_product), axis=-1)
     print('sum product labels')
     print(sum_product_labels.shape)
 
@@ -123,7 +134,7 @@ def Tanimoto_loss(label,pred):
     print('denominator')
     print(denomintor.shape)
     # Teria que multiplicar pelo peso wj. Simulando com wj=1
-    denomintor_sum_labels = tf.reduce_sum(denomintor, axis=-1)
+    denomintor_sum_labels = tf.reduce_sum(tf.multiply(wli, denomintor), axis=-1)
     print('denominator sum labels')
     print(denomintor_sum_labels.shape)
     loss=tf.divide(sum_product_labels,denomintor_sum_labels)
