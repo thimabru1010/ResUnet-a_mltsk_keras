@@ -27,8 +27,8 @@ import ast
 
 from multitasking_utils import get_boundary_labels, get_distance_labels, get_color_labels
 
-gpu_devices = tf.config.experimental.list_physical_devices('GPU')
-tf.config.experimental.set_memory_growth(gpu_devices[0], True)
+# gpu_devices = tf.config.experimental.list_physical_devices('GPU')
+# tf.config.experimental.set_memory_growth(gpu_devices[0], True)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--resunet_a",
