@@ -100,11 +100,11 @@ def get_color_labels(patches):
 def Tanimoto_loss(label,pred):
     Vli = tf.reduce_mean(tf.reduce_sum(label,axis=[1,2]),axis=0)
     #wli =  1.0/Vli**2 # weighting scheme
-    wli = tf.reciprocal(Vli**2) # weighting scheme
+    wli = tf.math.reciprocal(Vli**2) # weighting scheme
 
     # ---------------------This line is taken from niftyNet package --------------
     # ref: https://github.com/NifTK/NiftyNet/blob/dev/niftynet/layer/loss_segmentation.py, lines:170 -- 172
-    # First turn inf elements to zero, then replace that with the maximum weight value  
+    # First turn inf elements to zero, then replace that with the maximum weight value
     new_weights = tf.where(tf.is_inf(wli), tf.zeros_like(wli), wli)
     wli = tf.where(tf.is_inf(wli), tf.ones_like(wli) * tf.reduce_max(new_weights), wli)
     # --------------------------------------------------------------------

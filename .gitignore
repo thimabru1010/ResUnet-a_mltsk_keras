@@ -1,3 +1,16 @@
+# My gitignore
+dataset
+dataset_npy
+dataset.7z
+images
+images_npy
+models
+models_new
+zips
+DATASETS
+unet_results
+models_amazon
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
