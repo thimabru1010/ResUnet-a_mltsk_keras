@@ -1,1 +1,1 @@
-# Satelite-Amazonia-Images-Segmentation
+# ResUnet-a-multitasking
