@@ -49,9 +49,11 @@ def extract_patches_hw(image, reference, patch_size, stride):
 
     patches_ref = np.array(view_as_windows(reference, window_shape_ref, step = stride))
 
+    print('Patches extraidos')
     print(patches_array.shape)
     num_row,num_col,p,row,col,depth = patches_array.shape
 
+    print('fazendo reshape')
     patches_array = patches_array.reshape(num_row*num_col,row,col,depth)
     print(patches_array.shape)
     patches_ref = patches_ref.reshape(num_row*num_col,row,col)
@@ -174,12 +176,14 @@ img_train = load_npy_image(os.path.join(root_path, img_train_path)).astype(np.fl
 img_train_normalized = normalization(img_train)
 # Transform the image into W x H x C shape
 img_train_normalized = img_train_normalized.transpose((1,2,0))
+print('Imagem RGB')
 print(img_train_normalized.shape)
 
 # Load reference
 img_train_ref_path = 'Reference_Train.npy'
 img_train_ref = load_npy_image(os.path.join(root_path, img_train_ref_path))
 img_train_ref = img_train_ref.transpose((1,2,0))
+print('Imagem de referencia')
 print(img_train_ref.shape)
 
 label_dict = {'(255, 255, 255)': 0, '(0, 255, 0)': 1, '(0, 255, 255)': 2, '(0, 0, 255)': 3, '(255, 255, 0)': 4}
