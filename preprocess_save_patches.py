@@ -197,7 +197,7 @@ stride = patch_size // 8
 
 
 #stride = patch_size
-patches = extract_patches_hw(img_train_normalized, binary_img_train_ref, patch_size, stride)
+patches_tr, patches_tr_ref = extract_patches_hw(img_train_normalized, binary_img_train_ref, patch_size, stride)
 print('patches extraidos!')
 # patches_tr, patches_tr_ref = bal_aug_patches2(percent, patch_size, patches_tr, patches_tr_ref)
 process = psutil.Process(os.getpid())
@@ -221,8 +221,8 @@ if not os.path.exists(folder_path):
 def filename(i):
     return f'patch_{i}.npy'
 
-patches_tr = patches[0].tolist()
-patches_tr_ref = patches[1].tolist()
+# patches_tr = patches[0].tolist()
+# patches_tr_ref = patches[1].tolist()
 
 del patches
 
