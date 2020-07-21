@@ -224,7 +224,7 @@ def filename(i):
 # patches_tr = patches[0].tolist()
 # patches_tr_ref = patches[1].tolist()
 
-del patches
+#del patches
 
 print(f'Number of patches: {len(patches_tr)}')
 print(f'Number of patches expected: {len(patches_tr)*5}')
