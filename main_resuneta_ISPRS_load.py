@@ -106,7 +106,7 @@ def compute_metrics_hw(true_labels, predicted_labels):
     precision = 100*precision_score(true_labels, predicted_labels, average=None)
     return accuracy, f1score, recall, precision
 
-def Train_model(net, patches_train, patches_tr_lb_h, patches_val, patches_val_lb_h, batch_size, epochs, patience, delta, x_shape_batch, y_shape_batch):
+def Train_model(net, patches_train, patches_tr_lb_h, patches_val, patches_val_lb_h, batch_size, epochs, patience, delta, x_shape_batch, y_shape_batch, seed):
     print('Start training...')
     print(epochs)
     best_score = 0
@@ -127,7 +127,7 @@ def Train_model(net, patches_train, patches_tr_lb_h, patches_val, patches_val_lb
         #n_batchs_tr = patches_train.shape[0]//batch_size
         n_batchs_tr = len(patches_train)//batch_size
         # Random shuffle the data
-        patches_train , patches_tr_lb_h = shuffle(patches_train , patches_tr_lb_h , random_state = 42)
+        patches_train , patches_tr_lb_h = shuffle(patches_train , patches_tr_lb_h , random_state = seed)
 
         # Training the network per batch
         for  batch in range(n_batchs_tr):
@@ -209,6 +209,11 @@ else:
 root_path = './DATASETS/patches_ps=256_stride=32'
 train_path = os.path.join(root_path, 'train')
 ref_path = os.path.join(root_path, 'labels')
+patches_train = os.listdir(train_path)
+patches_tr_lb_h = os.listdir(ref_path)
+
+patches_train, patches_val, patches_tr_lb_h, patches_val_lb_h = train_test_split(patches_train, patches_tr_lb_h, test_size=0.2, random_state=42)
+
 number_class = 5
 patch_size = 256
 stride = patch_size // 8
@@ -327,7 +332,8 @@ else:
     start_training = time.time()
     x_shape_batch = (batch_size, patch_size, patch_size, 3)
     y_shape_batch = (batch_size, patch_size, patch_size, 5)
-    Train_model(model, patches_train, patches_tr_lb_h, patches_val, patches_val_lb_h, batch_size, epochs, patience=10, delta=0.001, x_shape_batch=x_shape_batch, y_shape_batch=y_shape_batch)
+
+    Train_model(model, patches_train, patches_tr_lb_h, patches_val, patches_val_lb_h, batch_size, epochs, patience=10, delta=0.001, x_shape_batch=x_shape_batch, y_shape_batch=y_shape_batch, seed=seed)
     # model_info = model.fit(x=train_generator, epochs=100, callbacks=callbacks_list, verbose=2, validation_data= val_generator)
 
     end_training = time.time() - start_time
