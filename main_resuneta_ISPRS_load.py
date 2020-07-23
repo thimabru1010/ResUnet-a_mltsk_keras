@@ -106,6 +106,100 @@ def compute_metrics_hw(true_labels, predicted_labels):
     precision = 100*precision_score(true_labels, predicted_labels, average=None)
     return accuracy, f1score, recall, precision
 
+def Train_model(net, patches_train, patches_tr_lb_h, patches_val, patches_val_lb_h, batch_size, epochs, patience, delta, x_shape_batch, y_shape_batch):
+    print('Start training...')
+    print(epochs)
+    best_score = 0
+    min_loss = 200
+    cont = 0
+    total_train_loss = []
+    total_train_acc = []
+    total_val_loss = []
+    total_val_acc =[]
+    x_train_b = np.zeros(x_shape_batch)
+    y_train_h_b = np.zeros(y_shape_batch)
+    x_val_b = np.zeros(x_shape_batch)
+    y_val_h_b = np.zeros(y_shape_batch)
+    for epoch in range(epochs):
+        loss_tr = np.zeros((1 , 2))
+        loss_val = np.zeros((1 , 2))
+        # Computing the number of batchs on training
+        #n_batchs_tr = patches_train.shape[0]//batch_size
+        n_batchs_tr = len(patches_train)//batch_size
+        # Random shuffle the data
+        patches_train , patches_tr_lb_h = shuffle(patches_train , patches_tr_lb_h , random_state = 42)
+
+        # Training the network per batch
+        for  batch in range(n_batchs_tr):
+            # x_train_b = patches_train[batch * batch_size : (batch + 1) * batch_size , : , : , :]
+            x_train_paths = patches_train[batch * batch_size : (batch + 1) * batch_size]
+            # y_train_h_b = patches_tr_lb_h[batch * batch_size : (batch + 1) * batch_size , :, :, :]
+            y_train_paths = patches_tr_lb_h[batch * batch_size : (batch + 1) * batch_size]
+            for b in range(batch_size):
+                x_train_b[b] = np.load(x_train_paths[b])
+                y_train_h_b[b] = np.load(x_train_paths[b])
+
+            loss_tr = loss_tr + net.train_on_batch(x_train_b , y_train_h_b)
+
+        # Training loss
+        loss_tr = loss_tr/n_batchs_tr
+        #print("%d [Training loss: %f , Train acc.: %.2f%%]" %(epoch , loss_tr[0 , 0], 100*loss_tr[0 , 1]))
+
+        # Computing the number of batchs on validation
+        #n_batchs_val = patches_val.shape[0]//batch_size
+        n_batchs_val = len(patches_val)//batch_size
+
+        '''
+            Talvez fosse bom deletar as matrizes :
+            x_train_b
+            y_train_h_b
+            Antes de começar o validation
+        '''
+
+        # Evaluating the model in the validation set
+        for  batch in range(n_batchs_val):
+            # x_val_b = patches_val[batch * batch_size : (batch + 1) * batch_size , : , : , :]
+            x_val_paths = patches_val[batch * batch_size : (batch + 1) * batch_size]
+            y_val_paths = patches_val_lb_h[batch * batch_size : (batch + 1) * batch_size]
+
+            for b in range(batch_size):
+                x_val_b[b] = np.load(x_val_paths[b])
+                y_val_h_b[b] = np.load(x_val_paths[b])
+
+            loss_val = loss_val + net.test_on_batch(x_val_b , y_val_h_b)
+
+        # validation loss
+        loss_val = loss_val/n_batchs_val
+        #print("%d [Validation loss: %f , Validation acc.: %.2f%%]" %(epoch , loss_val[0 , 0], 100*loss_val[0 , 1]))
+        train_loss = loss_tr[0 , 0]
+        train_acc = loss_tr[0 , 1]
+        val_loss = loss_val[0 , 0]
+        val_acc = loss_val[0 , 1]
+        total_train_loss.append(train_loss)
+        total_train_acc.append(train_acc)
+        total_val_loss.append(val_loss)
+        total_val_acc.append(val_acc)
+        print(f"Epoch: {epoch} \t Training loss: {train_loss :.2f} \t Train acc.: {100*train_acc:.2f}% \t Validation loss: {val_loss :.2f} \t Validation acc.: {100*val_acc:.2f}%")
+        # Early stop
+        # Save the model when loss is minimum
+        # Stop the training if the loss don't decreases after patience epochs
+        if val_loss >= min_loss + delta:
+            cont += 1
+            print(f'EarlyStopping counter: {cont} out of {patience}')
+            if cont >= patience:
+                print("Early Stopping! \t Training Stopped")
+                print("Saving model...")
+                net.save('weights/model_early_stopping.h5')
+                return total_train_loss, total_train_acc, total_val_loss, total_val_acc
+        else:
+            cont = 0
+            #best_score = score
+            min_loss = val_loss
+            print("Saving best model...")
+            net.save('weights/best_model.h5')
+
+    return total_train_loss, total_train_acc, total_val_loss, total_val_acc
+
 if args.gpu_parallel:
     strategy = tf.distribute.MirroredStrategy()
     print(f'Number of devices: {strategy.num_replicas_in_sync}')
@@ -119,46 +213,9 @@ number_class = 5
 patch_size = 256
 stride = patch_size // 8
 batch_size = 1
+epochs = 100
 seed = 42
 
-img_datagen = ImageDataGenerator(validation_split=0.2)
-# Lembrar de ver o class mode
-img_tr_generator = img_datagen.flow_from_directory(
-        train_path,
-        target_size=(patch_size, patch_size),
-        batch_size=batch_size,
-        class_mode=None,
-        subset='training',
-        seed = seed)
-
-img_val_generator = img_datagen.flow_from_directory(
-        train_path,
-        target_size=(patch_size, patch_size),
-        batch_size=batch_size,
-        class_mode=None,
-        subset='validation',
-        seed = seed)
-
-ref_datagen = ImageDataGenerator(validation_split=0.2)
-ref_tr_generator = ref_datagen.flow_from_directory(
-        ref_path,
-        target_size=(patch_size, patch_size),
-        batch_size=batch_size,
-        class_mode='categorical',
-        subset='training',
-        seed = seed)
-
-ref_val_generator = ref_datagen.flow_from_directory(
-        ref_path,
-        target_size=(patch_size, patch_size),
-        batch_size=batch_size,
-        class_mode='categorical',
-        subset='validation',
-        seed = seed)
-
-# Creates generator
-train_generator = zip(img_tr_generator, ref_tr_generator)
-val_generator = zip(img_val_generator, ref_val_generator)
 
 if args.multitasking:
     print('[DEBUG LABELS]')
@@ -256,9 +313,9 @@ else:
 
 filepath = './models/'
 # define early stopping callback
-earlystop = EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=10, verbose=1, mode='min')
-checkpoint = ModelCheckpoint(filepath+'unet_exp_'+str(exp)+'.h5', monitor='val_loss', verbose=1, save_best_only=True, mode='min')
-callbacks_list = [earlystop, checkpoint]
+# earlystop = EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=10, verbose=1, mode='min')
+# checkpoint = ModelCheckpoint(filepath+'unet_exp_'+str(exp)+'.h5', monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+# callbacks_list = [earlystop, checkpoint]
 
 # train the model
 if args.multitasking:
@@ -268,8 +325,11 @@ if args.multitasking:
     end_training = time.time() - start_time
 else:
     start_training = time.time()
-    model_info = model.fit(x=train_generator, epochs=100, callbacks=callbacks_list, verbose=2, validation_data= val_generator)
-    # model.fit_generator(train_generator, epochs=100, callbacks=callbacks_list, verbose=2, validation_data=val_generator, steps_per_epoch=len(patches_tr) // batch_size)
+    x_shape_batch = (batch_size, patch_size, patch_size, 3)
+    y_shape_batch = (batch_size, patch_size, patch_size, 5)
+    Train_model(model, patches_train, patches_tr_lb_h, patches_val, patches_val_lb_h, batch_size, epochs, patience=10, delta=0.001, x_shape_batch=x_shape_batch, y_shape_batch=y_shape_batch)
+    # model_info = model.fit(x=train_generator, epochs=100, callbacks=callbacks_list, verbose=2, validation_data= val_generator)
+
     end_training = time.time() - start_time
 
 #%% Test model

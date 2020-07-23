@@ -231,9 +231,10 @@ print(f'Number of patches expected: {len(patches_tr)*5}')
 for i in range(len(patches_tr)):
     #filename = f'patch_{i}.npy'
     img_aug, label_aug = data_augmentation(patches_tr[i], patches_tr_ref[i])
+    label_aug_h = tf.keras.utils.to_categorical(label_aug, number_class)
     for j in range(len(img_aug)):
         np.save(os.path.join(folder_path, 'train', filename(i*5 + j)), img_aug[j])
-        np.save(os.path.join(folder_path, 'labels', filename(i*5 + j)), label_aug[j])
+        np.save(os.path.join(folder_path, 'labels', filename(i*5 + j)), label_aug_h[j])
 
 
 # # Load images
