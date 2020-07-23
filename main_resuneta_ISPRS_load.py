@@ -141,7 +141,7 @@ def Train_model(net, patches_train, patches_tr_lb_h, patches_val, patches_val_lb
             y_train_paths = patches_tr_lb_h[batch * batch_size : (batch + 1) * batch_size]
             for b in range(batch_size):
                 x_train_b[b] = np.load(x_train_paths[b])
-                y_train_h_b[b] = np.load(x_train_paths[b])
+                y_train_h_b[b] = np.load(y_train_paths[b])
 
             loss_tr = loss_tr + net.train_on_batch(x_train_b , y_train_h_b)
 
@@ -168,7 +168,7 @@ def Train_model(net, patches_train, patches_tr_lb_h, patches_val, patches_val_lb
 
             for b in range(batch_size):
                 x_val_b[b] = np.load(x_val_paths[b])
-                y_val_h_b[b] = np.load(x_val_paths[b])
+                y_val_h_b[b] = np.load(y_val_paths[b])
 
             loss_val = loss_val + net.test_on_batch(x_val_b , y_val_h_b)
 
