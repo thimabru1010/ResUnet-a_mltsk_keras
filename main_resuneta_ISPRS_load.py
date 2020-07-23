@@ -213,8 +213,8 @@ else:
 root_path = './DATASETS/patches_ps=256_stride=32'
 train_path = os.path.join(root_path, 'train')
 ref_path = os.path.join(root_path, 'labels')
-patches_train = os.path.join(train_path, os.listdir(train_path))
-patches_tr_lb_h = os.path.join(ref_path, os.listdir(ref_path))
+patches_train = [os.path.join(train_path,name) for name in os.listdir(train_path)]
+patches_tr_lb_h = [os.path.join(ref_path, name) for name in os.listdir(ref_path)]
 
 patches_train, patches_val, patches_tr_lb_h, patches_val_lb_h = train_test_split(patches_train, patches_tr_lb_h, test_size=0.2, random_state=42)
 
