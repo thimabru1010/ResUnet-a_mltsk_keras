@@ -108,7 +108,11 @@ def compute_metrics_hw(true_labels, predicted_labels):
 
 def Train_model(net, patches_train, patches_tr_lb_h, patches_val, patches_val_lb_h, batch_size, epochs, patience, delta, x_shape_batch, y_shape_batch, seed):
     print('Start training...')
-    print(epochs)
+    print('='*60)
+    print(f'Training on {len(patches_train)} images')
+    print(f'Validating on {len(patches_val)} images')
+    print('='*60)
+    print(f'Epochs: {epochs}')
     best_score = 0
     min_loss = 200
     cont = 0
@@ -209,8 +213,8 @@ else:
 root_path = './DATASETS/patches_ps=256_stride=32'
 train_path = os.path.join(root_path, 'train')
 ref_path = os.path.join(root_path, 'labels')
-patches_train = os.listdir(train_path)
-patches_tr_lb_h = os.listdir(ref_path)
+patches_train = os.path.join(train_path, os.listdir(train_path))
+patches_tr_lb_h = os.path.join(ref_path, os.listdir(ref_path))
 
 patches_train, patches_val, patches_tr_lb_h, patches_val_lb_h = train_test_split(patches_train, patches_tr_lb_h, test_size=0.2, random_state=42)
 
@@ -380,7 +384,6 @@ patches_test_ref = extract_patches_test(binary_img_test_ref, patch_size)
 
 #% Load model
 model = load_model(filepath+'unet_exp_'+str(exp)+'.h5', compile=False)
-area = 11
 # Prediction
 # Test the model
 patches_pred = Test(model, patches_test, args)
