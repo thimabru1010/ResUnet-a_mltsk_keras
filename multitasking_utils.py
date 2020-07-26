@@ -98,6 +98,13 @@ def get_color_labels(patches):
 
 
 def Tanimoto_loss(label,pred):
+    """
+    Implementation of Tanimoto dual loss in tensorflow 2.x
+    -------------------------------------------------------------------------
+    Tanimoto coefficient with dual from: Diakogiannis et al 2019 (https://arxiv.org/abs/1904.00592)
+    Note: to use it in deep learning training use: return 1. - 0.5*(loss1+loss2)
+    OBS: Do use note's advice. Otherwise tanimoto doesn't work
+    """
     Vli = tf.reduce_mean(tf.reduce_sum(label,axis=[1,2]),axis=0)
     #wli =  1.0/Vli**2 # weighting scheme
     wli = tf.math.reciprocal(Vli**2) # weighting scheme
@@ -116,7 +123,6 @@ def Tanimoto_loss(label,pred):
     square_pred=tf.square(pred)
     square_label=tf.square(label)
     add_squared_label_pred = tf.add(square_pred,square_label)
-    # Ver isso aqui
     sum_square=tf.reduce_sum(add_squared_label_pred,axis=[1,2])
     print('sum square')
     print(sum_square.shape)
@@ -125,7 +131,6 @@ def Tanimoto_loss(label,pred):
     sum_product=tf.reduce_sum(product,axis=[1,2])
     print('sum product')
     print(sum_product.shape)
-    # Teria que multiplicar pelo peso wj. Simulando com wj=1
     sum_product_labels = tf.reduce_sum(tf.multiply(wli, sum_product), axis=-1)
     print('sum product labels')
     print(sum_product_labels.shape)
@@ -133,7 +138,6 @@ def Tanimoto_loss(label,pred):
     denomintor=tf.subtract(sum_square,sum_product)
     print('denominator')
     print(denomintor.shape)
-    # Teria que multiplicar pelo peso wj. Simulando com wj=1
     denomintor_sum_labels = tf.reduce_sum(tf.multiply(wli, denomintor), axis=-1)
     print('denominator sum labels')
     print(denomintor_sum_labels.shape)
@@ -142,32 +146,12 @@ def Tanimoto_loss(label,pred):
     print(loss.shape)
     return loss
 
-
-def Tanimoto_loss2(label,pred):
-    # print('[DEBUG LOSS]')
-    # print(label.shape)
-    # print(pred.shape)
-
-    square_pred=tf.square(pred)
-    square_label=tf.square(label)
-    add_squared_label_pred = tf.add(square_pred,square_label)
-    # Ver isso aqui
-    sum_square=tf.reduce_sum(add_squared_label_pred,axis=[0,1])
-
-    product=tf.multiply(pred,label)
-    sum_product=tf.reduce_sum(product,axis=[0,1])
-    # Teria que multiplicar pelo peso wj. Simulando com wj=1
-
-    denomintor=tf.subtract(sum_square,sum_product)
-    loss=tf.divide(sum_product,denomintor)
-    return loss
-
 def Tanimoto_dual_loss():
     def loss(label,pred):
         loss1=Tanimoto_loss(pred,label)
         pred=tf.subtract(1.0,pred)
         label=tf.subtract(1.0,label)
         loss2=Tanimoto_loss(label,pred)
-        loss=(loss1+loss2)/2
-        return loss
+        loss=(loss1+loss2)*0.5
+        return 1.0 - loss
     return loss

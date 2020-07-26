@@ -21,8 +21,6 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 import gc
 import psutil
-
-from CustomDataGenerator import Mygenerator, Mygenerator_multitasking
 import ast
 
 from multitasking_utils import get_boundary_labels, get_distance_labels, get_color_labels
