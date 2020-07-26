@@ -17,13 +17,9 @@ from sklearn.utils import shuffle
 from sklearn.metrics import confusion_matrix, f1_score, precision_score, recall_score, accuracy_score
 from sklearn.model_selection import train_test_split
 
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-
 import gc
 import psutil
 import ast
-
-from multitasking_utils import get_boundary_labels, get_distance_labels, get_color_labels
 
 gpu_devices = tf.config.experimental.list_physical_devices('GPU')
 tf.config.experimental.set_memory_growth(gpu_devices[0], True)
@@ -181,7 +177,7 @@ def Train_model(net, patches_train, patches_tr_lb_h, patches_val, patches_val_lb
         total_train_acc.append(train_acc)
         total_val_loss.append(val_loss)
         total_val_acc.append(val_acc)
-        print(f"Epoch: {epoch} \t Training loss: {train_loss :.2f} \t Train acc.: {100*train_acc:.2f}% \t Validation loss: {val_loss :.2f} \t Validation acc.: {100*val_acc:.2f}%")
+        print(f"Epoch: {epoch} \t Training loss: {train_loss :.5f} \t Train acc.: {100*train_acc:.5f}% \t Validation loss: {val_loss :.5f} \t Validation acc.: {100*val_acc:.5f}%")
         # Early stop
         # Save the model when loss is minimum
         # Stop the training if the loss don't decreases after patience epochs
@@ -250,13 +246,8 @@ if args.multitasking:
 
     val_fit={"segmentation": patches_val_ref_h, "boundary": patches_bound_labels_val, "distance":  patches_dist_labels_val, "color": patches_color_labels_val}
 
-    # Create generator
-    batch_size = 1
-    train_generator = Mygenerator_multitasking(patches_tr, y_fit, batch_size=batch_size)
-    val_generator = Mygenerator_multitasking(patches_val, val_fit, batch_size=batch_size)
 
-    # train_generator = Mygenerator(patches_tr, patches_tr_ref_h, batch_size=batch_size)
-    # val_generator = Mygenerator(patches_val, patches_val_ref_h, batch_size=batch_size)
+
 
 #%%
 start_time = time.time()

@@ -217,153 +217,29 @@ if not os.path.exists(folder_path):
     os.makedirs(folder_path)
     os.makedirs(os.path.join(folder_path, 'train'))
     os.makedirs(os.path.join(folder_path, 'labels'))
+    os.makedirs(os.path.join(folder_path, 'labels/seg'))
+    os.makedirs(os.path.join(folder_path, 'labels/bound'))
+    os.makedirs(os.path.join(folder_path, 'labels/dist'))
+    os.makedirs(os.path.join(folder_path, 'labels/color'))
 
 def filename(i):
     return f'patch_{i}.npy'
 
-# patches_tr = patches[0].tolist()
-# patches_tr_ref = patches[1].tolist()
-
-#del patches
-
 print(f'Number of patches: {len(patches_tr)}')
 print(f'Number of patches expected: {len(patches_tr)*5}')
 for i in range(len(patches_tr)):
-    #filename = f'patch_{i}.npy'
     img_aug, label_aug = data_augmentation(patches_tr[i], patches_tr_ref[i])
     label_aug_h = tf.keras.utils.to_categorical(label_aug, number_class)
+    # All multitasking labels are saved in one-hot
+    # Create labels for boundary
+    patches_bound_labels_h = get_boundary_labels(label_aug_h)
+    # Create labels for distance
+    patches_dist_labels_h = get_distance_labels(label_aug_h)
+    # Create labels for color
+    patches_color_labels_h = get_color_labels(patches_tr)
     for j in range(len(img_aug)):
         np.save(os.path.join(folder_path, 'train', filename(i*5 + j)), img_aug[j])
-        np.save(os.path.join(folder_path, 'labels', filename(i*5 + j)), label_aug_h[j])
-
-
-# # Load images
-#
-# # patches_tr_aug, patches_tr_ref_aug = bal_aug_patches(percent, patch_size, patches_tr, patches_tr_ref)
-# # patches_tr_ref_aug_h = tf.keras.utils.to_categorical(patches_tr_ref_aug, number_class)
-#
-# # Creates one-hot encoding for segmentation
-# patches_tr_ref_h = tf.keras.utils.to_categorical(patches_tr_ref, number_class)
-# print(process.memory_percent())
-# del patches_tr_ref
-# print(process.memory_percent())
-# gc.collect()
-# print('[GC COLLECT]')
-# print(process.memory_percent())
-#
-# #patches_tr_ref_h = patches_tr_ref
-#
-# if args.multitasking:
-#     print('[DEBUG LABELS]')
-#     # Create labels for boundary
-#     patches_bound_labels = get_boundary_labels(patches_tr_ref_h)
-#     print(patches_bound_labels.shape)
-#
-#     # Create labels for distance
-#     patches_dist_labels = get_distance_labels(patches_tr_ref_h)
-#     print(patches_dist_labels.shape)
-#
-#     # Create labels for color
-#     patches_color_labels = get_color_labels(patches_tr)
-#     print(patches_color_labels.shape)
-#
-#     print(patches_tr.shape)
-#
-#     print(patches_tr_ref_h.shape)
-#
-#     # patches_tr , patches_tr_ref_h = shuffle(patches_tr , patches_tr_ref_h , random_state = 42)
-#
-#     patches_tr, patches_val, patches_tr_ref_h, patches_val_ref_h, patches_bound_labels_tr, patches_bound_labels_val, patches_dist_labels_tr, patches_dist_labels_val, patches_color_labels_tr, patches_color_labels_val   = train_test_split(patches_tr, patches_tr_ref_h, patches_bound_labels, patches_dist_labels, patches_color_labels,  test_size=0.2, random_state=42)
-#
-#     y_fit={"segmentation": patches_tr_ref_h, "boundary": patches_bound_labels_tr, "distance":  patches_dist_labels_tr, "color": patches_color_labels_tr}
-#
-#     val_fit={"segmentation": patches_val_ref_h, "boundary": patches_bound_labels_val, "distance":  patches_dist_labels_val, "color": patches_color_labels_val}
-#
-#     # Create generator
-#     batch_size = 1
-#     train_generator = Mygenerator_multitasking(patches_tr, y_fit, batch_size=batch_size)
-#     val_generator = Mygenerator_multitasking(patches_val, val_fit, batch_size=batch_size)
-# else:
-#     patches_tr, patches_val, patches_tr_ref_h, patches_val_ref_h = train_test_split(patches_tr, patches_tr_ref_h, test_size=0.2, random_state=42)
-#     print(patches_tr.shape, patches_val.shape)
-#     print(patches_tr_ref_h.shape, patches_val_ref_h.shape)
-#
-#     # Create generator
-#     batch_size = 4
-#     train_generator = Mygenerator(patches_tr, patches_tr_ref_h, batch_size=batch_size)
-#     val_generator = Mygenerator(patches_val, patches_val_ref_h, batch_size=batch_size)
-#
-# print('[CHECKING MEMORY]')
-# print(process.memory_percent())
-#
-# print('='*40)
-# print(f'Total training images: {len(patches_tr)*5}')
-# print(f'Total validation images: {len(patches_val)*5}')
-# print('='*40)
-# del patches_tr, patches_tr_ref_h, patches_val, patches_val_ref_h
-#
-# print(process.memory_percent())
-# gc.collect()
-# print('[GC COLLECT]')
-# print(process.memory_percent())
-
-
-#
-# #%%
-# start_time = time.time()
-# exp = 1
-# rows = patch_size
-# cols = patch_size
-# channels = 3
-# adam = Adam(lr = 0.001 , beta_1=0.9)
-# sgd = SGD(lr=0.001,momentum=0.8)
-#
-#
-# weights = [  4.34558461   ,2.97682037   ,3.92124661   ,5.67350328 ,374.0300152 ]
-# print('='*60)
-# print(weights)
-# loss = weighted_categorical_crossentropy(weights)
-# if args.multitasking:
-#     weighted_cross_entropy = weighted_categorical_crossentropy(weights)
-#     cross_entropy = "categorical_crossentropy"
-#     tanimoto = Tanimoto_dual_loss()
-#
-# if args.resunet_a == True:
-#
-#     if args.multitasking:
-#         print('Multitasking enabled!')
-#         resuneta = Resunet_a2((rows, cols, channels), number_class, args)
-#         model = resuneta.model
-#         model.summary()
-#         # losses = {
-#         # 	"segmentation": weighted_cross_entropy,
-#         # 	"boundary": weighted_cross_entropy,
-#         #     "distance": weighted_cross_entropy,
-#         #     "color": cross_entropy,
-#         # }
-#         losses = {
-#         	"segmentation": tanimoto,
-#         	"boundary": tanimoto,
-#             "distance": tanimoto,
-#             "color": tanimoto,
-#         }
-#         lossWeights = {"segmentation": 1.0, "boundary": 1.0, "distance": 1.0,
-#         "color": 1.0}
-#         if args.gpu_parallel:
-#             with strategy.scope():
-#                 model.compile(optimizer=adam, loss=losses, loss_weights=lossWeights, metrics=['accuracy'])
-#         else:
-#             model.compile(optimizer=adam, loss=losses, loss_weights=lossWeights, metrics=['accuracy'])
-#     else:
-#         resuneta = Resunet_a2((rows, cols, channels), number_class, args)
-#         model = resuneta.model
-#         model.summary()
-#         model.compile(optimizer=adam, loss=loss, metrics=['accuracy'])
-#
-#     print('ResUnet-a compiled!')
-# else:
-#     model = unet((rows, cols, channels), number_class)
-#     model.summary()
-#
-#     model.compile(optimizer=adam, loss=loss, metrics=['accuracy'])
-#     #model.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['accuracy'])
+        np.save(os.path.join(folder_path, 'labels/seg', filename(i*5 + j)), label_aug_h[j])
+        np.save(os.path.join(folder_path, 'labels/bound', filename(i*5 + j)), patches_bound_labels_h[j])
+        np.save(os.path.join(folder_path, 'labels/dist', filename(i*5 + j)), patches_dist_labels_h[j])
+        np.save(os.path.join(folder_path, 'labels/color', filename(i*5 + j)), patches_color_labels_h[j])
