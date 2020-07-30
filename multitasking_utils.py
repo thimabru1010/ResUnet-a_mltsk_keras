@@ -99,11 +99,9 @@ def get_color_labels(patches):
 
 def Tanimoto_loss(label,pred):
     """
-    Implementation of Tanimoto dual loss in tensorflow 2.x
+    Implementation of Tanimoto loss in tensorflow 2.x
     -------------------------------------------------------------------------
     Tanimoto coefficient with dual from: Diakogiannis et al 2019 (https://arxiv.org/abs/1904.00592)
-    Note: to use it in deep learning training use: return 1. - 0.5*(loss1+loss2)
-    OBS: Do use note's advice. Otherwise tanimoto doesn't work
     """
     smooth = 1e-5
 
@@ -150,6 +148,12 @@ def Tanimoto_loss(label,pred):
     return loss
 
 def Tanimoto_dual_loss():
+    '''
+        Implementation of Tanimoto dual loss in tensorflow 2.x
+        ------------------------------------------------------------------------
+            Note: to use it in deep learning training use: return 1. - 0.5*(loss1+loss2)
+            OBS: Do use note's advice. Otherwise tanimoto doesn't work
+    '''
     def loss(label,pred):
         loss1=Tanimoto_loss(pred,label)
         pred=tf.subtract(1.0,pred)
