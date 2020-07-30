@@ -100,15 +100,16 @@ def compute_metrics_hw(true_labels, predicted_labels):
     precision = 100*precision_score(true_labels, predicted_labels, average=None)
     return accuracy, f1score, recall, precision
 
-def Train_model(net, patches_train, patches_tr_lb_h, patches_val, patches_val_lb_h, batch_size, epochs, patience, delta, x_shape_batch, y_shape_batch, seed):
+def Train_model(net, patches_train, y_paths, patches_val, val_paths, batch_size, epochs, patience, delta, x_shape_batch, y_shape_batch, seed, args):
     print('Start training...')
     print('='*60)
     print(f'Training on {len(patches_train)} images')
     print(f'Validating on {len(patches_val)} images')
     print('='*60)
-    print(f'Epochs: {epochs}')
+    print(f'Total Epochs: {epochs}')
     best_score = 0
-    min_loss = 200
+    # Initialize as maximum possible number
+    min_loss = float('inf')
     cont = 0
     total_train_loss = []
     total_train_acc = []
@@ -118,6 +119,16 @@ def Train_model(net, patches_train, patches_tr_lb_h, patches_val, patches_val_lb
     y_train_h_b = np.zeros(y_shape_batch)
     x_val_b = np.zeros(x_shape_batch)
     y_val_h_b = np.zeros(y_shape_batch)
+    if args.multitasking:
+        # Bounds
+        y_train_bound_h_b = np.zeros(y_shape_batch)
+        y_val_bound_h_b = np.zeros(y_shape_batch)
+        # Dists
+        y_train_dist_h_b = np.zeros(y_shape_batch)
+        y_val_dist_h_b = np.zeros(y_shape_batch)
+        # Colors
+        y_train_color_h_b = np.zeros(y_shape_batch)
+        y_val_color_h_b = np.zeros(y_shape_batch)
     for epoch in range(epochs):
         loss_tr = np.zeros((1 , 2))
         loss_val = np.zeros((1 , 2))
@@ -125,13 +136,16 @@ def Train_model(net, patches_train, patches_tr_lb_h, patches_val, patches_val_lb
         #n_batchs_tr = patches_train.shape[0]//batch_size
         n_batchs_tr = len(patches_train)//batch_size
         # Random shuffle the data
-        patches_train , patches_tr_lb_h = shuffle(patches_train , patches_tr_lb_h , random_state = seed)
+        # Talvez de problema aqui e tenha q separar em cada chave do dicionario
+        patches_train , patches_tr_lb_h = shuffle(patches_train , y_paths, random_state = seed)
+
+        print('='*30 + ' PAROU AQUI ' + '='*30)
+        break
+
 
         # Training the network per batch
         for  batch in range(n_batchs_tr):
-            # x_train_b = patches_train[batch * batch_size : (batch + 1) * batch_size , : , : , :]
             x_train_paths = patches_train[batch * batch_size : (batch + 1) * batch_size]
-            # y_train_h_b = patches_tr_lb_h[batch * batch_size : (batch + 1) * batch_size , :, :, :]
             y_train_paths = patches_tr_lb_h[batch * batch_size : (batch + 1) * batch_size]
             for b in range(batch_size):
                 x_train_b[b] = np.load(x_train_paths[b])
@@ -206,11 +220,24 @@ else:
 
 root_path = './DATASETS/patches_ps=256_stride=32'
 train_path = os.path.join(root_path, 'train')
-ref_path = os.path.join(root_path, 'labels')
 patches_train = [os.path.join(train_path,name) for name in os.listdir(train_path)]
-patches_tr_lb_h = [os.path.join(ref_path, name) for name in os.listdir(ref_path)]
 
-patches_train, patches_val, patches_tr_lb_h, patches_val_lb_h = train_test_split(patches_train, patches_tr_lb_h, test_size=0.2, random_state=42)
+ref_path = os.path.join(root_path, 'labels/seg')
+patches_tr_lb_h = [os.path.join(ref_path, name) for name in os.listdir(ref_path)]
+if args.multitasking:
+    ref_bound_path = os.path.join(root_path, 'labels/bound')
+    patches_bound_labels = [os.path.join(ref_bound_path, name) for name in os.listdir(ref_bound_path)]
+
+    ref_dist_path = os.path.join(root_path, 'labels/dist')
+    patches_dist_labels = [os.path.join(ref_dist_path, name) for name in os.listdir(ref_dist_path)]
+
+    ref_color_path = os.path.join(root_path, 'labels/color')
+    patches_color_labels = [os.path.join(ref_color_path, name) for name in os.listdir(ref_color_path)]
+
+if args.multitasking:
+    patches_tr, patches_val, patches_tr_ref_h, patches_val_ref_h, patches_bound_labels_tr, patches_bound_labels_val, patches_dist_labels_tr, patches_dist_labels_val, patches_color_labels_tr, patches_color_labels_val   = train_test_split(patches_tr, patches_tr_ref_h, patches_bound_labels, patches_dist_labels, patches_color_labels,  test_size=0.2, random_state=42)
+else:
+    patches_train, patches_val, patches_tr_lb_h, patches_val_lb_h = train_test_split(patches_train, patches_tr_lb_h, test_size=0.2, random_state=42)
 
 number_class = 5
 patch_size = 256
@@ -221,36 +248,16 @@ seed = 42
 
 
 if args.multitasking:
-    print('[DEBUG LABELS]')
-    # Create labels for boundary
-    patches_bound_labels = get_boundary_labels(patches_tr_ref_h)
-    print(patches_bound_labels.shape)
+    y_paths={"segmentation": patches_tr_ref_h, "boundary": patches_bound_labels_tr, "distance":  patches_dist_labels_tr, "color": patches_color_labels_tr}
 
-    # Create labels for distance
-    patches_dist_labels = get_distance_labels(patches_tr_ref_h)
-    print(patches_dist_labels.shape)
+    val_paths={"segmentation": patches_val_ref_h, "boundary": patches_bound_labels_val, "distance":  patches_dist_labels_val, "color": patches_color_labels_val}
+else:
+    y_paths={"segmentation": patches_tr_ref_h, "boundary": [], "distance":  [], "color": []}
 
-    # Create labels for color
-    patches_color_labels = get_color_labels(patches_tr)
-    print(patches_color_labels.shape)
-
-    print(patches_tr.shape)
-
-    print(patches_tr_ref_h.shape)
-
-    # patches_tr , patches_tr_ref_h = shuffle(patches_tr , patches_tr_ref_h , random_state = 42)
-
-    patches_tr, patches_val, patches_tr_ref_h, patches_val_ref_h, patches_bound_labels_tr, patches_bound_labels_val, patches_dist_labels_tr, patches_dist_labels_val, patches_color_labels_tr, patches_color_labels_val   = train_test_split(patches_tr, patches_tr_ref_h, patches_bound_labels, patches_dist_labels, patches_color_labels,  test_size=0.2, random_state=42)
-
-    y_fit={"segmentation": patches_tr_ref_h, "boundary": patches_bound_labels_tr, "distance":  patches_dist_labels_tr, "color": patches_color_labels_tr}
-
-    val_fit={"segmentation": patches_val_ref_h, "boundary": patches_bound_labels_val, "distance":  patches_dist_labels_val, "color": patches_color_labels_val}
+    val_paths={"segmentation": patches_val_ref_h, "boundary": [], "distance":  [], "color": []}
 
 
 
-
-#%%
-start_time = time.time()
 exp = 1
 rows = patch_size
 cols = patch_size
@@ -330,6 +337,7 @@ else:
     # model_info = model.fit(x=train_generator, epochs=100, callbacks=callbacks_list, verbose=2, validation_data= val_generator)
 
     end_training = time.time() - start_time
+    print(f'\n Training took: {end_training} \n')
 
 #%% Test model
 
