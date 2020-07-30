@@ -100,7 +100,7 @@ def compute_metrics_hw(true_labels, predicted_labels):
     precision = 100*precision_score(true_labels, predicted_labels, average=None)
     return accuracy, f1score, recall, precision
 
-def Train_model(net, patches_train, y_paths, patches_val, val_paths, batch_size, epochs, patience, delta, x_shape_batch, y_shape_batch, seed, args):
+def Train_model(args, net, patches_train, y_paths, patches_val, val_paths, batch_size, epochs, patience, delta, x_shape_batch, y_shape_batch, seed):
     print('Start training...')
     print('='*60)
     print(f'Training on {len(patches_train)} images')
@@ -333,7 +333,7 @@ else:
     x_shape_batch = (batch_size, patch_size, patch_size, 3)
     y_shape_batch = (batch_size, patch_size, patch_size, 5)
 
-    Train_model(model, patches_train, patches_tr_lb_h, patches_val, patches_val_lb_h, batch_size, epochs, patience=10, delta=0.001, x_shape_batch=x_shape_batch, y_shape_batch=y_shape_batch, seed=seed, args)
+    Train_model(args, model, patches_train, patches_tr_lb_h, patches_val, patches_val_lb_h, batch_size, epochs, patience=10, delta=0.001, x_shape_batch=x_shape_batch, y_shape_batch=y_shape_batch, seed=seed)
     # model_info = model.fit(x=train_generator, epochs=100, callbacks=callbacks_list, verbose=2, validation_data= val_generator)
 
     end_training = time.time() - start_time
