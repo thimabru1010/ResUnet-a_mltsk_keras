@@ -324,20 +324,20 @@ filepath = './models/'
 
 # train the model
 if args.multitasking:
-    start_training = time.time()
+    start_time = time.time()
     # model_info = model.fit(x=patches_tr, y=y_fit, batch_size=batch_size, epochs=100, callbacks=callbacks_list, verbose=2, validation_data= (patches_val, val_fit) )
     model_info = model.fit(x=train_generator, epochs=100, callbacks=callbacks_list, verbose=2, validation_data=val_generator )
-    end_training = time.time() - start_time
+    end_time = time.time() - start_time
 else:
-    start_training = time.time()
     x_shape_batch = (batch_size, patch_size, patch_size, 3)
     y_shape_batch = (batch_size, patch_size, patch_size, 5)
 
-    Train_model(args, model, patches_train, patches_tr_lb_h, patches_val, patches_val_lb_h, batch_size, epochs, patience=10, delta=0.001, x_shape_batch=x_shape_batch, y_shape_batch=y_shape_batch, seed=seed)
-    # model_info = model.fit(x=train_generator, epochs=100, callbacks=callbacks_list, verbose=2, validation_data= val_generator)
+    start_time = time.time()
 
-    end_training = time.time() - start_time
-    print(f'\n Training took: {end_training} \n')
+    Train_model(args, model, patches_train, patches_tr_lb_h, patches_val, patches_val_lb_h, batch_size, epochs, patience=10, delta=0.001, x_shape_batch=x_shape_batch, y_shape_batch=y_shape_batch, seed=seed)
+    
+    end_time = time.time() - start_time
+    print(f'\n Training took: {end_time} \n')
 
 #%% Test model
 
