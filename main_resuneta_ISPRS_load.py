@@ -137,11 +137,13 @@ def Train_model(args, net, patches_train, y_paths, patches_val, val_paths, batch
         n_batchs_tr = len(patches_train)//batch_size
         # Random shuffle the data
         # Talvez de problema aqui e tenha q separar em cada chave do dicionario
+        print(patches_train.shape)
+        print(type(y_paths))
         patches_train , patches_tr_lb_h = shuffle(patches_train , y_paths, random_state = seed)
         print(type(patches_train))
         print(type(patches_tr_lb_h))
-        print(patches_train.shape)
-        print(patches_tr_lb_h.shape)
+        print(len(patches_train))
+        print(len(patches_tr_lb_h))
 
         print('='*30 + ' PAROU AQUI ' + '='*30)
         break
