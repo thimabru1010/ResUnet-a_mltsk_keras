@@ -137,7 +137,7 @@ def Train_model(args, net, patches_train, y_paths, patches_val, val_paths, batch
         n_batchs_tr = len(patches_train)//batch_size
         # Random shuffle the data
         if not args.multitasking:
-            patches_train , patches_seg_lb_h = shuffle(patches_train , y_paths[0], random_state = seed)
+            patches_train , patches_seg_lb_h = shuffle(patches_train, y_paths[0], random_state = seed)
         else:
             patches_train , patches_seg_lb_h, patches_bound_labels_tr_h, patches_dist_labels_tr_h, patches_color_labels_tr_h  = shuffle(patches_train , y_paths[0], y_paths[1], y_paths[2], y_paths[3], random_state = seed)
 
@@ -285,10 +285,10 @@ if args.multitasking:
     val_paths=[patches_val_lb_h, patches_bound_labels_val, patches_dist_labels_val, patches_color_labels_val]
 else:
     # y_paths={"segmentation": patches_tr_lb_h, "boundary": [], "distance":  [], "color": []}
-    y_paths = patches_tr_lb_h
+    y_paths = [patches_tr_lb_h]
 
     # val_paths={"segmentation": patches_val_lb_h, "boundary": [], "distance":  [], "color": []}
-    val_paths = patches_val_lb_h
+    val_paths = [patches_val_lb_h]
 
 
 
