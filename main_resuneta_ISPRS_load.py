@@ -116,19 +116,19 @@ def Train_model(args, net, patches_train, y_paths, patches_val, val_paths, batch
     total_val_loss = []
     total_val_acc =[]
     x_train_b = np.zeros(x_shape_batch)
-    y_train_h_b = np.zeros(y_shape_batch)
+    y_train_h_b_seg = np.zeros(y_shape_batch)
     x_val_b = np.zeros(x_shape_batch)
-    y_val_h_b = np.zeros(y_shape_batch)
+    y_val_h_b_seg = np.zeros(y_shape_batch)
     if args.multitasking:
         # Bounds
-        y_train_bound_h_b = np.zeros(y_shape_batch)
-        y_val_bound_h_b = np.zeros(y_shape_batch)
+        y_train_h_b_bound = np.zeros(y_shape_batch)
+        y_val_h_b_bound = np.zeros(y_shape_batch)
         # Dists
-        y_train_dist_h_b = np.zeros(y_shape_batch)
-        y_val_dist_h_b = np.zeros(y_shape_batch)
+        y_train_h_b_dist = np.zeros(y_shape_batch)
+        y_val_h_b_dist = np.zeros(y_shape_batch)
         # Colors
-        y_train_color_h_b = np.zeros(y_shape_batch)
-        y_val_color_h_b = np.zeros(y_shape_batch)
+        y_train_h_b_color = np.zeros(y_shape_batch)
+        y_val_h_b_color = np.zeros(y_shape_batch)
     for epoch in range(epochs):
         loss_tr = np.zeros((1 , 2))
         loss_val = np.zeros((1 , 2))
