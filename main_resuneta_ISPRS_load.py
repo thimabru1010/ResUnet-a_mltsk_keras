@@ -136,32 +136,41 @@ def Train_model(args, net, patches_train, y_paths, patches_val, val_paths, batch
         #n_batchs_tr = patches_train.shape[0]//batch_size
         n_batchs_tr = len(patches_train)//batch_size
         # Random shuffle the data
-        # Talvez de problema aqui e tenha q separar em cada chave do dicionario
-        print(len(patches_train))
-        print(type(y_paths))
-        patches_train , patches_tr_lb_h = shuffle(patches_train , y_paths, random_state = seed)
-        print(type(patches_train))
-        print(type(patches_tr_lb_h))
-        print(len(patches_train))
-        print(len(patches_tr_lb_h))
+        if not args.multitasking:
+            patches_train , patches_seg_lb_h = shuffle(patches_train , y_paths[0], random_state = seed)
+        else:
+            patches_train , patches_seg_lb_h, patches_bound_labels_tr_h, patches_dist_labels_tr_h, patches_color_labels_tr_h  = shuffle(patches_train , y_paths[0], y_paths[1], y_paths[2], y_paths[3], random_state = seed)
 
         print('='*30 + ' PAROU AQUI ' + '='*30)
-        break
 
 
         # Training the network per batch
         for  batch in range(n_batchs_tr):
             x_train_paths = patches_train[batch * batch_size : (batch + 1) * batch_size]
-            y_train_paths = patches_tr_lb_h[batch * batch_size : (batch + 1) * batch_size]
+            y_train_paths_seg = patches_seg_lb_h[batch * batch_size : (batch + 1) * batch_size]
+            if args.multitasking:
+                y_train_paths_bound = patches_bound_labels_tr_h[batch * batch_size : (batch + 1) * batch_size]
+
+                y_train_paths_dist = patches_dist_labels_tr_h[batch * batch_size : (batch + 1) * batch_size]
+
+                y_train_paths_color = patches_color_labels_tr_h[batch * batch_size : (batch + 1) * batch_size]
             for b in range(batch_size):
                 x_train_b[b] = np.load(x_train_paths[b])
-                y_train_h_b[b] = np.load(y_train_paths[b])
+                y_train_h_b_seg[b] = np.load(y_train_paths_seg[b])
+                if args.multitasking:
+                    y_train_h_b_bound[b] = np.load(y_train_paths_bound[b])
+                    y_train_h_b_dist[b] = np.load(y_train_paths_dist[b])
+                    y_train_h_b_color[b] = np.load(y_train_paths_color[b])
 
-            loss_tr = loss_tr + net.train_on_batch(x_train_b , y_train_h_b)
+            if not args.multitasking:
+                loss_tr = loss_tr + net.train_on_batch(x_train_b, y_train_h_b_seg)
+            else:
+                loss_tr = loss_tr + net.train_on_batch(x_train_b, y_train_h_b_seg, y_train_h_b_bound, y_train_h_b_dist, y_train_h_b_color)
+                print('='*30 + ' [CHECKING LOSS] ' + '='*30)
+                print(loss_tr.shape)
 
         # Training loss
         loss_tr = loss_tr/n_batchs_tr
-        #print("%d [Training loss: %f , Train acc.: %.2f%%]" %(epoch , loss_tr[0 , 0], 100*loss_tr[0 , 1]))
 
         # Computing the number of batchs on validation
         #n_batchs_val = patches_val.shape[0]//batch_size
@@ -176,13 +185,21 @@ def Train_model(args, net, patches_train, y_paths, patches_val, val_paths, batch
 
         # Evaluating the model in the validation set
         for  batch in range(n_batchs_val):
-            # x_val_b = patches_val[batch * batch_size : (batch + 1) * batch_size , : , : , :]
             x_val_paths = patches_val[batch * batch_size : (batch + 1) * batch_size]
-            y_val_paths = patches_val_lb_h[batch * batch_size : (batch + 1) * batch_size]
+            y_val_paths_seg = val_paths[0][batch * batch_size : (batch + 1) * batch_size]
+            if args.multitasking:
+                y_val_paths_bound = val_paths[1][batch * batch_size : (batch + 1) * batch_size]
 
+                y_val_paths_dist = val_paths[2][batch * batch_size : (batch + 1) * batch_size]
+
+                y_val_paths_color = val_paths[3][batch * batch_size : (batch + 1) * batch_size]
             for b in range(batch_size):
                 x_val_b[b] = np.load(x_val_paths[b])
-                y_val_h_b[b] = np.load(y_val_paths[b])
+                y_val_h_b_seg[b] = np.load(y_val_paths_seg[b])
+                if args.multitasking:
+                    y_val_h_b_bound[b] = np.load(y_val_paths_bound[b])
+                    y_val_h_b_dist[b] = np.load(y_val_paths_dist[b])
+                    y_val_h_b_color[b] = np.load(y_val_paths_color[b])
 
             loss_val = loss_val + net.test_on_batch(x_val_b , y_val_h_b)
 
@@ -254,9 +271,18 @@ seed = 42
 
 
 if args.multitasking:
-    y_paths={"segmentation": patches_tr_lb_h, "boundary": patches_bound_labels_tr, "distance":  patches_dist_labels_tr, "color": patches_color_labels_tr}
+    # y_paths={"segmentation": patches_tr_lb_h, "boundary": patches_bound_labels_tr, "distance":  patches_dist_labels_tr, "color": patches_color_labels_tr}
+    '''
+        index maps:
+            0 --> segmentation
+            1 --> boundary
+            2 --> distance
+            3 --> color
+    '''
+    y_paths=[patches_tr_lb_h, patches_bound_labels_tr, patches_dist_labels_tr, patches_color_labels_tr]
 
-    val_paths={"segmentation": patches_val_lb_h, "boundary": patches_bound_labels_val, "distance":  patches_dist_labels_val, "color": patches_color_labels_val}
+    # val_paths={"segmentation": patches_val_lb_h, "boundary": patches_bound_labels_val, "distance":  patches_dist_labels_val, "color": patches_color_labels_val}
+    val_paths=[patches_val_lb_h, patches_bound_labels_val, patches_dist_labels_val, patches_color_labels_val]
 else:
     # y_paths={"segmentation": patches_tr_lb_h, "boundary": [], "distance":  [], "color": []}
     y_paths = patches_tr_lb_h
@@ -325,10 +351,6 @@ else:
 
 
 filepath = './models/'
-# define early stopping callback
-# earlystop = EarlyStopping(monitor='val_loss', min_delta=0.0001, patience=10, verbose=1, mode='min')
-# checkpoint = ModelCheckpoint(filepath+'unet_exp_'+str(exp)+'.h5', monitor='val_loss', verbose=1, save_best_only=True, mode='min')
-# callbacks_list = [earlystop, checkpoint]
 
 # train the model
 if args.multitasking:
