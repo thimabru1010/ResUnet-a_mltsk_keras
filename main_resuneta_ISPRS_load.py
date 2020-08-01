@@ -141,9 +141,6 @@ def Train_model(args, net, patches_train, y_paths, patches_val, val_paths, batch
         else:
             patches_train , patches_seg_lb_h, patches_bound_labels_tr_h, patches_dist_labels_tr_h, patches_color_labels_tr_h  = shuffle(patches_train , y_paths[0], y_paths[1], y_paths[2], y_paths[3], random_state = seed)
 
-        print('='*30 + ' PAROU AQUI ' + '='*30)
-
-
         # Training the network per batch
         for  batch in range(n_batchs_tr):
             x_train_paths = patches_train[batch * batch_size : (batch + 1) * batch_size]
@@ -165,9 +162,14 @@ def Train_model(args, net, patches_train, y_paths, patches_val, val_paths, batch
             if not args.multitasking:
                 loss_tr = loss_tr + net.train_on_batch(x_train_b, y_train_h_b_seg)
             else:
-                loss_tr = loss_tr + net.train_on_batch(x_train_b, y_train_h_b_seg, y_train_h_b_bound, y_train_h_b_dist, y_train_h_b_color)
-                print('='*30 + ' [CHECKING LOSS] ' + '='*30)
-                print(loss_tr.shape)
+                y_train_b = {"segmentation": y_train_h_b_seg, "boundary": y_train_h_b_bound, "distance":  y_train_h_b_dist, "color": y_train_h_b_color}
+
+                loss_tr = loss_tr + net.train_on_batch(x=x_train_b, y=y_train_b)
+
+            print('='*30 + ' [CHECKING LOSS] ' + '='*30)
+            print(type(loss_tr))
+            print(len(loss_tr))
+            print(loss_tr)
 
         # Training loss
         loss_tr = loss_tr/n_batchs_tr
@@ -201,7 +203,12 @@ def Train_model(args, net, patches_train, y_paths, patches_val, val_paths, batch
                     y_val_h_b_dist[b] = np.load(y_val_paths_dist[b])
                     y_val_h_b_color[b] = np.load(y_val_paths_color[b])
 
-            loss_val = loss_val + net.test_on_batch(x_val_b , y_val_h_b)
+            if not args.multitasking:
+                loss_val = loss_val + net.test_on_batch(x_val_b , y_val_h_b_seg)
+            else:
+                y_val_b = {"segmentation": y_val_h_b_seg, "boundary": y_val_h_b_bound, "distance":  y_val_h_b_dist, "color": y_val_h_b_color}
+
+                loss_val = loss_val + net.test_on_batch(x=x_val_b, y=y_val_b)
 
         # validation loss
         loss_val = loss_val/n_batchs_val
