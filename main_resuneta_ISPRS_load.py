@@ -258,9 +258,11 @@ if args.multitasking:
 
     val_paths={"segmentation": patches_val_lb_h, "boundary": patches_bound_labels_val, "distance":  patches_dist_labels_val, "color": patches_color_labels_val}
 else:
-    y_paths={"segmentation": patches_tr_lb_h, "boundary": [], "distance":  [], "color": []}
+    # y_paths={"segmentation": patches_tr_lb_h, "boundary": [], "distance":  [], "color": []}
+    y_paths = patches_tr_lb_h
 
-    val_paths={"segmentation": patches_val_lb_h, "boundary": [], "distance":  [], "color": []}
+    # val_paths={"segmentation": patches_val_lb_h, "boundary": [], "distance":  [], "color": []}
+    val_paths = patches_val_lb_h
 
 
 
