@@ -256,6 +256,7 @@ ref_path = os.path.join(root_path, 'labels/seg')
 patches_tr_lb_h = [os.path.join(ref_path, name) for name in os.listdir(ref_path)]
 if args.multitasking:
     ref_bound_path = os.path.join(root_path, 'labels/bound')
+    print(ref_bound_path)
     patches_bound_labels = [os.path.join(ref_bound_path, name) for name in os.listdir(ref_bound_path)]
 
     ref_dist_path = os.path.join(root_path, 'labels/dist')
