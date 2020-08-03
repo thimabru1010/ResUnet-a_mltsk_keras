@@ -250,7 +250,7 @@ else:
 
 root_path = './DATASETS/patches_ps=256_stride=32'
 train_path = os.path.join(root_path, 'train')
-patches_train = [os.path.join(train_path,name) for name in os.listdir(train_path)]
+patches_tr = [os.path.join(train_path,name) for name in os.listdir(train_path)]
 
 ref_path = os.path.join(root_path, 'labels/seg')
 patches_tr_lb_h = [os.path.join(ref_path, name) for name in os.listdir(ref_path)]
@@ -266,9 +266,9 @@ if args.multitasking:
     patches_color_labels = [os.path.join(ref_color_path, name) for name in os.listdir(ref_color_path)]
 
 if args.multitasking:
-    patches_tr, patches_val, patches_tr_ref_h, patches_val_ref_h, patches_bound_labels_tr, patches_bound_labels_val, patches_dist_labels_tr, patches_dist_labels_val, patches_color_labels_tr, patches_color_labels_val   = train_test_split(patches_tr, patches_tr_ref_h, patches_bound_labels, patches_dist_labels, patches_color_labels,  test_size=0.2, random_state=42)
+    patches_tr, patches_val, patches_tr_lb_h, patches_val_lb_h, patches_bound_labels_tr, patches_bound_labels_val, patches_dist_labels_tr, patches_dist_labels_val, patches_color_labels_tr, patches_color_labels_val   = train_test_split(patches_tr, patches_tr_lb_h, patches_bound_labels, patches_dist_labels, patches_color_labels,  test_size=0.2, random_state=42)
 else:
-    patches_train, patches_val, patches_tr_lb_h, patches_val_lb_h = train_test_split(patches_train, patches_tr_lb_h, test_size=0.2, random_state=42)
+    patches_tr, patches_val, patches_tr_lb_h, patches_val_lb_h = train_test_split(patches_tr, patches_tr_lb_h, test_size=0.2, random_state=42)
 
 number_class = 5
 patch_size = 256
@@ -362,9 +362,10 @@ filepath = './models/'
 
 # train the model
 if args.multitasking:
+    x_shape_batch = (batch_size, patch_size, patch_size, 3)
+    y_shape_batch = (batch_size, patch_size, patch_size, 5)
     start_time = time.time()
-    # model_info = model.fit(x=patches_tr, y=y_fit, batch_size=batch_size, epochs=100, callbacks=callbacks_list, verbose=2, validation_data= (patches_val, val_fit) )
-    model_info = model.fit(x=train_generator, epochs=100, callbacks=callbacks_list, verbose=2, validation_data=val_generator )
+    Train_model(args, model, patches_train, y_paths, patches_val, val_paths, batch_size, epochs, patience=10, delta=0.001, x_shape_batch=x_shape_batch, y_shape_batch=y_shape_batch, seed=seed)
     end_time = time.time() - start_time
 else:
     x_shape_batch = (batch_size, patch_size, patch_size, 3)
