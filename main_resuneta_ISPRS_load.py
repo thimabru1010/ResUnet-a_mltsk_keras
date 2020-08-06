@@ -127,8 +127,8 @@ def Train_model(args, net, patches_train, y_paths, patches_val, val_paths, batch
         y_train_h_b_dist = np.zeros(y_shape_batch)
         y_val_h_b_dist = np.zeros(y_shape_batch)
         # Colors
-        y_train_h_b_color = np.zeros(y_shape_batch)
-        y_val_h_b_color = np.zeros(y_shape_batch)
+        y_train_h_b_color = np.zeros((y_shape_batch[0], y_shape_batch[1], 3))
+        y_val_h_b_color = np.zeros((y_shape_batch[0], y_shape_batch[1], 3))
     for epoch in range(epochs):
         loss_tr = np.zeros((1 , 2))
         loss_val = np.zeros((1 , 2))
