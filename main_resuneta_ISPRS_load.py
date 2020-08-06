@@ -131,8 +131,12 @@ def Train_model(args, net, patches_train, y_paths, patches_val, val_paths, batch
         y_train_h_b_color = np.zeros((y_shape_batch[0], y_shape_batch[1], y_shape_batch[2], 3))
         y_val_h_b_color = np.zeros((y_shape_batch[0], y_shape_batch[1], y_shape_batch[2], 3))
     for epoch in range(epochs):
-        loss_tr = np.zeros((1 , 2))
-        loss_val = np.zeros((1 , 2))
+        if not args.multitasking:
+            loss_tr = np.zeros((1 , 2))
+            loss_val = np.zeros((1 , 2))
+        else:
+            loss_tr = np.zeros((1 , 9))
+            loss_val = np.zeros((1 , 9))
         # Computing the number of batchs on training
         #n_batchs_tr = patches_train.shape[0]//batch_size
         n_batchs_tr = len(patches_train)//batch_size
@@ -171,6 +175,7 @@ def Train_model(args, net, patches_train, y_paths, patches_val, val_paths, batch
             print(type(loss_tr))
             print(len(loss_tr))
             print(loss_tr)
+            print(loss_tr.shape)
 
         # Training loss
         loss_tr = loss_tr/n_batchs_tr
