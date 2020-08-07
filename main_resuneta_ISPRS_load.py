@@ -263,11 +263,27 @@ def Train_model(args, net, patches_train, y_paths, patches_val, val_paths, batch
             val_acc = (val_seg_acc + val_bound_acc + val_dist_acc + val_color_acc) / 4
             total_val_acc.append(val_acc)
 
-            print(f"Epoch: {epoch} \t Training loss: {train_loss} \t Validation loss: {val_loss} \t Training acc: {train_acc} \t Validation acc: {val_acc} \
-            \t Training seg loss: {train_seg_loss :.5f} \t Train seg acc.: {100*train_seg_acc:.5f}% \t Validation seg loss: {val_seg_loss :.5f} Validation seg acc.: {100*val_seg_acc:.5f}% \
-            \t Training bound loss: {train_bound_loss :.5f} \t Train bound acc.: {100*train_bound_acc:.5f}% \t Validation bound loss: {val_bound_loss :.5f} \t Validation bound acc.: {100*val_bound_acc:.5f}% \
-            \t Training dist loss: {train_dist_loss :.5f} \t Train dist acc.: {100*train_dist_acc:.5f}% \t Validation dist loss: {val_dist_loss :.5f} \t Validation dist acc.: {100*val_dist_acc:.5f}% \
-            \t Training color loss: {train_color_loss :.5f} \t Train color acc.: {100*train_color_acc:.5f}% \t Validation color loss: {val_color_loss :.5f} \t Validation color acc.: {100*val_color_acc:.5f}%")
+            print(f"Epoch: {epoch} \t \
+             Train loss: {train_loss :.5f} \
+             Val loss: {val_loss :.5f} \
+             Train seg loss: {train_seg_loss :.5f} \
+             Val seg loss: {val_seg_loss :.5f} \
+             Train bound loss: {train_bound_loss :.5f} \
+             Val bound loss: {val_bound_loss :.5f} \
+             Train dist loss: {train_dist_loss :.5f} \
+             Val dist loss: {val_dist_loss :.5f} \
+             Train color loss: \ {train_color_loss :.5f} \
+             Val color loss: {val_color_loss :.5f} \
+             Train acc: {100*train_acc :.5f}% \
+             Val acc: {100*val_acc :.5f}% \
+             Train seg acc.: {100*train_seg_acc:.5f}% \
+             Val seg acc.: {100*val_seg_acc:.5f}% \
+             Train bound acc.: {100*train_bound_acc:.5f}% \
+             Val bound acc.: {100*val_bound_acc:.5f}% \
+             Train dist acc.: {100*train_dist_acc:.5f}% \
+             Val dist acc.: {100*val_dist_acc:.5f}% \
+             Train color acc.: {100*train_color_acc:.5f}% \
+             Val color acc.: {100*val_color_acc:.5f}%")
         # Early stop
         # Save the model when loss is minimum
         # Stop the training if the loss don't decreases after patience epochs
