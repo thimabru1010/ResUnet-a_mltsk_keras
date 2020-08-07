@@ -171,12 +171,12 @@ def Train_model(args, net, patches_train, y_paths, patches_val, val_paths, batch
 
                 loss_tr = loss_tr + net.train_on_batch(x=x_train_b, y=y_train_b)
 
-            print('='*30 + ' [CHECKING LOSS] ' + '='*30)
-            print(net.metrics_names)
-            print(type(loss_tr))
-            print(len(loss_tr))
-            print(loss_tr)
-            print(loss_tr.shape)
+            # print('='*30 + ' [CHECKING LOSS] ' + '='*30)
+            # print(net.metrics_names)
+            # print(type(loss_tr))
+            # print(len(loss_tr))
+            # print(loss_tr)
+            # print(loss_tr.shape)
 
         # Training loss
         loss_tr = loss_tr/n_batchs_tr
