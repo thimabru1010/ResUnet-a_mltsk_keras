@@ -240,15 +240,15 @@ def Train_model(args, net, patches_train, y_paths, patches_val, val_paths, batch
             val_bound_loss = loss_val[0 , 2]
             val_bound_acc = loss_val[0 , 3]
             # Distance
-            train_bound_loss = loss_tr[0 , 4]
-            train_bound_acc = loss_tr[0 , 5]
-            val_bound_loss = loss_val[0 , 4]
-            val_bound_acc = loss_val[0 , 5]
+            train_dist_loss = loss_tr[0 , 4]
+            train_dist_acc = loss_tr[0 , 5]
+            val_dist_loss = loss_val[0 , 4]
+            val_dist_acc = loss_val[0 , 5]
             # Color
-            train_bound_loss = loss_tr[0 , 6]
-            train_bound_acc = loss_tr[0 , 7]
-            val_bound_loss = loss_val[0 , 6]
-            val_bound_acc = loss_val[0 , 7]
+            train_color_loss = loss_tr[0 , 6]
+            train_color_acc = loss_tr[0 , 7]
+            val_color_loss = loss_val[0 , 6]
+            val_color_acc = loss_val[0 , 7]
 
             total_train_loss.append(train_loss)
             total_train_acc.append(train_acc)
@@ -256,8 +256,9 @@ def Train_model(args, net, patches_train, y_paths, patches_val, val_paths, batch
             total_val_acc.append(val_acc)
 
             print(f"Epoch: {epoch} \t Training seg loss: {train_seg_loss :.5f} \t Train seg acc.: {100*train_seg_acc:.5f}% \t Validation seg loss: {val_seg_loss :.5f} \t Validation seg acc.: {100*val_seg_acc:.5f}%
-
-            \t Training bound loss: {train_bound_loss :.5f} \t Train seg acc.: {100*train_seg_acc:.5f}% \t Validation seg loss: {val_seg_loss :.5f} \t Validation seg acc.: {100*val_seg_acc:.5f}%")
+            \t Training bound loss: {train_bound_loss :.5f} \t Train bound acc.: {100*train_bound_acc:.5f}% \t Validation bound loss: {val_bound_loss :.5f} \t Validation bound acc.: {100*val_bound_acc:.5f}%
+            \t Training dist loss: {train_dist_loss :.5f} \t Train dist acc.: {100*train_dist_acc:.5f}% \t Validation dist loss: {val_dist_loss :.5f} \t Validation dist acc.: {100*val_dist_acc:.5f}%
+            \t Training color loss: {train_color_loss :.5f} \t Train color acc.: {100*train_color_acc:.5f}% \t Validation color loss: {val_color_loss :.5f} \t Validation color acc.: {100*val_color_acc:.5f}%")
         # Early stop
         # Save the model when loss is minimum
         # Stop the training if the loss don't decreases after patience epochs
