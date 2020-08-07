@@ -135,8 +135,8 @@ def Train_model(args, net, patches_train, y_paths, patches_val, val_paths, batch
             loss_tr = np.zeros((1 , 2))
             loss_val = np.zeros((1 , 2))
         else:
-            loss_tr = np.zeros((1 , 9))
-            loss_val = np.zeros((1 , 9))
+            loss_tr = np.zeros((1 , 8))
+            loss_val = np.zeros((1 , 8))
         # Computing the number of batchs on training
         #n_batchs_tr = patches_train.shape[0]//batch_size
         n_batchs_tr = len(patches_train)//batch_size
@@ -218,16 +218,46 @@ def Train_model(args, net, patches_train, y_paths, patches_val, val_paths, batch
 
         # validation loss
         loss_val = loss_val/n_batchs_val
-        #print("%d [Validation loss: %f , Validation acc.: %.2f%%]" %(epoch , loss_val[0 , 0], 100*loss_val[0 , 1]))
-        train_loss = loss_tr[0 , 0]
-        train_acc = loss_tr[0 , 1]
-        val_loss = loss_val[0 , 0]
-        val_acc = loss_val[0 , 1]
-        total_train_loss.append(train_loss)
-        total_train_acc.append(train_acc)
-        total_val_loss.append(val_loss)
-        total_val_acc.append(val_acc)
-        print(f"Epoch: {epoch} \t Training loss: {train_loss :.5f} \t Train acc.: {100*train_acc:.5f}% \t Validation loss: {val_loss :.5f} \t Validation acc.: {100*val_acc:.5f}%")
+        if not args.multitasking:
+            train_loss = loss_tr[0 , 0]
+            train_acc = loss_tr[0 , 1]
+            val_loss = loss_val[0 , 0]
+            val_acc = loss_val[0 , 1]
+            total_train_loss.append(train_loss)
+            total_train_acc.append(train_acc)
+            total_val_loss.append(val_loss)
+            total_val_acc.append(val_acc)
+            print(f"Epoch: {epoch} \t Training loss: {train_loss :.5f} \t Train acc.: {100*train_acc:.5f}% \t Validation loss: {val_loss :.5f} \t Validation acc.: {100*val_acc:.5f}%")
+        else:
+            # Segmentation
+            train_seg_loss = loss_tr[0 , 0]
+            train_seg_acc = loss_tr[0 , 1]
+            val_seg_loss = loss_val[0 , 0]
+            val_seg_acc = loss_val[0 , 1]
+            # Boundary
+            train_bound_loss = loss_tr[0 , 2]
+            train_bound_acc = loss_tr[0 , 3]
+            val_bound_loss = loss_val[0 , 2]
+            val_bound_acc = loss_val[0 , 3]
+            # Distance
+            train_bound_loss = loss_tr[0 , 4]
+            train_bound_acc = loss_tr[0 , 5]
+            val_bound_loss = loss_val[0 , 4]
+            val_bound_acc = loss_val[0 , 5]
+            # Color
+            train_bound_loss = loss_tr[0 , 6]
+            train_bound_acc = loss_tr[0 , 7]
+            val_bound_loss = loss_val[0 , 6]
+            val_bound_acc = loss_val[0 , 7]
+
+            total_train_loss.append(train_loss)
+            total_train_acc.append(train_acc)
+            total_val_loss.append(val_loss)
+            total_val_acc.append(val_acc)
+
+            print(f"Epoch: {epoch} \t Training seg loss: {train_seg_loss :.5f} \t Train seg acc.: {100*train_seg_acc:.5f}% \t Validation seg loss: {val_seg_loss :.5f} \t Validation seg acc.: {100*val_seg_acc:.5f}%
+
+            \t Training bound loss: {train_bound_loss :.5f} \t Train seg acc.: {100*train_seg_acc:.5f}% \t Validation seg loss: {val_seg_loss :.5f} \t Validation seg acc.: {100*val_seg_acc:.5f}%")
         # Early stop
         # Save the model when loss is minimum
         # Stop the training if the loss don't decreases after patience epochs
