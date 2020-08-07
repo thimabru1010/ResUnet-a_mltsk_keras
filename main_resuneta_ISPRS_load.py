@@ -248,7 +248,7 @@ def Train_model(args, net, patches_train, y_paths, patches_val, val_paths, batch
             train_color_loss = loss_tr[0 , 6]
             train_color_acc = loss_tr[0 , 7]
             val_color_loss = loss_val[0 , 6]
-            val_color_acc = loss_val[0 , ]
+            val_color_acc = loss_val[0 , 7]
 
             train_loss = (train_seg_loss + train_bound_loss + train_dist_loss + train_color_loss) / 4
             total_train_loss.append(train_loss)
