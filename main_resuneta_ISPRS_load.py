@@ -172,6 +172,7 @@ def Train_model(args, net, patches_train, y_paths, patches_val, val_paths, batch
                 loss_tr = loss_tr + net.train_on_batch(x=x_train_b, y=y_train_b)
 
             print('='*30 + ' [CHECKING LOSS] ' + '='*30)
+            print(net.metrics_names)
             print(type(loss_tr))
             print(len(loss_tr))
             print(loss_tr)
@@ -230,33 +231,33 @@ def Train_model(args, net, patches_train, y_paths, patches_val, val_paths, batch
             print(f"Epoch: {epoch} \t Training loss: {train_loss :.5f} \t Train acc.: {100*train_acc:.5f}% \t Validation loss: {val_loss :.5f} \t Validation acc.: {100*val_acc:.5f}%")
         else:
             # Segmentation
-            train_seg_loss = loss_tr[0 , 0]
-            train_seg_acc = loss_tr[0 , 1]
-            val_seg_loss = loss_val[0 , 0]
-            val_seg_acc = loss_val[0 , 1]
+            train_seg_loss = loss_tr[0 , 1]
+            train_seg_acc = loss_tr[0 , 5]
+            val_seg_loss = loss_val[0 , 1]
+            val_seg_acc = loss_val[0 , 5]
             # Boundary
             train_bound_loss = loss_tr[0 , 2]
-            train_bound_acc = loss_tr[0 , 3]
+            train_bound_acc = loss_tr[0 , 6]
             val_bound_loss = loss_val[0 , 2]
-            val_bound_acc = loss_val[0 , 3]
+            val_bound_acc = loss_val[0 , 6]
             # Distance
-            train_dist_loss = loss_tr[0 , 4]
-            train_dist_acc = loss_tr[0 , 5]
-            val_dist_loss = loss_val[0 , 4]
-            val_dist_acc = loss_val[0 , 5]
+            train_dist_loss = loss_tr[0 , 3]
+            train_dist_acc = loss_tr[0 , 7]
+            val_dist_loss = loss_val[0 , 3]
+            val_dist_acc = loss_val[0 , 7]
             # Color
-            train_color_loss = loss_tr[0 , 6]
-            train_color_acc = loss_tr[0 , 7]
-            val_color_loss = loss_val[0 , 6]
-            val_color_acc = loss_val[0 , 7]
+            train_color_loss = loss_tr[0 , 4]
+            train_color_acc = loss_tr[0 , 8]
+            val_color_loss = loss_val[0 , 4]
+            val_color_acc = loss_val[0 , 8]
 
-            train_loss = (train_seg_loss + train_bound_loss + train_dist_loss + train_color_loss) / 4
+            train_loss = loss_tr[0, 0]
             total_train_loss.append(train_loss)
 
             train_acc = (train_seg_acc + train_bound_acc + train_dist_acc + train_color_loss) / 4
             total_train_acc.append(train_acc)
 
-            val_loss = (val_seg_loss + val_bound_loss + val_dist_loss + val_color_loss) / 4
+            val_loss = loss_val[0, 0]
             total_val_loss.append(val_loss)
 
             val_acc = (val_seg_acc + val_bound_acc + val_dist_acc + val_color_acc) / 4
