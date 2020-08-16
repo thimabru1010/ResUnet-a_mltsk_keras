@@ -427,7 +427,7 @@ if args.resunet_a == True:
 
     if args.multitasking:
         print('Multitasking enabled!')
-        resuneta = Resunet_a2((rows, cols, channels), number_class, args)
+        resuneta = Resunet_a((rows, cols, channels), number_class, args)
         model = resuneta.model
         model.summary()
         # losses = {
@@ -436,21 +436,21 @@ if args.resunet_a == True:
         #     "distance": weighted_cross_entropy,
         #     "color": cross_entropy,
         # }
-        losses = {
-        	"segmentation": tanimoto,
-        	"boundary": tanimoto,
-            "distance": tanimoto,
-            "color": tanimoto,
-        }
-        lossWeights = {"segmentation": 1.0, "boundary": 1.0, "distance": 1.0,
-        "color": 1.0}
+        losses = {"segmentation": tanimoto,
+                  "boundary": tanimoto,
+                  "distance": tanimoto,
+                  "color": tanimoto}
+        lossWeights = {"segmentation": 1.0, "boundary": 1.0,
+                       "distance": 1.0, "color": 1.0}
         if args.gpu_parallel:
             with strategy.scope():
-                model.compile(optimizer=adam, loss=losses, loss_weights=lossWeights, metrics=['accuracy'])
+                model.compile(optimizer=adam, loss=losses,
+                              loss_weights=lossWeights, metrics=['accuracy'])
         else:
-            model.compile(optimizer=adam, loss=losses, loss_weights=lossWeights, metrics=['accuracy'])
+            model.compile(optimizer=adam, loss=losses,
+                          loss_weights=lossWeights, metrics=['accuracy'])
     else:
-        resuneta = Resunet_a2((rows, cols, channels), number_class, args)
+        resuneta = Resunet_a((rows, cols, channels), number_class, args)
         model = resuneta.model
         model.summary()
         model.compile(optimizer=adam, loss=loss, metrics=['accuracy'])
