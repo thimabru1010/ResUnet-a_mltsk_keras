@@ -321,6 +321,7 @@ def Train_model(args, net, patches_train, y_paths, patches_val, val_paths, batch
                                   round(val_loss, 5),
                                   round(100*train_acc, 5),
                                   round(100*val_acc, 5)])
+            print(metrics_table)
         # Early stop
         # Save the model when loss is minimum
         # Stop the training if the loss don't decreases after patience epochs
