@@ -106,7 +106,7 @@ def Tanimoto_loss(label,pred):
     smooth = 1e-5
 
     Vli = tf.reduce_mean(tf.reduce_sum(label,axis=[1,2]),axis=0)
-    #wli =  1.0/Vli**2 # weighting scheme
+    # wli =  1.0/Vli**2 # weighting scheme
     wli = tf.math.reciprocal(Vli**2) # weighting scheme
 
     # ---------------------This line is taken from niftyNet package --------------
@@ -124,8 +124,8 @@ def Tanimoto_loss(label,pred):
     square_label=tf.square(label)
     add_squared_label_pred = tf.add(square_pred,square_label)
     sum_square=tf.reduce_sum(add_squared_label_pred,axis=[1,2])
-    #print('sum square')
-    #print(sum_square.shape)
+    # print('sum square')
+    # print(sum_square.shape)
 
     product=tf.multiply(pred,label)
     sum_product=tf.reduce_sum(product,axis=[1,2])

@@ -31,12 +31,8 @@ from multitasking_utils import get_boundary_labels, get_distance_labels, get_col
 # tf.config.experimental.set_memory_growth(gpu_devices[0], True)
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--resunet_a",
-    help="choose resunet-a model or not", type=int, default=0)
 parser.add_argument("--multitasking",
     help="choose resunet-a model or not", type=int, default=0)
-parser.add_argument("--gpu_parallel",
-    help="choose 1 to train one multiple gpu", type=int, default=0)
 args = parser.parse_args()
 
 def extract_patches_hw(image, reference, patch_size, stride):
@@ -51,7 +47,7 @@ def extract_patches_hw(image, reference, patch_size, stride):
 
     print('Patches extraidos')
     print(patches_array.shape)
-    num_row,num_col,p,row,col,depth = patches_array.shape
+    num_row, num_col, p, row,col, depth = patches_array.shape
 
     print('fazendo reshape')
     patches_array = patches_array.reshape(num_row*num_col,row,col,depth)

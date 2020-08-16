@@ -7,7 +7,7 @@ EarlyStopping, ModelCheckpoint, identity_block, ResNet50, color_map, SGD, \
 load_npy_image
 
 from ResUnet_a.model import Resunet_a
-from ResUnet_a.model2 import Resunet_a2
+#from ResUnet_a.model2 import Resunet_a2
 from multitasking_utils import get_boundary_labels, get_distance_labels, get_color_labels, Tanimoto_dual_loss
 import argparse
 import os
@@ -20,18 +20,20 @@ from sklearn.model_selection import train_test_split
 import gc
 import psutil
 import ast
+from prettytable import PrettyTable
 
 gpu_devices = tf.config.experimental.list_physical_devices('GPU')
 tf.config.experimental.set_memory_growth(gpu_devices[0], True)
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--resunet_a",
-    help="choose resunet-a model or not", type=int, default=0)
-parser.add_argument("--multitasking",
-    help="choose resunet-a model or not", type=int, default=0)
-parser.add_argument("--gpu_parallel",
-    help="choose 1 to train one multiple gpu", type=int, default=0)
+parser.add_argument("--resunet_a", help="choose resunet-a model or not",
+                    type=int, default=0)
+parser.add_argument("--multitasking", help="choose resunet-a model or not",
+                    type=int, default=0)
+parser.add_argument("--gpu_parallel", help="choose 1 to train one multiple gpu",
+                    type=int, default=0)
 args = parser.parse_args()
+
 
 def extract_patches_test(binary_img_test_ref, patch_size):
     # Extract training patches
@@ -57,6 +59,7 @@ def extract_patches_test(binary_img_test_ref, patch_size):
     #print(cont)
 
     return new_img_ref
+
 
 def extract_patches_train(img_test_normalized, patch_size):
     # Extract training patches manual
@@ -84,6 +87,7 @@ def extract_patches_train(img_test_normalized, patch_size):
 
     return new_img
 
+
 def Test(model, patch_test, args):
     result = model.predict(patch_test)
     if args.multitasking:
@@ -92,6 +96,7 @@ def Test(model, patch_test, args):
         predicted_class = np.argmax(result, axis=-1)
     return predicted_class
 
+
 def compute_metrics_hw(true_labels, predicted_labels):
     accuracy = 100*accuracy_score(true_labels, predicted_labels)
     #avg_accuracy = 100*accuracy_score(true_labels, predicted_labels, average=None)
@@ -99,6 +104,7 @@ def compute_metrics_hw(true_labels, predicted_labels):
     recall = 100*recall_score(true_labels, predicted_labels, average=None)
     precision = 100*precision_score(true_labels, predicted_labels, average=None)
     return accuracy, f1score, recall, precision
+
 
 def Train_model(args, net, patches_train, y_paths, patches_val, val_paths, batch_size, epochs, patience, delta, x_shape_batch, y_shape_batch, seed):
     print('Start training...')
@@ -138,7 +144,7 @@ def Train_model(args, net, patches_train, y_paths, patches_val, val_paths, batch
             loss_tr = np.zeros((1 , 9))
             loss_val = np.zeros((1 , 9))
         # Computing the number of batchs on training
-        #n_batchs_tr = patches_train.shape[0]//batch_size
+        # n_batchs_tr = patches_train.shape[0]//batch_size
         n_batchs_tr = len(patches_train)//batch_size
         # Random shuffle the data
         if not args.multitasking:
@@ -147,15 +153,16 @@ def Train_model(args, net, patches_train, y_paths, patches_val, val_paths, batch
             patches_train , patches_seg_lb_h, patches_bound_labels_tr_h, patches_dist_labels_tr_h, patches_color_labels_tr_h  = shuffle(patches_train , y_paths[0], y_paths[1], y_paths[2], y_paths[3], random_state = seed)
 
         # Training the network per batch
-        for  batch in range(n_batchs_tr):
-            x_train_paths = patches_train[batch * batch_size : (batch + 1) * batch_size]
-            y_train_paths_seg = patches_seg_lb_h[batch * batch_size : (batch + 1) * batch_size]
+        for batch in range(n_batchs_tr):
+            x_train_paths = patches_train[batch * batch_size:(batch + 1) * batch_size]
+            y_train_paths_seg = patches_seg_lb_h[batch * batch_size:(batch + 1)
+                                                       * batch_size]
             if args.multitasking:
-                y_train_paths_bound = patches_bound_labels_tr_h[batch * batch_size : (batch + 1) * batch_size]
+                y_train_paths_bound = patches_bound_labels_tr_h[batch * batch_size:(batch + 1) * batch_size]
 
-                y_train_paths_dist = patches_dist_labels_tr_h[batch * batch_size : (batch + 1) * batch_size]
+                y_train_paths_dist = patches_dist_labels_tr_h[batch * batch_size:(batch + 1) * batch_size]
 
-                y_train_paths_color = patches_color_labels_tr_h[batch * batch_size : (batch + 1) * batch_size]
+                y_train_paths_color = patches_color_labels_tr_h[batch * batch_size:(batch + 1) * batch_size]
             for b in range(batch_size):
                 x_train_b[b] = np.load(x_train_paths[b])
                 y_train_h_b_seg[b] = np.load(y_train_paths_seg[b])
@@ -182,7 +189,7 @@ def Train_model(args, net, patches_train, y_paths, patches_val, val_paths, batch
         loss_tr = loss_tr/n_batchs_tr
 
         # Computing the number of batchs on validation
-        #n_batchs_val = patches_val.shape[0]//batch_size
+        # n_batchs_val = patches_val.shape[0]//batch_size
         n_batchs_val = len(patches_val)//batch_size
 
         '''
@@ -220,70 +227,99 @@ def Train_model(args, net, patches_train, y_paths, patches_val, val_paths, batch
         # validation loss
         loss_val = loss_val/n_batchs_val
         if not args.multitasking:
-            train_loss = loss_tr[0 , 0]
-            train_acc = loss_tr[0 , 1]
-            val_loss = loss_val[0 , 0]
-            val_acc = loss_val[0 , 1]
+            train_loss = loss_tr[0, 0]
+            train_acc = loss_tr[0, 1]
+            val_loss = loss_val[0, 0]
+            val_acc = loss_val[0, 1]
             total_train_loss.append(train_loss)
             total_train_acc.append(train_acc)
             total_val_loss.append(val_loss)
             total_val_acc.append(val_acc)
-            print(f"Epoch: {epoch} \t Training loss: {train_loss :.5f} \t Train acc.: {100*train_acc:.5f}% \t Validation loss: {val_loss :.5f} \t Validation acc.: {100*val_acc:.5f}%")
+            print(f"Epoch: {epoch} \t \
+                    Training loss: {train_loss :.5f} \t \
+                    Train acc.: {100*train_acc:.5f}% \t \
+                    Validation loss: {val_loss :.5f} \t \
+                    Validation acc.: {100*val_acc:.5f}%")
         else:
             # Segmentation
-            train_seg_loss = loss_tr[0 , 1]
-            train_seg_acc = loss_tr[0 , 5]
-            val_seg_loss = loss_val[0 , 1]
-            val_seg_acc = loss_val[0 , 5]
+            train_seg_loss = loss_tr[0, 1]
+            train_seg_acc = loss_tr[0, 5]
+            val_seg_loss = loss_val[0, 1]
+            val_seg_acc = loss_val[0, 5]
             # Boundary
-            train_bound_loss = loss_tr[0 , 2]
-            train_bound_acc = loss_tr[0 , 6]
-            val_bound_loss = loss_val[0 , 2]
-            val_bound_acc = loss_val[0 , 6]
+            train_bound_loss = loss_tr[0, 2]
+            train_bound_acc = loss_tr[0, 6]
+            val_bound_loss = loss_val[0, 2]
+            val_bound_acc = loss_val[0, 6]
             # Distance
-            train_dist_loss = loss_tr[0 , 3]
-            train_dist_acc = loss_tr[0 , 7]
-            val_dist_loss = loss_val[0 , 3]
-            val_dist_acc = loss_val[0 , 7]
+            train_dist_loss = loss_tr[0, 3]
+            train_dist_acc = loss_tr[0, 7]
+            val_dist_loss = loss_val[0, 3]
+            val_dist_acc = loss_val[0, 7]
             # Color
-            train_color_loss = loss_tr[0 , 4]
-            train_color_acc = loss_tr[0 , 8]
-            val_color_loss = loss_val[0 , 4]
-            val_color_acc = loss_val[0 , 8]
+            train_color_loss = loss_tr[0, 4]
+            train_color_acc = loss_tr[0, 8]
+            val_color_loss = loss_val[0, 4]
+            val_color_acc = loss_val[0, 8]
 
             train_loss = loss_tr[0, 0]
             total_train_loss.append(train_loss)
 
-            train_acc = (train_seg_acc + train_bound_acc + train_dist_acc + train_color_loss) / 4
+            train_acc = (train_seg_acc + train_bound_acc + train_dist_acc
+                         + train_color_loss) / 4
             total_train_acc.append(train_acc)
 
             val_loss = loss_val[0, 0]
             total_val_loss.append(val_loss)
 
-            val_acc = (val_seg_acc + val_bound_acc + val_dist_acc + val_color_acc) / 4
+            val_acc = (val_seg_acc + val_bound_acc + val_dist_acc
+                       + val_color_acc) / 4
             total_val_acc.append(val_acc)
 
-            print(f"Epoch: {epoch} \t \
-             Train loss: {train_loss :.5f} \
-             Val loss: {val_loss :.5f} \
-             Train seg loss: {train_seg_loss :.5f} \
-             Val seg loss: {val_seg_loss :.5f} \
-             Train bound loss: {train_bound_loss :.5f} \
-             Val bound loss: {val_bound_loss :.5f} \
-             Train dist loss: {train_dist_loss :.5f} \
-             Val dist loss: {val_dist_loss :.5f} \
-             Train color loss: \ {train_color_loss :.5f} \
-             Val color loss: {val_color_loss :.5f} \
-             Train acc: {100*train_acc :.5f}% \
-             Val acc: {100*val_acc :.5f}% \
-             Train seg acc.: {100*train_seg_acc:.5f}% \
-             Val seg acc.: {100*val_seg_acc:.5f}% \
-             Train bound acc.: {100*train_bound_acc:.5f}% \
-             Val bound acc.: {100*val_bound_acc:.5f}% \
-             Train dist acc.: {100*train_dist_acc:.5f}% \
-             Val dist acc.: {100*val_dist_acc:.5f}% \
-             Train color acc.: {100*train_color_acc:.5f}% \
-             Val color acc.: {100*val_color_acc:.5f}%")
+            # print(f"Epoch: {epoch} \t \
+            #  Train loss: {train_loss :.5f} \
+            #  Val loss: {val_loss :.5f} \
+            #  Train seg loss: {train_seg_loss :.5f} \
+            #  Val seg loss: {val_seg_loss :.5f} \
+            #  Train bound loss: {train_bound_loss :.5f} \
+            #  Val bound loss: {val_bound_loss :.5f} \
+            #  Train dist loss: {train_dist_loss :.5f} \
+            #  Val dist loss: {val_dist_loss :.5f} \
+            #  Train color loss: \ {train_color_loss :.5f} \
+            #  Val color loss: {val_color_loss :.5f} \
+            #  Train acc: {100*train_acc :.5f}% \
+            #  Val acc: {100*val_acc :.5f}% \
+            #  Train seg acc.: {100*train_seg_acc:.5f}% \
+            #  Val seg acc.: {100*val_seg_acc:.5f}% \
+            #  Train bound acc.: {100*train_bound_acc:.5f}% \
+            #  Val bound acc.: {100*val_bound_acc:.5f}% \
+            #  Train dist acc.: {100*train_dist_acc:.5f}% \
+            #  Val dist acc.: {100*val_dist_acc:.5f}% \
+            #  Train color acc.: {100*train_color_acc:.5f}% \
+            #  Val color acc.: {100*val_color_acc:.5f}%")
+            metrics_table = PrettyTable()
+            metrics_table.title = f'Epoch: {epoch}'
+            metrics.field_names = ['Task', 'Loss', 'Val Loss', 'Acc', 'Val Acc']
+            metrics.add_row(['Seg', round(train_seg_loss, 5),
+                            round(val_seg_loss, 5),
+                            round(100*train_seg_acc, 5),
+                            round(100*val_seg_acc, 5)])
+            metrics.add_row(['Bound', round(train_bound_loss, 5),
+                            round(val_bound_loss, 5),
+                            round(100*train_bound_acc, 5),
+                            round(100*val_bound_acc, 5)])
+            metrics.add_row(['Dist', round(train_dist_loss, 5),
+                            round(val_dist_loss, 5),
+                            round(100*train_dist_acc, 5),
+                            round(100*val_dist_acc, 5)])
+            metrics.add_row(['Color', round(train_color_loss, 5),
+                            round(val_color_loss, 5),
+                            round(100*train_color_acc, 5),
+                            round(100*val_color_acc, 5)])
+            metrics.add_row(['Total', round(train_loss, 5),
+                            round(val_loss, 5),
+                            round(100*train_acc, 5),
+                            round(100*val_acc, 5)])
         # Early stop
         # Save the model when loss is minimum
         # Stop the training if the loss don't decreases after patience epochs
@@ -294,15 +330,17 @@ def Train_model(args, net, patches_train, y_paths, patches_val, val_paths, batch
                 print("Early Stopping! \t Training Stopped")
                 print("Saving model...")
                 net.save('weights/model_early_stopping.h5')
-                return total_train_loss, total_train_acc, total_val_loss, total_val_acc
+                return total_train_loss, total_train_acc,
+                total_val_loss, total_val_acc
         else:
             cont = 0
-            #best_score = score
+            # best_score = score
             min_loss = val_loss
             print("Saving best model...")
             net.save('weights/best_model.h5')
 
     return total_train_loss, total_train_acc, total_val_loss, total_val_acc
+
 
 if args.gpu_parallel:
     strategy = tf.distribute.MirroredStrategy()
@@ -310,22 +348,27 @@ if args.gpu_parallel:
 else:
     strategy = None
 
-root_path = './DATASETS/patches_ps=256_stride=32'
+root_path = './DATASETS/patches_ps=128_stride=32'
 train_path = os.path.join(root_path, 'train')
-patches_tr = [os.path.join(train_path,name) for name in os.listdir(train_path)]
+patches_tr = [os.path.join(train_path, name) for name in os.listdir(train_path)]
 
 ref_path = os.path.join(root_path, 'labels/seg')
-patches_tr_lb_h = [os.path.join(ref_path, name) for name in os.listdir(ref_path)]
+patches_tr_lb_h = [os.path.join(ref_path, name) for name
+                   in os.listdir(ref_path)]
+
 if args.multitasking:
     ref_bound_path = os.path.join(root_path, 'labels/bound')
     print(ref_bound_path)
-    patches_bound_labels = [os.path.join(ref_bound_path, name) for name in os.listdir(ref_bound_path)]
+    patches_bound_labels = [os.path.join(ref_bound_path, name) for name
+                            in os.listdir(ref_bound_path)]
 
     ref_dist_path = os.path.join(root_path, 'labels/dist')
-    patches_dist_labels = [os.path.join(ref_dist_path, name) for name in os.listdir(ref_dist_path)]
+    patches_dist_labels = [os.path.join(ref_dist_path, name) for name
+                           in os.listdir(ref_dist_path)]
 
     ref_color_path = os.path.join(root_path, 'labels/color')
-    patches_color_labels = [os.path.join(ref_color_path, name) for name in os.listdir(ref_color_path)]
+    patches_color_labels = [os.path.join(ref_color_path, name) for name
+                            in os.listdir(ref_color_path)]
 
 if args.multitasking:
     patches_tr, patches_val, patches_tr_lb_h, patches_val_lb_h, patches_bound_labels_tr, patches_bound_labels_val, patches_dist_labels_tr, patches_dist_labels_val, patches_color_labels_tr, patches_color_labels_val   = train_test_split(patches_tr, patches_tr_lb_h, patches_bound_labels, patches_dist_labels, patches_color_labels,  test_size=0.2, random_state=42)
@@ -333,10 +376,10 @@ else:
     patches_tr, patches_val, patches_tr_lb_h, patches_val_lb_h = train_test_split(patches_tr, patches_tr_lb_h, test_size=0.2, random_state=42)
 
 number_class = 5
-patch_size = 256
-stride = patch_size // 8
+patch_size = 128
+stride = patch_size // 4
 batch_size = 1
-epochs = 100
+epochs = 500
 seed = 42
 
 
@@ -366,8 +409,9 @@ exp = 1
 rows = patch_size
 cols = patch_size
 channels = 3
-adam = Adam(lr = 0.001 , beta_1=0.9)
-sgd = SGD(lr=0.001,momentum=0.8)
+lr = 1e-3
+adam = Adam(lr = lr , beta_1=0.9)
+sgd = SGD(lr=lr,momentum=0.8)
 
 
 weights = [  4.34558461   ,2.97682037   ,3.92124661   ,5.67350328 ,374.0300152 ]
@@ -503,6 +547,7 @@ print('F1score: ', metrics[1])
 print('Recall: ', metrics[2])
 print('Precision: ', metrics[3])
 
+
 def pred_recostruction(patch_size, pred_labels, binary_img_test_ref):
     # Patches Reconstruction
     stride = patch_size
@@ -523,6 +568,7 @@ def pred_recostruction(patch_size, pred_labels, binary_img_test_ref):
             cont += 1
     print('Reconstruction Done!')
     return img_reconstructed
+
 
 def reconstruction_rgb_prdiction_patches(img_reconstructed, label_dict):
     reversed_label_dict = {value : key for (key, value) in label_dict.items()}
