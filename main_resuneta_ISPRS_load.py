@@ -299,27 +299,28 @@ def Train_model(args, net, patches_train, y_paths, patches_val, val_paths, batch
             #  Val color acc.: {100*val_color_acc:.5f}%")
             metrics_table = PrettyTable()
             metrics_table.title = f'Epoch: {epoch}'
-            metrics.field_names = ['Task', 'Loss', 'Val Loss', 'Acc', 'Val Acc']
-            metrics.add_row(['Seg', round(train_seg_loss, 5),
-                            round(val_seg_loss, 5),
-                            round(100*train_seg_acc, 5),
-                            round(100*val_seg_acc, 5)])
-            metrics.add_row(['Bound', round(train_bound_loss, 5),
-                            round(val_bound_loss, 5),
-                            round(100*train_bound_acc, 5),
-                            round(100*val_bound_acc, 5)])
-            metrics.add_row(['Dist', round(train_dist_loss, 5),
-                            round(val_dist_loss, 5),
-                            round(100*train_dist_acc, 5),
-                            round(100*val_dist_acc, 5)])
-            metrics.add_row(['Color', round(train_color_loss, 5),
-                            round(val_color_loss, 5),
-                            round(100*train_color_acc, 5),
-                            round(100*val_color_acc, 5)])
-            metrics.add_row(['Total', round(train_loss, 5),
-                            round(val_loss, 5),
-                            round(100*train_acc, 5),
-                            round(100*val_acc, 5)])
+            metrics_table.field_names = ['Task', 'Loss', 'Val Loss',
+                                         'Acc', 'Val Acc']
+            metrics_table.add_row(['Seg', round(train_seg_loss, 5),
+                                  round(val_seg_loss, 5),
+                                  round(100*train_seg_acc, 5),
+                                  round(100*val_seg_acc, 5)])
+            metrics_table.add_row(['Bound', round(train_bound_loss, 5),
+                                  round(val_bound_loss, 5),
+                                  round(100*train_bound_acc, 5),
+                                  round(100*val_bound_acc, 5)])
+            metrics_table.add_row(['Dist', round(train_dist_loss, 5),
+                                  round(val_dist_loss, 5),
+                                  round(100*train_dist_acc, 5),
+                                  round(100*val_dist_acc, 5)])
+            metrics_table.add_row(['Color', round(train_color_loss, 5),
+                                  round(val_color_loss, 5),
+                                  round(100*train_color_acc, 5),
+                                  round(100*val_color_acc, 5)])
+            metrics_table.add_row(['Total', round(train_loss, 5),
+                                  round(val_loss, 5),
+                                  round(100*train_acc, 5),
+                                  round(100*val_acc, 5)])
         # Early stop
         # Save the model when loss is minimum
         # Stop the training if the loss don't decreases after patience epochs
@@ -461,7 +462,7 @@ else:
     model.summary()
 
     model.compile(optimizer=adam, loss=loss, metrics=['accuracy'])
-    #model.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['accuracy'])
+    # model.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['accuracy'])
 
 
 filepath = './models/'
