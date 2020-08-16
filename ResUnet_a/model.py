@@ -120,32 +120,51 @@ class Resunet_a(object):
             x = KL.Activation('softmax')(x)
             model = KM.Model(inputs=inputs, outputs=x)
         else:
+            # Models' output
+            out = []
+
             # Segmentation
-            x_seg=KL.Conv2D(32,(3,3), activation='relu', padding='same', name='seg1')(x_psp)
-            x_seg=KL.Conv2D(32,(3,3), activation='relu', padding='same', name='seg2')(x_seg)
-            x_seg=KL.Conv2D(self.num_classes,(1,1), padding='valid', name='seg3')(x_seg)
-            out_seg=KL.Activation('softmax', name='segmentation')(x_seg)
+            x_seg = KL.Conv2D(32, (3, 3), activation='relu', padding='same',
+                              name='seg1')(x_psp)
+            x_seg = KL.Conv2D(32, (3, 3), activation='relu', padding='same',
+                              name='seg2')(x_seg)
+            x_seg = KL.Conv2D(self.num_classes, (1, 1), padding='valid',
+                              name='seg3')(x_seg)
+            out_seg = KL.Activation('softmax', name='segmentation')(x_seg)
+            out.append(out_seg)
 
             # Boundary
-            x_bound=KL.Conv2D(32,(3,3), activation='relu', padding='same')(x_psp)
-            x_bound=KL.Conv2D(self.num_classes,(1,1), padding='valid')(x_bound)
-            out_bound=KL.Activation('sigmoid', name='boundary')(x_bound)
+            if self.args.bound:
+                x_bound = KL.Conv2D(32, (3, 3), activation='relu',
+                                    padding='same')(x_psp)
+                x_bound = KL.Conv2D(self.num_classes, (1, 1),
+                                    padding='valid')(x_bound)
+                out_bound = KL.Activation('sigmoid', name='boundary')(x_bound)
+                out.append(out_bound)
 
             # Distance
-            x_dist=KL.Conv2D(32,(3,3), activation='relu', padding='same')(x_comb)
-            x_dist=KL.Conv2D(32,(3,3), activation='relu', padding='same')(x_dist)
-            x_dist=KL.Conv2D(self.num_classes,(1,1), padding='valid')(x_dist)
-            out_dist=KL.Activation('softmax', name='distance')(x_dist)
+            if self.args.dist:
+                x_dist = KL.Conv2D(32, (3, 3), activation='relu',
+                                   padding='same')(x_comb)
+                x_dist = KL.Conv2D(32, (3, 3), activation='relu',
+                                   padding='same')(x_dist)
+                x_dist = KL.Conv2D(self.num_classes, (1, 1),
+                                   padding='valid')(x_dist)
+                out_dist = KL.Activation('softmax', name='distance')(x_dist)
+                out.append(out_dist)
 
             # Color
-            out_color=KL.Conv2D(3,(1,1), activation='sigmoid', padding='valid', name='color')(x_comb)
+            if self.args.color:
+                out_color = KL.Conv2D(3, (1, 1), activation='sigmoid',
+                                      padding='valid', name='color')(x_comb)
+                out.append(out_color)
 
-            out = [out_seg, out_bound, out_dist, out_color]
+            # out = [out_seg, out_bound, out_dist, out_color]
 
             if self.args.gpu_parallel:
                 return inputs, out
-                #model=KM.Model(inputs=inputs,outputs=out)
+                # model=KM.Model(inputs=inputs,outputs=out)
             else:
-                model=KM.Model(inputs=inputs,outputs=out)
+                model = KM.Model(inputs=inputs, outputs=out)
 
         return model

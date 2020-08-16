@@ -76,7 +76,7 @@ def get_color_labels(patches):
         # Remember to convert to opencv color format (bgr) img = img[:,:,::-1]
         hsv_patch = cv2.cvtColor(patches[i,:,:,::-1],cv2.COLOR_BGR2HSV)
         # Normalizes the patches. Good for training. Otherwise loss explodes.
-        color_patches[i,:,:,:] = cv2.normalize(hsv_patch, hsv_patch, 0, 1.0, cv2.NORM_MINMAX)
+        color_patches[i, :, :, :] = cv2.normalize(hsv_patch, hsv_patch, 0, 1.0, cv2.NORM_MINMAX)
         #print(color_patches[i,:,:,:])
     return color_patches
 

@@ -11,3 +11,10 @@ table.add_row(["Brisbane", 5905, 1857594, 1146.4])
 
 # print(table.title)
 print(table)
+
+dic = {'test': 15}
+
+dic['key'] = 1
+dic['pessoa'] = 10
+
+print(dic)
