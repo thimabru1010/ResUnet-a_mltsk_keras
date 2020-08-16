@@ -188,20 +188,20 @@ binary_img_train_ref = binarize_matrix(img_train_ref, label_dict)
 del img_train_ref
 
 number_class = 5
-patch_size = 256
+patch_size = 128
 stride = patch_size // 8
 
 
-#stride = patch_size
+# stride = patch_size
 patches_tr, patches_tr_ref = extract_patches_hw(img_train_normalized, binary_img_train_ref, patch_size, stride)
 print('patches extraidos!')
 # patches_tr, patches_tr_ref = bal_aug_patches2(percent, patch_size, patches_tr, patches_tr_ref)
 process = psutil.Process(os.getpid())
 print('[CHECKING MEMORY]')
-#print(process.memory_info().rss)
+# print(process.memory_info().rss)
 print(process.memory_percent())
 del binary_img_train_ref, img_train_normalized, img_train
-#print(process.memory_info().rss)
+# print(process.memory_info().rss)
 print(process.memory_percent())
 gc.collect()
 print('[GC COLLECT]')
@@ -218,8 +218,10 @@ if not os.path.exists(folder_path):
     os.makedirs(os.path.join(folder_path, 'labels/dist'))
     os.makedirs(os.path.join(folder_path, 'labels/color'))
 
+
 def filename(i):
     return f'patch_{i}.npy'
+
 
 print(f'Number of patches: {len(patches_tr)}')
 print(f'Number of patches expected: {len(patches_tr)*5}')
