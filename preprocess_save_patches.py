@@ -82,6 +82,7 @@ def extract_patches_test(binary_img_test_ref, patch_size):
 
     return new_img_ref
 
+
 def extract_patches_train(img_test_normalized, patch_size):
     # Extract training patches manual
     stride = patch_size
@@ -157,6 +158,7 @@ def bal_aug_patches2(percent, patch_size, patches_img, patches_ref):
     patches_bal = np.concatenate(patches_images).astype(np.float32)
     labels_bal = np.concatenate(patches_labels).astype(np.float32)
     return patches_bal, labels_bal
+
 
 if args.gpu_parallel:
     strategy = tf.distribute.MirroredStrategy()

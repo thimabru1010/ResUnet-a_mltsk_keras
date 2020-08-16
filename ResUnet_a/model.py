@@ -1,21 +1,21 @@
 import tensorflow.keras.models as KM
 import tensorflow.keras as KE
 import tensorflow.keras.layers as KL
-#import tensorflow.keras.engine as KE
-import tensorflow.keras.backend as KB
-from tensorflow.keras.utils import plot_model
-from tensorflow.keras.preprocessing.image import img_to_array
-from tensorflow.keras.applications.resnet50 import ResNet50
-from tensorflow.keras.optimizers import Adam, SGD
-import tensorflow as tf
+# import tensorflow.keras.engine as KE
+# import tensorflow.keras.backend as KB
+# from tensorflow.keras.utils import plot_model
+# from tensorflow.keras.preprocessing.image import img_to_array
+# from tensorflow.keras.applications.resnet50 import ResNet50
+# from tensorflow.keras.optimizers import Adam, SGD
+# import tensorflow as tf
+#
+# from ResUnet_a.config import UnetConfig
+# import utils
+# import math
+# import numpy as np
 
-from ResUnet_a.config import UnetConfig
-import utils
-import math
-import numpy as np
 
-
-class Resunet_a2(object):
+class Resunet_a(object):
     def __init__(self, input_shape, num_classes, args):
         self.num_classes = num_classes
         self.img_height, self.img_width, self.img_channel = input_shape
@@ -23,22 +23,24 @@ class Resunet_a2(object):
         self.model = self.build_model_ResUneta()
 
     def build_model_ResUneta(self):
-        def ResBlock(input,filter,kernel_size,dilation_rates,stride):
+        def ResBlock(input, filter, kernel_size, dilation_rates, stride):
             def branch(dilation_rate):
-                x=KL.BatchNormalization()(input)
-                x=KL.Activation('relu')(x)
-                x=KL.Conv2D(filter,kernel_size,strides=stride,dilation_rate=dilation_rate,padding='same')(x)
-                x=KL.BatchNormalization()(x)
-                x=KL.Activation('relu')(x)
-                x=KL.Conv2D(filter,kernel_size,strides=stride,dilation_rate=dilation_rate,padding='same')(x)
+                x = KL.BatchNormalization()(input)
+                x = KL.Activation('relu')(x)
+                x = KL.Conv2D(filter, kernel_size, strides=stride,
+                              dilation_rate=dilation_rate, padding='same')(x)
+                x = KL.BatchNormalization()(x)
+                x = KL.Activation('relu')(x)
+                x = KL.Conv2D(filter, kernel_size, strides=stride,
+                              dilation_rate=dilation_rate, padding='same')(x)
                 return x
-            out=[]
+            out = []
             for d in dilation_rates:
                 out.append(branch(d))
-            if len(dilation_rates)>1:
-                out=KL.Add()(out)
+            if len(dilation_rates) > 1:
+                out = KL.Add()(out)
             else:
-                out=out[0]
+                out = out[0]
             return out
 
         def PSPPooling(input,filter):
