@@ -113,14 +113,13 @@ def Train_model(args, net, patches_train, y_paths, patches_val, val_paths, batch
     print(f'Validating on {len(patches_val)} images')
     print('='*60)
     print(f'Total Epochs: {epochs}')
-    best_score = 0
     # Initialize as maximum possible number
     min_loss = float('inf')
     cont = 0
     total_train_loss = []
     total_train_acc = []
     total_val_loss = []
-    total_val_acc =[]
+    total_val_acc = []
     x_train_b = np.zeros(x_shape_batch)
     y_train_h_b_seg = np.zeros(y_shape_batch)
     x_val_b = np.zeros(x_shape_batch)
@@ -216,14 +215,14 @@ def Train_model(args, net, patches_train, y_paths, patches_val, val_paths, batch
 
         # Evaluating the model in the validation set
         for batch in range(n_batchs_val):
-            x_val_paths = patches_val[batch * batch_size : (batch + 1) * batch_size]
-            y_val_paths_seg = val_paths[0][batch * batch_size : (batch + 1) * batch_size]
+            x_val_paths = patches_val[batch * batch_size:(batch + 1) * batch_size]
+            y_val_paths_seg = val_paths[0][batch * batch_size:(batch + 1) * batch_size]
             if args.multitasking:
-                y_val_paths_bound = val_paths[1][batch * batch_size : (batch + 1) * batch_size]
+                y_val_paths_bound = val_paths[1][batch * batch_size:(batch + 1) * batch_size]
 
-                y_val_paths_dist = val_paths[2][batch * batch_size : (batch + 1) * batch_size]
+                y_val_paths_dist = val_paths[2][batch * batch_size:(batch + 1) * batch_size]
 
-                y_val_paths_color = val_paths[3][batch * batch_size : (batch + 1) * batch_size]
+                y_val_paths_color = val_paths[3][batch * batch_size:(batch + 1) * batch_size]
             for b in range(batch_size):
                 x_val_b[b] = np.load(x_val_paths[b])
                 y_val_h_b_seg[b] = np.load(y_val_paths_seg[b])
