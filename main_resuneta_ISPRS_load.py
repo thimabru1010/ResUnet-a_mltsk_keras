@@ -106,10 +106,11 @@ def compute_metrics_hw(true_labels, predicted_labels):
     return accuracy, f1score, recall, precision
 
 
-def Train_model(args, net, patches_train, y_paths, patches_val, val_paths, batch_size, epochs, patience, delta, x_shape_batch, y_shape_batch, seed):
+def Train_model(args, net, x_train_paths, y_paths, patches_val, val_paths, batch_size, epochs, patience, delta, x_shape_batch, y_shape_batch, seed):
+    # patches_train = x_train_paths
     print('Start training...')
     print('='*60)
-    print(f'Training on {len(patches_train)} images')
+    print(f'Training on {len(x_train_paths)} images')
     print(f'Validating on {len(patches_val)} images')
     print('='*60)
     print(f'Total Epochs: {epochs}')
@@ -147,22 +148,19 @@ def Train_model(args, net, patches_train, y_paths, patches_val, val_paths, batch
         n_batchs_tr = len(patches_train)//batch_size
         # Random shuffle the data
         if not args.multitasking:
-            patches_train, patches_seg_lb_h = shuffle(patches_train, y_paths[0],
-                                                      random_state=seed)
+            patches_train, patches_seg_lb_h = shuffle(x_train_paths, y_paths[0])
         else:
             patches_train, patches_seg_lb_h, patches_bound_labels_tr_h, \
                 patches_dist_labels_tr_h, patches_color_labels_tr_h = \
-                shuffle(patches_train, y_paths[0], y_paths[1], y_paths[2],
-                        y_paths[3], random_state=seed)
+                shuffle(x_train_paths, y_paths[0], y_paths[1], y_paths[2],
+                        y_paths[3])
 
         # Training the network per batch
         for batch in range(n_batchs_tr):
             x_train_paths = patches_train[batch * batch_size:(batch + 1) * batch_size]
-            y_train_paths_seg = patches_seg_lb_h[batch * batch_size:(batch + 1)
-                                                       * batch_size]
+            y_train_paths_seg = patches_seg_lb_h[batch * batch_size:(batch + 1) * batch_size]
             if args.multitasking:
-                y_train_paths_bound = patches_bound_labels_tr_h[batch *
-                                      batch_size:(batch + 1) * batch_size]
+                y_train_paths_bound = patches_bound_labels_tr_h[batch * batch_size:(batch + 1) * batch_size]
 
                 y_train_paths_dist = patches_dist_labels_tr_h[batch * batch_size:(batch + 1) * batch_size]
 
@@ -365,6 +363,8 @@ def Train_model(args, net, patches_train, y_paths, patches_val, val_paths, batch
 
     return total_train_loss, total_train_acc, total_val_loss, total_val_acc
 
+# End functions definition -----------------------------------------------------
+
 
 if args.gpu_parallel:
     strategy = tf.distribute.MirroredStrategy()
@@ -419,7 +419,7 @@ if args.multitasking:
     y_paths=[patches_tr_lb_h, patches_bound_labels_tr, patches_dist_labels_tr, patches_color_labels_tr]
 
     # val_paths={"segmentation": patches_val_lb_h, "boundary": patches_bound_labels_val, "distance":  patches_dist_labels_val, "color": patches_color_labels_val}
-    val_paths=[patches_val_lb_h, patches_bound_labels_val, patches_dist_labels_val, patches_color_labels_val]
+    val_paths = [patches_val_lb_h, patches_bound_labels_val, patches_dist_labels_val, patches_color_labels_val]
 else:
     # y_paths={"segmentation": patches_tr_lb_h, "boundary": [], "distance":  [], "color": []}
     y_paths = [patches_tr_lb_h]
