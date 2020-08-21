@@ -347,8 +347,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--resunet_a", help="choose resunet-a model or not",
                         type=int, default=0)
-    parser.add_argument("--multitasking", help="choose resunet-a model or not",
-                        type=int, default=0)
+    parser.add_argument("--multitasking", help="choose resunet-a multitasking \
+                        or not", type=int, default=0)
+    parser.add_argument("--bound", help="choose resunet-a boundary task or not",
+                        type=int, default=1)
+    parser.add_argument("--dist", help="choose resunet-a distance task or not",
+                        type=int, default=1)
+    parser.add_argument("--color", help="choose resunet-a color task or not",
+                        type=int, default=1)
     parser.add_argument("--gpu_parallel", help="choose 1 to train one multiple gpu",
                         type=int, default=0)
     args = parser.parse_args()
