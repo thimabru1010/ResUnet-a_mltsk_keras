@@ -122,7 +122,6 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
         y_train_h_b_dist = np.zeros(y_shape_batch)
         y_val_h_b_dist = np.zeros(y_shape_batch)
         # Colors
-        print()
         y_train_h_b_color = np.zeros((y_shape_batch[0], y_shape_batch[1], y_shape_batch[2], 3))
         y_val_h_b_color = np.zeros((y_shape_batch[0], y_shape_batch[1], y_shape_batch[2], 3))
     for epoch in range(epochs):
@@ -155,7 +154,7 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
 
                 y_train_paths_b_dist = y_train_paths_rand_dist[batch * batch_size:(batch + 1) * batch_size]
 
-                y_train_paths_b_dist = y_train_paths_rand_color[batch * batch_size:(batch + 1) * batch_size]
+                y_train_paths_b_color = y_train_paths_rand_color[batch * batch_size:(batch + 1) * batch_size]
             for b in range(batch_size):
                 x_train_b[b] = np.load(x_train_paths_b[b])
                 y_train_h_b_seg[b] = np.load(y_train_paths_b_seg[b])
@@ -165,7 +164,7 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                     if args.dist:
                         y_train_h_b_dist[b] = np.load(y_train_paths_b_dist[b])
                     if args.color:
-                        y_train_h_b_color[b] = np.load(y_train_paths_b_dist[b])
+                        y_train_h_b_color[b] = np.load(y_train_paths_b_color[b])
 
             if not args.multitasking:
                 loss_tr = loss_tr + net.train_on_batch(x_train_b, y_train_h_b_seg)
@@ -394,10 +393,10 @@ def main():
 
     number_class = 5
     patch_size = 256
-    stride = patch_size // 8
+    # stride = patch_size // 8
     batch_size = 4
     epochs = 500
-    seed = 42
+
 
 
     if args.multitasking:
@@ -523,11 +522,11 @@ def main():
     w = img_test_ref.shape[0]
     h = img_test_ref.shape[1]
     c = img_test_ref.shape[2]
-    #binary_img_train_ref = np.zeros((1,w,h))
+    # binary_img_train_ref = np.zeros((1,w,h))
     binary_img_test_ref = np.full((w,h), -1)
     # Dictionary used in training
     label_dict = {'(255, 255, 255)': 0, '(0, 255, 0)': 1, '(0, 255, 255)': 2, '(0, 0, 255)': 3, '(255, 255, 0)': 4}
-    label = 0
+    # label = 0
     for i in range(w):
         for j in range(h):
             r = img_test_ref[i][j][0]
