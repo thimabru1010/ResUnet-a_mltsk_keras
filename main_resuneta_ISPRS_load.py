@@ -22,19 +22,6 @@ import psutil
 import ast
 from prettytable import PrettyTable
 
-gpu_devices = tf.config.experimental.list_physical_devices('GPU')
-tf.config.experimental.set_memory_growth(gpu_devices[0], True)
-
-parser = argparse.ArgumentParser()
-parser.add_argument("--resunet_a", help="choose resunet-a model or not",
-                    type=int, default=0)
-parser.add_argument("--multitasking", help="choose resunet-a model or not",
-                    type=int, default=0)
-parser.add_argument("--gpu_parallel", help="choose 1 to train one multiple gpu",
-                    type=int, default=0)
-args = parser.parse_args()
-
-
 def extract_patches_test(binary_img_test_ref, patch_size):
     # Extract training patches
     stride = patch_size
@@ -203,7 +190,7 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
             # print(loss_tr)
             # print(loss_tr.shape)
 
-        # Training loss
+        # Training loss; Divide for the numberof batches
         loss_tr = loss_tr/n_batchs_tr
 
         # Computing the number of batchs on validation
@@ -220,26 +207,28 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
         # Evaluating the model in the validation set
         for batch in range(n_batchs_val):
             x_val_paths = x_val_paths[batch * batch_size:(batch + 1) * batch_size]
-            y_val_paths_seg = y_val_paths[0][batch * batch_size:(batch + 1) * batch_size]
+            y_val_paths_b_seg = y_val_paths[0][batch * batch_size:(batch + 1) * batch_size]
             if args.multitasking:
-                y_val_paths_bound = y_val_paths[1][batch * batch_size:(batch + 1) * batch_size]
+                # y_train_paths_b_bound
+                y_val_paths_b_bound = y_val_paths[1][batch * batch_size:(batch + 1) * batch_size]
 
-                y_val_paths_dist = y_val_paths[2][batch * batch_size:(batch + 1) * batch_size]
+                y_val_paths_b_dist = y_val_paths[2][batch * batch_size:(batch + 1) * batch_size]
 
-                y_val_paths_color = y_val_paths[3][batch * batch_size:(batch + 1) * batch_size]
+                y_val_paths_b_color = y_val_paths[3][batch * batch_size:(batch + 1) * batch_size]
             for b in range(batch_size):
                 x_val_b[b] = np.load(x_val_paths[b])
-                y_val_h_b_seg[b] = np.load(y_val_paths_seg[b])
+                y_val_h_b_seg[b] = np.load(y_val_paths_b_seg[b])
                 if args.multitasking:
-                    y_val_h_b_bound[b] = np.load(y_val_paths_bound[b])
-                    y_val_h_b_dist[b] = np.load(y_val_paths_dist[b])
-                    y_val_h_b_color[b] = np.load(y_val_paths_color[b])
+                    y_val_h_b_bound[b] = np.load(y_val_paths_b_bound[b])
+                    y_val_h_b_dist[b] = np.load(y_val_paths_b_dist[b])
+                    y_val_h_b_color[b] = np.load(y_val_paths_b_color[b])
 
             if not args.multitasking:
                 loss_val = loss_val + net.test_on_batch(x_val_b, y_val_h_b_seg)
             else:
-                # y_val_b = {"segmentation": y_val_h_b_seg, "boundary": y_val_h_b_bound, "distance":  y_val_h_b_dist, "color": y_val_h_b_color}
-
+                # Dict template: y_val_b = {"segmentation": y_val_h_b_seg,
+                # "boundary": y_val_h_b_bound, "distance":  y_val_h_b_dist,
+                # "color": y_val_h_b_color}
                 y_val_b = {"segmentation": y_val_h_b_seg}
                 if args.bound:
                     y_val_b['boundary'] = y_val_h_b_bound
@@ -351,247 +340,263 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
 # End functions definition -----------------------------------------------------
 
 
-if args.gpu_parallel:
-    strategy = tf.distribute.MirroredStrategy()
-    print(f'Number of devices: {strategy.num_replicas_in_sync}')
-else:
-    strategy = None
+def main():
+    gpu_devices = tf.config.experimental.list_physical_devices('GPU')
+    tf.config.experimental.set_memory_growth(gpu_devices[0], True)
 
-root_path = './DATASETS/patches_ps=256_stride=32'
-train_path = os.path.join(root_path, 'train')
-patches_tr = [os.path.join(train_path, name) for name in os.listdir(train_path)]
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--resunet_a", help="choose resunet-a model or not",
+                        type=int, default=0)
+    parser.add_argument("--multitasking", help="choose resunet-a model or not",
+                        type=int, default=0)
+    parser.add_argument("--gpu_parallel", help="choose 1 to train one multiple gpu",
+                        type=int, default=0)
+    args = parser.parse_args()
 
-ref_path = os.path.join(root_path, 'labels/seg')
-patches_tr_lb_h = [os.path.join(ref_path, name) for name
-                   in os.listdir(ref_path)]
+    if args.gpu_parallel:
+        strategy = tf.distribute.MirroredStrategy()
+        print(f'Number of devices: {strategy.num_replicas_in_sync}')
+    else:
+        strategy = None
 
-if args.multitasking:
-    ref_bound_path = os.path.join(root_path, 'labels/bound')
-    print(ref_bound_path)
-    patches_bound_labels = [os.path.join(ref_bound_path, name) for name
-                            in os.listdir(ref_bound_path)]
+    root_path = './DATASETS/patches_ps=256_stride=32'
+    train_path = os.path.join(root_path, 'train')
+    patches_tr = [os.path.join(train_path, name) for name in os.listdir(train_path)]
 
-    ref_dist_path = os.path.join(root_path, 'labels/dist')
-    patches_dist_labels = [os.path.join(ref_dist_path, name) for name
-                           in os.listdir(ref_dist_path)]
-
-    ref_color_path = os.path.join(root_path, 'labels/color')
-    patches_color_labels = [os.path.join(ref_color_path, name) for name
-                            in os.listdir(ref_color_path)]
-
-if args.multitasking:
-    patches_tr, patches_val, patches_tr_lb_h, patches_val_lb_h, patches_bound_labels_tr, patches_bound_labels_val, patches_dist_labels_tr, patches_dist_labels_val, patches_color_labels_tr, patches_color_labels_val   = train_test_split(patches_tr, patches_tr_lb_h, patches_bound_labels, patches_dist_labels, patches_color_labels,  test_size=0.2, random_state=42)
-else:
-    patches_tr, patches_val, patches_tr_lb_h, patches_val_lb_h = train_test_split(patches_tr, patches_tr_lb_h, test_size=0.2, random_state=42)
-
-number_class = 5
-patch_size = 256
-stride = patch_size // 8
-batch_size = 4
-epochs = 500
-seed = 42
-
-
-if args.multitasking:
-    # y_paths={"segmentation": patches_tr_lb_h, "boundary": patches_bound_labels_tr, "distance":  patches_dist_labels_tr, "color": patches_color_labels_tr}
-    '''
-        index maps:
-            0 --> segmentation
-            1 --> boundary
-            2 --> distance
-            3 --> color
-    '''
-    y_paths=[patches_tr_lb_h, patches_bound_labels_tr, patches_dist_labels_tr, patches_color_labels_tr]
-
-    # val_paths={"segmentation": patches_val_lb_h, "boundary": patches_bound_labels_val, "distance":  patches_dist_labels_val, "color": patches_color_labels_val}
-    val_paths = [patches_val_lb_h, patches_bound_labels_val, patches_dist_labels_val, patches_color_labels_val]
-else:
-    # y_paths={"segmentation": patches_tr_lb_h, "boundary": [], "distance":  [], "color": []}
-    y_paths = [patches_tr_lb_h]
-
-    # val_paths={"segmentation": patches_val_lb_h, "boundary": [], "distance":  [], "color": []}
-    val_paths = [patches_val_lb_h]
-
-
-
-exp = 1
-rows = patch_size
-cols = patch_size
-channels = 3
-lr = 1e-3
-adam = Adam(lr = lr , beta_1=0.9)
-sgd = SGD(lr=lr,momentum=0.8)
-
-
-weights = [  4.34558461   ,2.97682037   ,3.92124661   ,5.67350328 ,374.0300152 ]
-print('='*60)
-print(weights)
-loss = weighted_categorical_crossentropy(weights)
-if args.multitasking:
-    weighted_cross_entropy = weighted_categorical_crossentropy(weights)
-    cross_entropy = "categorical_crossentropy"
-    tanimoto = Tanimoto_dual_loss()
-
-if args.resunet_a == True:
+    ref_path = os.path.join(root_path, 'labels/seg')
+    patches_tr_lb_h = [os.path.join(ref_path, name) for name
+                       in os.listdir(ref_path)]
 
     if args.multitasking:
-        print('Multitasking enabled!')
-        resuneta = Resunet_a((rows, cols, channels), number_class, args)
-        model = resuneta.model
-        model.summary()
-        # losses = {
-        # 	"segmentation": weighted_cross_entropy,
-        # 	"boundary": weighted_cross_entropy,
-        #     "distance": weighted_cross_entropy,
-        #     "color": cross_entropy,
-        # }
-        losses = {"segmentation": tanimoto,
-                  "boundary": tanimoto,
-                  "distance": tanimoto,
-                  "color": tanimoto}
-        lossWeights = {"segmentation": 1.0, "boundary": 1.0,
-                       "distance": 1.0, "color": 1.0}
-        if args.gpu_parallel:
-            with strategy.scope():
+        ref_bound_path = os.path.join(root_path, 'labels/bound')
+        print(ref_bound_path)
+        patches_bound_labels = [os.path.join(ref_bound_path, name) for name
+                                in os.listdir(ref_bound_path)]
+
+        ref_dist_path = os.path.join(root_path, 'labels/dist')
+        patches_dist_labels = [os.path.join(ref_dist_path, name) for name
+                               in os.listdir(ref_dist_path)]
+
+        ref_color_path = os.path.join(root_path, 'labels/color')
+        patches_color_labels = [os.path.join(ref_color_path, name) for name
+                                in os.listdir(ref_color_path)]
+
+    if args.multitasking:
+        patches_tr, patches_val, patches_tr_lb_h, patches_val_lb_h, patches_bound_labels_tr, patches_bound_labels_val, patches_dist_labels_tr, patches_dist_labels_val, patches_color_labels_tr, patches_color_labels_val   = train_test_split(patches_tr, patches_tr_lb_h, patches_bound_labels, patches_dist_labels, patches_color_labels,  test_size=0.2, random_state=42)
+    else:
+        patches_tr, patches_val, patches_tr_lb_h, patches_val_lb_h = train_test_split(patches_tr, patches_tr_lb_h, test_size=0.2, random_state=42)
+
+    number_class = 5
+    patch_size = 256
+    stride = patch_size // 8
+    batch_size = 4
+    epochs = 500
+    seed = 42
+
+
+    if args.multitasking:
+        # y_paths={"segmentation": patches_tr_lb_h, "boundary": patches_bound_labels_tr, "distance":  patches_dist_labels_tr, "color": patches_color_labels_tr}
+        '''
+            index maps:
+                0 --> segmentation
+                1 --> boundary
+                2 --> distance
+                3 --> color
+        '''
+        y_paths=[patches_tr_lb_h, patches_bound_labels_tr, patches_dist_labels_tr, patches_color_labels_tr]
+
+        # val_paths={"segmentation": patches_val_lb_h, "boundary": patches_bound_labels_val, "distance":  patches_dist_labels_val, "color": patches_color_labels_val}
+        val_paths = [patches_val_lb_h, patches_bound_labels_val, patches_dist_labels_val, patches_color_labels_val]
+    else:
+        # y_paths={"segmentation": patches_tr_lb_h, "boundary": [], "distance":  [], "color": []}
+        y_paths = [patches_tr_lb_h]
+
+        # val_paths={"segmentation": patches_val_lb_h, "boundary": [], "distance":  [], "color": []}
+        val_paths = [patches_val_lb_h]
+
+
+
+    exp = 1
+    rows = patch_size
+    cols = patch_size
+    channels = 3
+    lr = 1e-3
+    adam = Adam(lr = lr , beta_1=0.9)
+    sgd = SGD(lr=lr,momentum=0.8)
+
+
+    weights = [  4.34558461   ,2.97682037   ,3.92124661   ,5.67350328 ,374.0300152 ]
+    print('='*60)
+    print(weights)
+    loss = weighted_categorical_crossentropy(weights)
+    if args.multitasking:
+        weighted_cross_entropy = weighted_categorical_crossentropy(weights)
+        cross_entropy = "categorical_crossentropy"
+        tanimoto = Tanimoto_dual_loss()
+
+    if args.resunet_a == True:
+
+        if args.multitasking:
+            print('Multitasking enabled!')
+            resuneta = Resunet_a((rows, cols, channels), number_class, args)
+            model = resuneta.model
+            model.summary()
+            # losses = {
+            # 	"segmentation": weighted_cross_entropy,
+            # 	"boundary": weighted_cross_entropy,
+            #     "distance": weighted_cross_entropy,
+            #     "color": cross_entropy,
+            # }
+            losses = {"segmentation": tanimoto,
+                      "boundary": tanimoto,
+                      "distance": tanimoto,
+                      "color": tanimoto}
+            lossWeights = {"segmentation": 1.0, "boundary": 1.0,
+                           "distance": 1.0, "color": 1.0}
+            if args.gpu_parallel:
+                with strategy.scope():
+                    model.compile(optimizer=adam, loss=losses,
+                                  loss_weights=lossWeights, metrics=['accuracy'])
+            else:
                 model.compile(optimizer=adam, loss=losses,
                               loss_weights=lossWeights, metrics=['accuracy'])
         else:
-            model.compile(optimizer=adam, loss=losses,
-                          loss_weights=lossWeights, metrics=['accuracy'])
+            resuneta = Resunet_a((rows, cols, channels), number_class, args)
+            model = resuneta.model
+            model.summary()
+            model.compile(optimizer=adam, loss=loss, metrics=['accuracy'])
+
+        print('ResUnet-a compiled!')
     else:
-        resuneta = Resunet_a((rows, cols, channels), number_class, args)
-        model = resuneta.model
+        model = unet((rows, cols, channels), number_class)
         model.summary()
+
         model.compile(optimizer=adam, loss=loss, metrics=['accuracy'])
-
-    print('ResUnet-a compiled!')
-else:
-    model = unet((rows, cols, channels), number_class)
-    model.summary()
-
-    model.compile(optimizer=adam, loss=loss, metrics=['accuracy'])
-    # model.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['accuracy'])
+        # model.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['accuracy'])
 
 
-filepath = './models/'
+    filepath = './models/'
 
-# train the model
-if args.multitasking:
-    x_shape_batch = (batch_size, patch_size, patch_size, 3)
-    y_shape_batch = (batch_size, patch_size, patch_size, 5)
-    start_time = time.time()
-    train_model(args, model, patches_tr, y_paths, patches_val, val_paths, batch_size, epochs, x_shape_batch=x_shape_batch, y_shape_batch=y_shape_batch)
-    end_time = time.time() - start_time
-else:
-    x_shape_batch = (batch_size, patch_size, patch_size, 3)
-    y_shape_batch = (batch_size, patch_size, patch_size, 5)
+    # train the model
+    if args.multitasking:
+        x_shape_batch = (batch_size, patch_size, patch_size, 3)
+        y_shape_batch = (batch_size, patch_size, patch_size, 5)
+        start_time = time.time()
+        train_model(args, model, patches_tr, y_paths, patches_val, val_paths, batch_size, epochs, x_shape_batch=x_shape_batch, y_shape_batch=y_shape_batch)
+        end_time = time.time() - start_time
+    else:
+        x_shape_batch = (batch_size, patch_size, patch_size, 3)
+        y_shape_batch = (batch_size, patch_size, patch_size, 5)
 
-    start_time = time.time()
+        start_time = time.time()
 
-    # train_model(args, model, patches_train, patches_tr_lb_h, patches_val, patches_val_lb_h, batch_size, epochs, patience=10, delta=0.001, x_shape_batch=x_shape_batch, y_shape_batch=y_shape_batch, seed=seed)
-    train_model(args, model, patches_tr, y_paths, patches_val, val_paths, batch_size, epochs, x_shape_batch=x_shape_batch, y_shape_batch=y_shape_batch)
+        # train_model(args, model, patches_train, patches_tr_lb_h, patches_val, patches_val_lb_h, batch_size, epochs, patience=10, delta=0.001, x_shape_batch=x_shape_batch, y_shape_batch=y_shape_batch, seed=seed)
+        train_model(args, model, patches_tr, y_paths, patches_val, val_paths, batch_size, epochs, x_shape_batch=x_shape_batch, y_shape_batch=y_shape_batch)
 
-    end_time = time.time() - start_time
-    print(f'\nTraining took: {end_time} \n')
+        end_time = time.time() - start_time
+        print(f'\nTraining took: {end_time} \n')
 
-#%% Test model
+    #%% Test model
 
-# Load images
-img_test_path = 'Image_Test.npy'
-img_test = load_npy_image(os.path.join(root_path, img_test_path)).astype(np.float32)
-# Normalizes the image
-img_test_normalized = normalization(img_test)
-# Transform the image into W x H x C shape
-img_test_normalized = img_test_normalized.transpose((1,2,0))
-print(img_test_normalized.shape)
+    # Load images
+    img_test_path = 'Image_Test.npy'
+    img_test = load_npy_image(os.path.join(root_path, img_test_path)).astype(np.float32)
+    # Normalizes the image
+    img_test_normalized = normalization(img_test)
+    # Transform the image into W x H x C shape
+    img_test_normalized = img_test_normalized.transpose((1,2,0))
+    print(img_test_normalized.shape)
 
-# Load reference
-img_test_ref_path = 'Reference_Test.npy'
-img_test_ref = load_npy_image(os.path.join(root_path, img_test_ref_path))
-img_test_ref = img_test_ref.transpose((1,2,0))
-print(img_test_ref.shape)
+    # Load reference
+    img_test_ref_path = 'Reference_Test.npy'
+    img_test_ref = load_npy_image(os.path.join(root_path, img_test_ref_path))
+    img_test_ref = img_test_ref.transpose((1,2,0))
+    print(img_test_ref.shape)
 
-# Create binarized matrix
-w = img_test_ref.shape[0]
-h = img_test_ref.shape[1]
-c = img_test_ref.shape[2]
-#binary_img_train_ref = np.zeros((1,w,h))
-binary_img_test_ref = np.full((w,h), -1)
-# Dictionary used in training
-label_dict = {'(255, 255, 255)': 0, '(0, 255, 0)': 1, '(0, 255, 255)': 2, '(0, 0, 255)': 3, '(255, 255, 0)': 4}
-label = 0
-for i in range(w):
-    for j in range(h):
-        r = img_test_ref[i][j][0]
-        g = img_test_ref[i][j][1]
-        b = img_test_ref[i][j][2]
-        rgb = (r,g,b)
-        rgb_key = str(rgb)
-        binary_img_test_ref[i][j] = label_dict[rgb_key]
-print(label_dict)
+    # Create binarized matrix
+    w = img_test_ref.shape[0]
+    h = img_test_ref.shape[1]
+    c = img_test_ref.shape[2]
+    #binary_img_train_ref = np.zeros((1,w,h))
+    binary_img_test_ref = np.full((w,h), -1)
+    # Dictionary used in training
+    label_dict = {'(255, 255, 255)': 0, '(0, 255, 0)': 1, '(0, 255, 255)': 2, '(0, 0, 255)': 3, '(255, 255, 0)': 4}
+    label = 0
+    for i in range(w):
+        for j in range(h):
+            r = img_test_ref[i][j][0]
+            g = img_test_ref[i][j][1]
+            b = img_test_ref[i][j][2]
+            rgb = (r,g,b)
+            rgb_key = str(rgb)
+            binary_img_test_ref[i][j] = label_dict[rgb_key]
+    print(label_dict)
 
-# Put the patch size according to you training here
-patches_test = extract_patches_train(img_test_normalized, patch_size)
-patches_test_ref = extract_patches_test(binary_img_test_ref, patch_size)
+    # Put the patch size according to you training here
+    patches_test = extract_patches_train(img_test_normalized, patch_size)
+    patches_test_ref = extract_patches_test(binary_img_test_ref, patch_size)
 
-#% Load model
-model = load_model(filepath+'unet_exp_'+str(exp)+'.h5', compile=False)
-# Prediction
-# Test the model
-patches_pred = Test(model, patches_test, args)
-print(patches_pred.shape)
+    #% Load model
+    model = load_model(filepath+'unet_exp_'+str(exp)+'.h5', compile=False)
+    # Prediction
+    # Test the model
+    patches_pred = Test(model, patches_test, args)
+    print(patches_pred.shape)
 
-# Metrics
-true_labels = np.reshape(patches_test_ref, (patches_test_ref.shape[0]* patches_test_ref.shape[1]*patches_test_ref.shape[2]))
-predicted_labels = np.reshape(patches_pred, (patches_pred.shape[0]* patches_pred.shape[1]*patches_pred.shape[2]))
+    # Metrics
+    true_labels = np.reshape(patches_test_ref, (patches_test_ref.shape[0]* patches_test_ref.shape[1]*patches_test_ref.shape[2]))
+    predicted_labels = np.reshape(patches_pred, (patches_pred.shape[0]* patches_pred.shape[1]*patches_pred.shape[2]))
 
-# Metrics
-metrics = compute_metrics(true_labels,predicted_labels)
-cm = confusion_matrix(true_labels, predicted_labels, labels=[0,1,2,3,4])
+    # Metrics
+    metrics = compute_metrics(true_labels,predicted_labels)
+    cm = confusion_matrix(true_labels, predicted_labels, labels=[0,1,2,3,4])
 
-print('Confusion  matrix \n', cm)
-print()
-print('Accuracy: ', metrics[0])
-print('F1score: ', metrics[1])
-print('Recall: ', metrics[2])
-print('Precision: ', metrics[3])
+    print('Confusion  matrix \n', cm)
+    print()
+    print('Accuracy: ', metrics[0])
+    print('F1score: ', metrics[1])
+    print('Recall: ', metrics[2])
+    print('Precision: ', metrics[3])
+
+    def pred_recostruction(patch_size, pred_labels, binary_img_test_ref):
+        # Patches Reconstruction
+        stride = patch_size
+
+        height, width = binary_img_test_ref.shape
+
+        num_patches_h = height // stride
+        num_patches_w = width // stride
+
+        new_shape = (height, width)
+        img_reconstructed = np.zeros(new_shape)
+        cont = 0
+        # rows
+        for h in range(num_patches_h):
+            # columns
+            for w in range(num_patches_w):
+                img_reconstructed[h*stride:(h+1)*stride, w*stride:(w+1)*stride] = patches_pred[cont]
+                cont += 1
+        print('Reconstruction Done!')
+        return img_reconstructed
 
 
-def pred_recostruction(patch_size, pred_labels, binary_img_test_ref):
-    # Patches Reconstruction
-    stride = patch_size
+    def reconstruction_rgb_prdiction_patches(img_reconstructed, label_dict):
+        reversed_label_dict = {value : key for (key, value) in label_dict.items()}
+        print(reversed_label_dict)
+        height, width = img_reconstructed.shape
+        img_reconstructed_rgb = np.zeros((height,width,3))
+        for h in range(height):
+            for w in range(width):
+                pixel_class = img_reconstructed[h, w]
+                img_reconstructed_rgb[h, w, :] = ast.literal_eval(reversed_label_dict[pixel_class])
+        print('Conversion to RGB Done!')
+        return img_reconstructed_rgb.astype(np.uint8)
 
-    height, width = binary_img_test_ref.shape
+    img_reconstructed = pred_recostruction(patch_size, patches_pred, binary_img_test_ref)
+    img_reconstructed_rgb = reconstruction_rgb_prdiction_patches(img_reconstructed, label_dict)
 
-    num_patches_h = height // stride
-    num_patches_w = width // stride
-
-    new_shape = (height, width)
-    img_reconstructed = np.zeros(new_shape)
-    cont = 0
-    # rows
-    for h in range(num_patches_h):
-        # columns
-        for w in range(num_patches_w):
-            img_reconstructed[h*stride:(h+1)*stride, w*stride:(w+1)*stride] = patches_pred[cont]
-            cont += 1
-    print('Reconstruction Done!')
-    return img_reconstructed
+    plt.imsave(f'img_reconstructed_rgb_exp{exp}.jpeg', img_reconstructed_rgb)
 
 
-def reconstruction_rgb_prdiction_patches(img_reconstructed, label_dict):
-    reversed_label_dict = {value : key for (key, value) in label_dict.items()}
-    print(reversed_label_dict)
-    height, width = img_reconstructed.shape
-    img_reconstructed_rgb = np.zeros((height,width,3))
-    for h in range(height):
-        for w in range(width):
-            pixel_class = img_reconstructed[h, w]
-            img_reconstructed_rgb[h, w, :] = ast.literal_eval(reversed_label_dict[pixel_class])
-    print('Conversion to RGB Done!')
-    return img_reconstructed_rgb.astype(np.uint8)
-
-img_reconstructed = pred_recostruction(patch_size, patches_pred, binary_img_test_ref)
-img_reconstructed_rgb = reconstruction_rgb_prdiction_patches(img_reconstructed, label_dict)
-
-plt.imsave(f'img_reconstructed_rgb_exp{exp}.jpeg', img_reconstructed_rgb)
+if __name__ == '__main__':
+    main()
