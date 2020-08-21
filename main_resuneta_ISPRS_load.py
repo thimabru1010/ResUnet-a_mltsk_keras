@@ -106,12 +106,12 @@ def compute_metrics_hw(true_labels, predicted_labels):
     return accuracy, f1score, recall, precision
 
 
-def Train_model(args, net, x_train_paths, y_paths, patches_val, val_paths, batch_size, epochs, patience, delta, x_shape_batch, y_shape_batch, seed):
+def Train_model(args, net, x_train_paths, y_train_paths, x_val_paths, y_val_paths, batch_size, epochs, patience, delta, x_shape_batch, y_shape_batch, seed):
     # patches_train = x_train_paths
     print('Start training...')
     print('='*60)
     print(f'Training on {len(x_train_paths)} images')
-    print(f'Validating on {len(patches_val)} images')
+    print(f'Validating on {len(x_val_paths)} images')
     print('='*60)
     print(f'Total Epochs: {epochs}')
     # Initialize as maximum possible number
@@ -148,17 +148,17 @@ def Train_model(args, net, x_train_paths, y_paths, patches_val, val_paths, batch
         n_batchs_tr = len(x_train_paths)//batch_size
         # Random shuffle the data
         if not args.multitasking:
-            patches_train, patches_seg_lb_h = shuffle(x_train_paths, y_paths[0])
+            x_train_paths_rand, y_train_paths_rand_seg = shuffle(x_train_paths, y_train_paths[0])
         else:
-            patches_train, patches_seg_lb_h, patches_bound_labels_tr_h, \
+            x_train_paths_rand, y_train_paths_rand_seg, patches_bound_labels_tr_h, \
                 patches_dist_labels_tr_h, patches_color_labels_tr_h = \
-                shuffle(x_train_paths, y_paths[0], y_paths[1], y_paths[2],
-                        y_paths[3])
+                shuffle(x_train_paths, y_train_paths[0], y_train_paths[1], y_train_paths[2],
+                        y_train_paths[3])
 
         # Training the network per batch
         for batch in range(n_batchs_tr):
-            x_train_paths_b = patches_train[batch * batch_size:(batch + 1) * batch_size]
-            y_train_paths_seg = patches_seg_lb_h[batch * batch_size:(batch + 1) * batch_size]
+            x_train_paths_b = x_train_paths_rand[batch * batch_size:(batch + 1) * batch_size]
+            y_train_paths_b_seg = y_train_paths_rand_seg[batch * batch_size:(batch + 1) * batch_size]
             if args.multitasking:
                 y_train_paths_bound = patches_bound_labels_tr_h[batch * batch_size:(batch + 1) * batch_size]
 
@@ -167,7 +167,7 @@ def Train_model(args, net, x_train_paths, y_paths, patches_val, val_paths, batch
                 y_train_paths_color = patches_color_labels_tr_h[batch * batch_size:(batch + 1) * batch_size]
             for b in range(batch_size):
                 x_train_b[b] = np.load(x_train_paths_b[b])
-                y_train_h_b_seg[b] = np.load(y_train_paths_seg[b])
+                y_train_h_b_seg[b] = np.load(y_train_paths_b_seg[b])
                 if args.multitasking:
                     if args.bound:
                         y_train_h_b_bound[b] = np.load(y_train_paths_bound[b])
@@ -201,8 +201,8 @@ def Train_model(args, net, x_train_paths, y_paths, patches_val, val_paths, batch
         loss_tr = loss_tr/n_batchs_tr
 
         # Computing the number of batchs on validation
-        # n_batchs_val = patches_val.shape[0]//batch_size
-        n_batchs_val = len(patches_val)//batch_size
+        # n_batchs_val = x_val_paths.shape[0]//batch_size
+        n_batchs_val = len(x_val_paths)//batch_size
 
         '''
             Talvez fosse bom deletar as matrizes :
@@ -213,10 +213,10 @@ def Train_model(args, net, x_train_paths, y_paths, patches_val, val_paths, batch
 
         # Evaluating the model in the validation set
         for batch in range(n_batchs_val):
-            x_val_paths = patches_val[batch * batch_size:(batch + 1) * batch_size]
+            x_val_paths = x_val_paths[batch * batch_size:(batch + 1) * batch_size]
             y_val_paths_seg = val_paths[0][batch * batch_size:(batch + 1) * batch_size]
             if args.multitasking:
-                y_val_paths_bound = val_paths[1][batch * batch_size:(batch + 1) * batch_size]
+                y_val_paths_bound = y_val_paths[1][batch * batch_size:(batch + 1) * batch_size]
 
                 y_val_paths_dist = val_paths[2][batch * batch_size:(batch + 1) * batch_size]
 
@@ -296,27 +296,6 @@ def Train_model(args, net, x_train_paths, y_paths, patches_val, val_paths, batch
                        + val_color_acc) / 4
             total_val_acc.append(val_acc)
 
-            # print(f"Epoch: {epoch} \t \
-            #  Train loss: {train_loss :.5f} \
-            #  Val loss: {val_loss :.5f} \
-            #  Train seg loss: {train_seg_loss :.5f} \
-            #  Val seg loss: {val_seg_loss :.5f} \
-            #  Train bound loss: {train_bound_loss :.5f} \
-            #  Val bound loss: {val_bound_loss :.5f} \
-            #  Train dist loss: {train_dist_loss :.5f} \
-            #  Val dist loss: {val_dist_loss :.5f} \
-            #  Train color loss: \ {train_color_loss :.5f} \
-            #  Val color loss: {val_color_loss :.5f} \
-            #  Train acc: {100*train_acc :.5f}% \
-            #  Val acc: {100*val_acc :.5f}% \
-            #  Train seg acc.: {100*train_seg_acc:.5f}% \
-            #  Val seg acc.: {100*val_seg_acc:.5f}% \
-            #  Train bound acc.: {100*train_bound_acc:.5f}% \
-            #  Val bound acc.: {100*val_bound_acc:.5f}% \
-            #  Train dist acc.: {100*train_dist_acc:.5f}% \
-            #  Val dist acc.: {100*val_dist_acc:.5f}% \
-            #  Train color acc.: {100*train_color_acc:.5f}% \
-            #  Val color acc.: {100*val_color_acc:.5f}%")
             metrics_table = PrettyTable()
             metrics_table.title = f'Epoch: {epoch}'
             metrics_table.field_names = ['Task', 'Loss', 'Val Loss',
