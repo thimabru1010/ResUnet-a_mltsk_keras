@@ -206,7 +206,7 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
 
         # Evaluating the model in the validation set
         for batch in range(n_batchs_val):
-            x_val_paths = x_val_paths[batch * batch_size:(batch + 1) * batch_size]
+            x_val_paths_b = x_val_paths[batch * batch_size:(batch + 1) * batch_size]
             y_val_paths_b_seg = y_val_paths[0][batch * batch_size:(batch + 1) * batch_size]
             if args.multitasking:
                 # y_train_paths_b_bound
@@ -216,7 +216,7 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
 
                 y_val_paths_b_color = y_val_paths[3][batch * batch_size:(batch + 1) * batch_size]
             for b in range(batch_size):
-                x_val_b[b] = np.load(x_val_paths[b])
+                x_val_b[b] = np.load(x_val_paths_b[b])
                 y_val_h_b_seg[b] = np.load(y_val_paths_b_seg[b])
                 if args.multitasking:
                     y_val_h_b_bound[b] = np.load(y_val_paths_b_bound[b])
