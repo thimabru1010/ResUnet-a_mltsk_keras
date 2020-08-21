@@ -145,7 +145,7 @@ def Train_model(args, net, x_train_paths, y_paths, patches_val, val_paths, batch
             loss_val = np.zeros((1, 9))
         # Computing the number of batchs on training
         # n_batchs_tr = patches_train.shape[0]//batch_size
-        n_batchs_tr = len(patches_train)//batch_size
+        n_batchs_tr = len(x_train_paths)//batch_size
         # Random shuffle the data
         if not args.multitasking:
             patches_train, patches_seg_lb_h = shuffle(x_train_paths, y_paths[0])
@@ -372,7 +372,7 @@ if args.gpu_parallel:
 else:
     strategy = None
 
-root_path = './DATASETS/patches_ps=128_stride=32'
+root_path = './DATASETS/patches_ps=256_stride=32'
 train_path = os.path.join(root_path, 'train')
 patches_tr = [os.path.join(train_path, name) for name in os.listdir(train_path)]
 
@@ -400,9 +400,9 @@ else:
     patches_tr, patches_val, patches_tr_lb_h, patches_val_lb_h = train_test_split(patches_tr, patches_tr_lb_h, test_size=0.2, random_state=42)
 
 number_class = 5
-patch_size = 128
-stride = patch_size // 4
-batch_size = 1
+patch_size = 256
+stride = patch_size // 8
+batch_size = 4
 epochs = 500
 seed = 42
 
