@@ -157,7 +157,7 @@ def Train_model(args, net, x_train_paths, y_paths, patches_val, val_paths, batch
 
         # Training the network per batch
         for batch in range(n_batchs_tr):
-            x_train_paths = patches_train[batch * batch_size:(batch + 1) * batch_size]
+            patches_train = patches_train[batch * batch_size:(batch + 1) * batch_size]
             y_train_paths_seg = patches_seg_lb_h[batch * batch_size:(batch + 1) * batch_size]
             if args.multitasking:
                 y_train_paths_bound = patches_bound_labels_tr_h[batch * batch_size:(batch + 1) * batch_size]
@@ -166,7 +166,7 @@ def Train_model(args, net, x_train_paths, y_paths, patches_val, val_paths, batch
 
                 y_train_paths_color = patches_color_labels_tr_h[batch * batch_size:(batch + 1) * batch_size]
             for b in range(batch_size):
-                x_train_b[b] = np.load(x_train_paths[b])
+                x_train_b[b] = np.load(patches_train[b])
                 y_train_h_b_seg[b] = np.load(y_train_paths_seg[b])
                 if args.multitasking:
                     if args.bound:
