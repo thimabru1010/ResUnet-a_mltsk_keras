@@ -429,17 +429,16 @@ def main():
     adam = Adam(lr = lr , beta_1=0.9)
     sgd = SGD(lr=lr,momentum=0.8)
 
-
-    weights = [  4.34558461   ,2.97682037   ,3.92124661   ,5.67350328 ,374.0300152 ]
+    weights = [4.34558461, 2.97682037, 3.92124661, 5.67350328, 374.0300152]
     print('='*60)
     print(weights)
     loss = weighted_categorical_crossentropy(weights)
     if args.multitasking:
-        weighted_cross_entropy = weighted_categorical_crossentropy(weights)
-        cross_entropy = "categorical_crossentropy"
+        # weighted_cross_entropy = weighted_categorical_crossentropy(weights)
+        # cross_entropy = "categorical_crossentropy"
         tanimoto = Tanimoto_dual_loss()
 
-    if args.resunet_a == True:
+    if args.resunet_a:
 
         if args.multitasking:
             print('Multitasking enabled!')
@@ -452,12 +451,25 @@ def main():
             #     "distance": weighted_cross_entropy,
             #     "color": cross_entropy,
             # }
-            losses = {"segmentation": tanimoto,
-                      "boundary": tanimoto,
-                      "distance": tanimoto,
-                      "color": tanimoto}
-            lossWeights = {"segmentation": 1.0, "boundary": 1.0,
-                           "distance": 1.0, "color": 1.0}
+            # losses = {"segmentation": tanimoto,
+            #           "boundary": tanimoto,
+            #           "distance": tanimoto,
+            #           "color": tanimoto}
+
+            losses = {'segmentation': tanimoto}
+            lossWeights = {'segmentation': 1.0}
+            if args.bound:
+                losses['boundary'] = tanimoto
+                lossWeights["boundary"] = 1.0
+            if args.dist:
+                losses['distance'] = tanimoto
+                lossWeights["distance"] = 1.0
+            if args.color:
+                losses['color'] = tanimoto
+                lossWeights["color"] = 1.0
+
+            print(losses)
+            print(lossWeights)
             if args.gpu_parallel:
                 with strategy.scope():
                     model.compile(optimizer=adam, loss=losses,
