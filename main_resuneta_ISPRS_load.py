@@ -116,14 +116,18 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
     y_val_h_b_seg = np.zeros(y_shape_batch)
     if args.multitasking:
         # Bounds
-        y_train_h_b_bound = np.zeros(y_shape_batch)
-        y_val_h_b_bound = np.zeros(y_shape_batch)
+        if args.bound:
+            y_train_h_b_bound = np.zeros(y_shape_batch)
+            y_val_h_b_bound = np.zeros(y_shape_batch)
         # Dists
-        y_train_h_b_dist = np.zeros(y_shape_batch)
-        y_val_h_b_dist = np.zeros(y_shape_batch)
+        if args.dist:
+            y_train_h_b_dist = np.zeros(y_shape_batch)
+            y_val_h_b_dist = np.zeros(y_shape_batch)
         # Colors
-        y_train_h_b_color = np.zeros((y_shape_batch[0], y_shape_batch[1], y_shape_batch[2], 3))
-        y_val_h_b_color = np.zeros((y_shape_batch[0], y_shape_batch[1], y_shape_batch[2], 3))
+        if args.color:
+            y_train_h_b_color = np.zeros((y_shape_batch[0], y_shape_batch[1], y_shape_batch[2], 3))
+            y_val_h_b_color = np.zeros((y_shape_batch[0], y_shape_batch[1], y_shape_batch[2], 3))
+    print(net.metrics_names)
     for epoch in range(epochs):
         if not args.multitasking:
             loss_tr = np.zeros((1, 2))
@@ -180,7 +184,7 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                 if args.color:
                     y_train_b['color'] = y_train_h_b_color
 
-                loss_tr = loss_tr + net.train_on_batch(x=x_train_b, y=y_train_b)
+                loss_tr = loss_tr + net.train_on_batch(x=x_train_b, y=y_train_b, return_dict=True)
 
             # print('='*30 + ' [CHECKING LOSS] ' + '='*30)
             # print(net.metrics_names)
@@ -190,6 +194,7 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
             # print(loss_tr.shape)
 
         # Training loss; Divide for the numberof batches
+        print(loss_tr)
         loss_tr = loss_tr/n_batchs_tr
 
         # Computing the number of batchs on validation
@@ -236,9 +241,10 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                 if args.color:
                     y_val_b['color'] = y_val_h_b_color
 
-                loss_val = loss_val + net.test_on_batch(x=x_val_b, y=y_val_b)
+                loss_val = loss_val + net.test_on_batch(x=x_val_b, y=y_val_b, return_dict=True)
 
         # validation loss
+        print(loss_val)
         loss_val = loss_val/n_batchs_val
         if not args.multitasking:
             train_loss = loss_tr[0, 0]
@@ -535,7 +541,7 @@ def main():
     h = img_test_ref.shape[1]
     c = img_test_ref.shape[2]
     # binary_img_train_ref = np.zeros((1,w,h))
-    binary_img_test_ref = np.full((w,h), -1)
+    binary_img_test_ref = np.full((w, h), -1)
     # Dictionary used in training
     label_dict = {'(255, 255, 255)': 0, '(0, 255, 0)': 1, '(0, 255, 255)': 2, '(0, 0, 255)': 3, '(255, 255, 0)': 4}
     # label = 0
