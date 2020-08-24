@@ -130,7 +130,7 @@ class Resunet_a(object):
                               name='seg2')(x_seg)
             x_seg = KL.Conv2D(self.num_classes, (1, 1), padding='valid',
                               name='seg3')(x_seg)
-            out_seg = KL.Activation('softmax', name='segmentation')(x_seg)
+            out_seg = KL.Activation('softmax', name='seg')(x_seg)
             out.append(out_seg)
 
             # Boundary
@@ -139,7 +139,7 @@ class Resunet_a(object):
                                     padding='same')(x_psp)
                 x_bound = KL.Conv2D(self.num_classes, (1, 1),
                                     padding='valid')(x_bound)
-                out_bound = KL.Activation('sigmoid', name='boundary')(x_bound)
+                out_bound = KL.Activation('sigmoid', name='bound')(x_bound)
                 out.append(out_bound)
 
             # Distance
@@ -150,7 +150,7 @@ class Resunet_a(object):
                                    padding='same')(x_dist)
                 x_dist = KL.Conv2D(self.num_classes, (1, 1),
                                    padding='valid')(x_dist)
-                out_dist = KL.Activation('softmax', name='distance')(x_dist)
+                out_dist = KL.Activation('softmax', name='dist')(x_dist)
                 out.append(out_dist)
 
             # Color
