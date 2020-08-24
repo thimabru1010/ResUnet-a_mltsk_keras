@@ -263,8 +263,9 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                     Validation loss: {val_loss :.5f} \t \
                     Validation acc.: {100*val_acc:.5f}%")
         else:
-            train_metrics = dict(zip(net.metrics_name, list(loss_tr)))
-            val_metrics = dict(zip(net.metrics_name, list(loss_val)))
+            train_metrics = dict(zip(net.metrics_name, loss_tr.tolist()[0]))
+            print(loss_tr.tolist()[0])
+            val_metrics = dict(zip(net.metrics_name, loss_val.tolist()[0]))
             # Segmentation
             # train_seg_loss = loss_tr[0, 1]
             # train_seg_acc = loss_tr[0, 5]
