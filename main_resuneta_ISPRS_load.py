@@ -133,8 +133,9 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
             loss_tr = np.zeros((1, 2))
             loss_val = np.zeros((1, 2))
         else:
-            loss_tr = np.zeros((1, 9))
-            loss_val = np.zeros((1, 9))
+            metrics_len = len(net.metrics_names)
+            loss_tr = np.zeros((1, metrics_len))
+            loss_val = np.zeros((1, metrics_len))
         # Computing the number of batchs on training
         # n_batchs_tr = patches_train.shape[0]//batch_size
         n_batchs_tr = len(x_train_paths)//batch_size
@@ -176,15 +177,16 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                 # Dict template: y_train_b = {"segmentation": y_train_h_b_seg,
                 # "boundary": y_train_h_b_bound, "distance":  y_train_h_b_dist,
                 # "color": y_train_h_b_color}
-                y_train_b = {"segmentation": y_train_h_b_seg}
+                y_train_b = {"seg": y_train_h_b_seg}
                 if args.bound:
-                    y_train_b['boundary'] = y_train_h_b_bound
+                    y_train_b['bound'] = y_train_h_b_bound
                 if args.dist:
-                    y_train_b['distance'] = y_train_h_b_dist
+                    y_train_b['dist'] = y_train_h_b_dist
                 if args.color:
                     y_train_b['color'] = y_train_h_b_color
 
-                loss_tr = loss_tr + net.train_on_batch(x=x_train_b, y=y_train_b, return_dict=True)
+                # return_dict argument not working
+                loss_tr = loss_tr + net.train_on_batch(x=x_train_b, y=y_train_b)
 
             # print('='*30 + ' [CHECKING LOSS] ' + '='*30)
             # print(net.metrics_names)
@@ -233,11 +235,11 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                 # Dict template: y_val_b = {"segmentation": y_val_h_b_seg,
                 # "boundary": y_val_h_b_bound, "distance":  y_val_h_b_dist,
                 # "color": y_val_h_b_color}
-                y_val_b = {"segmentation": y_val_h_b_seg}
+                y_val_b = {"seg": y_val_h_b_seg}
                 if args.bound:
-                    y_val_b['boundary'] = y_val_h_b_bound
+                    y_val_b['bound'] = y_val_h_b_bound
                 if args.dist:
-                    y_val_b['distance'] = y_val_h_b_dist
+                    y_val_b['dist'] = y_val_h_b_dist
                 if args.color:
                     y_val_b['color'] = y_val_h_b_color
 
@@ -261,65 +263,83 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                     Validation loss: {val_loss :.5f} \t \
                     Validation acc.: {100*val_acc:.5f}%")
         else:
+            train_metrics = dict(zip(net.metrics_name, list(loss_tr)))
+            val_metrics = dict(zip(net.metrics_name, list(loss_val)))
             # Segmentation
-            train_seg_loss = loss_tr[0, 1]
-            train_seg_acc = loss_tr[0, 5]
-            val_seg_loss = loss_val[0, 1]
-            val_seg_acc = loss_val[0, 5]
+            # train_seg_loss = loss_tr[0, 1]
+            # train_seg_acc = loss_tr[0, 5]
+            # val_seg_loss = loss_val[0, 1]
+            # val_seg_acc = loss_val[0, 5]
             # Boundary
-            train_bound_loss = loss_tr[0, 2]
-            train_bound_acc = loss_tr[0, 6]
-            val_bound_loss = loss_val[0, 2]
-            val_bound_acc = loss_val[0, 6]
-            # Distance
-            train_dist_loss = loss_tr[0, 3]
-            train_dist_acc = loss_tr[0, 7]
-            val_dist_loss = loss_val[0, 3]
-            val_dist_acc = loss_val[0, 7]
-            # Color
-            train_color_loss = loss_tr[0, 4]
-            train_color_acc = loss_tr[0, 8]
-            val_color_loss = loss_val[0, 4]
-            val_color_acc = loss_val[0, 8]
+            # train_bound_loss = loss_tr[0, 2]
+            # train_bound_acc = loss_tr[0, 6]
+            # val_bound_loss = loss_val[0, 2]
+            # val_bound_acc = loss_val[0, 6]
+            # # Distance
+            # train_dist_loss = loss_tr[0, 3]
+            # train_dist_acc = loss_tr[0, 7]
+            # val_dist_loss = loss_val[0, 3]
+            # val_dist_acc = loss_val[0, 7]
+            # # Color
+            # train_color_loss = loss_tr[0, 4]
+            # train_color_acc = loss_tr[0, 8]
+            # val_color_loss = loss_val[0, 4]
+            # val_color_acc = loss_val[0, 8]
+            #
+            # train_loss = loss_tr[0, 0]
+            # total_train_loss.append(train_loss)
 
-            train_loss = loss_tr[0, 0]
-            total_train_loss.append(train_loss)
-
-            train_acc = (train_seg_acc + train_bound_acc + train_dist_acc
-                         + train_color_loss) / 4
+            # train_acc = (train_seg_acc + train_bound_acc + train_dist_acc
+            #              + train_color_loss) / 4
+            train_acc = 0.0
+            for task in net.metrics_names:
+                if 'accuracy' in task:
+                    train_acc += train_metrics[task]
+            train_acc = train_acc / 4
+            # train_acc = (train_seg_acc + train_bound_acc + train_dist_acc
+            #              + train_color_loss) / 4
             total_train_acc.append(train_acc)
 
-            val_loss = loss_val[0, 0]
-            total_val_loss.append(val_loss)
+            # val_loss = loss_val[0, 0]
+            # total_val_loss.append(val_loss)
 
-            val_acc = (val_seg_acc + val_bound_acc + val_dist_acc
-                       + val_color_acc) / 4
+            val_acc = 0.0
+            for task in net.metrics_names:
+                if 'accuracy' in task:
+                    val_acc += val_metrics[task]
+            val_acc = val_acc / 4
+            # val_acc = (val_seg_acc + val_bound_acc + val_dist_acc
+            #            + val_color_acc) / 4
             total_val_acc.append(val_acc)
 
             metrics_table = PrettyTable()
             metrics_table.title = f'Epoch: {epoch}'
             metrics_table.field_names = ['Task', 'Loss', 'Val Loss',
-                                         'Acc', 'Val Acc']
-            metrics_table.add_row(['Seg', round(train_seg_loss, 5),
-                                  round(val_seg_loss, 5),
-                                  round(100*train_seg_acc, 5),
-                                  round(100*val_seg_acc, 5)])
-            metrics_table.add_row(['Bound', round(train_bound_loss, 5),
-                                  round(val_bound_loss, 5),
-                                  round(100*train_bound_acc, 5),
-                                  round(100*val_bound_acc, 5)])
-            metrics_table.add_row(['Dist', round(train_dist_loss, 5),
-                                  round(val_dist_loss, 5),
-                                  round(100*train_dist_acc, 5),
-                                  round(100*val_dist_acc, 5)])
-            metrics_table.add_row(['Color', round(train_color_loss, 5),
-                                  round(val_color_loss, 5),
-                                  round(100*train_color_acc, 5),
-                                  round(100*val_color_acc, 5)])
-            metrics_table.add_row(['Total', round(train_loss, 5),
-                                  round(val_loss, 5),
+                                         'Acc %', 'Val Acc %']
+            metrics_table.add_row(['Seg', round(train_metrics['seg_loss'], 5),
+                                  round(val_metrics['seg_loss'], 5),
+                                  round(100*train_metrics['seg_accuracy'], 5),
+                                  round(100*val_metrics['seg_accuracy'], 5)])
+            if args.bound:
+                metrics_table.add_row(['Bound', round(train_metrics['bound_loss'], 5),
+                                      round(val_metrics['bound_loss'], 5),
+                                      round(100*train_metrics['bound_accuracy'], 5),
+                                      round(100*val_metrics['bound_accuracy'], 5)])
+            if args.dist:
+                metrics_table.add_row(['Dist', round(train_metrics['dist_loss'], 5),
+                                      round(val_metrics['dist_loss'], 5),
+                                      round(100*train_metrics['dist_accuracy'], 5),
+                                      round(100*val_metrics['dist_accuracy'], 5)])
+            if args.color:
+                metrics_table.add_row(['Color', round(train_metrics['color_loss'], 5),
+                                      round(val_metrics['color_loss'], 5),
+                                      round(100*train_metrics['color_accuracy'], 5),
+                                      round(100*val_metrics['color_accuracy'], 5)])
+            metrics_table.add_row(['Total', round(train_metrics['loss'], 5),
+                                  round(val_metrics['loss'], 5),
                                   round(100*train_acc, 5),
                                   round(100*val_acc, 5)])
+            val_loss = val_metrics['loss']
             print(metrics_table)
         # Early stop
         # Save the model when loss is minimum
@@ -462,14 +482,14 @@ def main():
             #           "distance": tanimoto,
             #           "color": tanimoto}
 
-            losses = {'segmentation': tanimoto}
-            lossWeights = {'segmentation': 1.0}
+            losses = {'seg': tanimoto}
+            lossWeights = {'seg': 1.0}
             if args.bound:
-                losses['boundary'] = tanimoto
-                lossWeights["boundary"] = 1.0
+                losses['bound'] = tanimoto
+                lossWeights["bound"] = 1.0
             if args.dist:
-                losses['distance'] = tanimoto
-                lossWeights["distance"] = 1.0
+                losses['dist'] = tanimoto
+                lossWeights["dist"] = 1.0
             if args.color:
                 losses['color'] = tanimoto
                 lossWeights["color"] = 1.0
