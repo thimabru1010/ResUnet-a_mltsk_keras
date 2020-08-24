@@ -225,9 +225,12 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                 x_val_b[b] = np.load(x_val_paths_b[b])
                 y_val_h_b_seg[b] = np.load(y_val_paths_b_seg[b])
                 if args.multitasking:
-                    y_val_h_b_bound[b] = np.load(y_val_paths_b_bound[b])
-                    y_val_h_b_dist[b] = np.load(y_val_paths_b_dist[b])
-                    y_val_h_b_color[b] = np.load(y_val_paths_b_color[b])
+                    if args.bound:
+                        y_val_h_b_bound[b] = np.load(y_val_paths_b_bound[b])
+                    if args.dist:
+                        y_val_h_b_dist[b] = np.load(y_val_paths_b_dist[b])
+                    if args.color:
+                        y_val_h_b_color[b] = np.load(y_val_paths_b_color[b])
 
             if not args.multitasking:
                 loss_val = loss_val + net.test_on_batch(x_val_b, y_val_h_b_seg)
@@ -243,7 +246,7 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                 if args.color:
                     y_val_b['color'] = y_val_h_b_color
 
-                loss_val = loss_val + net.test_on_batch(x=x_val_b, y=y_val_b, return_dict=True)
+                loss_val = loss_val + net.test_on_batch(x=x_val_b, y=y_val_b)
 
         # validation loss
         print(loss_val)
