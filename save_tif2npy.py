@@ -54,6 +54,7 @@ def load_tiff_image(patch):
 # np.save(os.path.join('dataset_npy','labels/binary_clipped_1988_2012.tif'), past_ref2)
 from skimage.transform import resize
 #bottle_resized = resize(bottle, (140, 54))
+
 # Homework 3
 img_train = load_tiff_image('DATASETS/homework3/Image_Train.tif')
 img_train = resize(img_train, (4500, 4000))
