@@ -8,7 +8,7 @@ load_npy_image
 
 from ResUnet_a.model import Resunet_a
 #from ResUnet_a.model2 import Resunet_a2
-from multitasking_utils import get_boundary_labels, get_distance_labels, get_color_labels, Tanimoto_dual_loss
+from multitasking_utils import Tanimoto_dual_loss
 import argparse
 import os
 
