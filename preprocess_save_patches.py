@@ -78,6 +78,8 @@ def normalize_rgb(img, norm_type=1):
     elif norm_type == 2:
         img /= 127.5 - 1
 
+    return img
+
 
 def normalize_hsv(img, norm_type=1):
     # TODO: Maybe should implement normalization with StandardScaler
@@ -91,6 +93,8 @@ def normalize_hsv(img, norm_type=1):
         img[:, :, 0] /= 89.5 - 1
         img[:, :, 1] /= 127.5 - 1
         img[:, :, 2] /= 127.5 - 1
+
+    return img
 
 
 root_path = './DATASETS/ISPRS_npy'
