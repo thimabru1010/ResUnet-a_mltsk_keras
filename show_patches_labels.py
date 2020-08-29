@@ -21,6 +21,8 @@ import cv2
 from osgeo import ogr, gdal
 from matplotlib import cm
 
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--multitasking",
                     help="choose resunet-a model or not", type=int, default=0)
@@ -83,25 +85,47 @@ root_path = './DATASETS/homework3'
 img_train_path = 'Image_Train.tif'
 img_train = load_tiff_image(os.path.join(root_path,
                                         img_train_path))
+img_train = img_train.transpose((1, 2, 0))
+plt.imshow(img_train)
+plt.show()
+print(f'Img train max: {img_train.max()}, Img train min: {img_train.min()}')
 # img_train = plt.imread(os.path.join(root_path,
 #                                    img_train_path))
 # print(type(img_train))
 # Normalizes the image
+# scaler = StandardScaler()
+# scaler = MinMaxScaler(feature_range=(-1,1))
+# img_reshaped = img_train.reshape((img_train.shape[0]*img_train.shape[1]), img_train.shape[2])
+# scaler.fit(img_reshaped)
+# image_normalized = scaler.transform(img_reshaped)
+# img_normalized = image_normalized.reshape(img_train.shape[0], img_train.shape[1], img_train.shape[2])
+img_normalized = img_train / 127.5 - 1
+print(f'Img norm max: {img_normalized.max()}, Img norm min: {img_normalized.min()}')
+# img_normalized = img_normalized.transpose((1, 2, 0))
 # img_train_normalized = normalization(img_train)*255
 # Transform the image into W x H x C shape
 # img_train_normalized = img_train_normalized.transpose((1, 2, 0))
 print('Imagem RGB')
 # print(img_train)
 print(img_train.shape)
-img_train = img_train.transpose((1, 2, 0))
+# img_train = img_train.transpose((1, 2, 0))
 print(img_train.shape)
 # print(img_train)
-from skimage.transform import resize
+# from skimage.transform import resize
+print('Imagem HSV')
+hsv_patch = cv2.cvtColor(img_train, cv2.COLOR_RGB2HSV)
+print(hsv_patch.shape)
+plt.imshow(hsv_patch)
+plt.show()
+# hsv_patch = hsv_patch[:, :, 2]
+for i in range(3):
+    print(f'Img train max hsv {i}: {hsv_patch[:, :, i].max()}, Img train min hsv: {hsv_patch[:, :, i].min()}')
+hsv_patch = hsv_patch / np.array([179, 255, 255])
+for i in range(3):
+    print(f'Img norm max hsv {i}: {hsv_patch[:, :, i].max()}, Img norm min hsv: {hsv_patch[:, :, i].min()}')
 # img_train = cv2.resize(img_train, (500, 500), cv2.INTER_AREA)
-# img_train = resize(img_train, (500, 500))
+# hsv_patch = resize(hsv_patch, (500, 500))
 # #cv2.imshow('teste', img_train)
-# plt.imshow(img_train)
-# plt.show()
 # print('image showed')
 #cv2.waitKey(0)
 # print(img_train_normalized.shape)
@@ -154,28 +178,53 @@ def filename(i):
     return f'patch_{i}.npy'
 
 
-def get_boundary_label(label, _kernel_size = (3,3)):
+# def get_boundary_label(label, _kernel_size = (3,3)):
+#
+#     label = label.copy()
+#     h, w, c = label.shape
+#     # bounds = np.empty_like(labels,dtype=np.float32)
+#     # bounds = np.empty_like(label,dtype=np.int8)
+#     for channel in range(c):
+#         #print(label)
+#         label = label.astype(np.uint8)
+#         #print(label)
+#         #temp = cv2.Canny(label[:,:,channel],0,1)
+#         bound = cv2.Canny(label[:, :, channel], 0,1)
+#         label[:, :, channel] = cv2.dilate(bound, cv2.getStructuringElement(cv2.MORPH_CROSS,_kernel_size) ,iterations = 1)
+#
+#         # bound = bound.astype(np.float32)
+#         # bounds /= 255.
+#
+#         # bounds[n,:,:,channel] = bound
+#
+#     # bounds = bounds.astype(np.float32)
+#     # bounds /= 255.
+#     return label
 
-    label = label.copy()
-    h, w, c = label.shape
-    # bounds = np.empty_like(labels,dtype=np.float32)
-    # bounds = np.empty_like(label,dtype=np.int8)
-    for channel in range(c):
-        #print(label)
-        label = label.astype(np.uint8)
-        #print(label)
-        #temp = cv2.Canny(label[:,:,channel],0,1)
-        bound = cv2.Canny(label[:, :, channel], 0,1)
-        label[:, :, channel] = cv2.dilate(bound, cv2.getStructuringElement(cv2.MORPH_CROSS,_kernel_size) ,iterations = 1)
 
-        # bound = bound.astype(np.float32)
-        # bounds /= 255.
+def get_boundary_label(label, kernel_size=(3, 3)):
+    print('='*50)
+    print('[DEBUG BOUND]')
+    _, _, channel = label.shape
+    bounds = np.empty_like(label, dtype=np.float32)
+    for c in range(channel):
+        tlabel = label.astype(np.uint8)
+        temp = cv2.Canny(tlabel, 0, 1)
+        tlabel = cv2.dilate(temp,
+                            cv2.getStructuringElement(
+                                cv2.MORPH_CROSS,
+                                kernel_size),
+                            iterations=1)
+        # Convert to be used on training (Need to be float32)
+        tlabel = tlabel.astype(np.float32)
+        # Normalize between [0, 1]
+        tlabel /= 255.
+        bounds[:, :, c] = tlabel
+        print(tlabel)
+        print(f'Img bound max {c}: {tlabel.max()}, Img bound min: {tlabel.min()}')
+    print('='*50)
+    return bounds
 
-        # bounds[n,:,:,channel] = bound
-
-    # bounds = bounds.astype(np.float32)
-    # bounds /= 255.
-    return label
 
 def get_distance_label(label):
     label = label.copy()
@@ -226,6 +275,7 @@ for i in range(len(patches_tr)):
     print('color')
     axes[3, 0].set_ylabel('Boundary')
     hsv_patch = cv2.cvtColor(patches_tr[i], cv2.COLOR_RGB2HSV)
+    # hsv_patch = hsv_patch / np.array([179, 255, 255])
     axes[3, 0].imshow(hsv_patch)
     axes[3, 1].imshow(patches_tr[i])
     axes[3, 2].imshow(patches_tr[i])

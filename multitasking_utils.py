@@ -1,84 +1,77 @@
-# Label para imagens em HSV: HSV_img = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
-import tensorflow.keras.backend as KB
 import tensorflow as tf
 import cv2
 import numpy as np
 
-def get_boundary_labels_old(labels, _kernel_size = (3,3)):
+# def get_boundary_labels(labels, _kernel_size = (3,3)):
+#
+#     labels = labels.copy()
+#     num_patches, h, w, c = labels.shape
+#     bounds = np.empty_like(labels,dtype=np.float32)
+#     for n in range(num_patches):
+#         label = labels[n,:,:,:]
+#         for channel in range(c):
+#             #print(label)
+#             label = label.astype(np.uint8)
+#             #print(label)
+#             #temp = cv2.Canny(label[:,:,channel],0,1)
+#             bound = cv2.Canny(label[:,:,channel],0,1)
+#             bound = cv2.dilate(bound, cv2.getStructuringElement(cv2.MORPH_CROSS,_kernel_size) ,iterations = 1)
+#
+#             # bound = bound.astype(np.float32)
+#             # bounds /= 255.
+#
+#             bounds[n,:,:,channel] = bound
+#
+#     bounds = bounds.astype(np.float32)
+#     bounds /= 255.
+#     return bounds
 
-    labels = labels.copy()
-    num_patches, h, w, c = labels.shape
-    for n in range(num_patches):
-        label = labels[n,:,:,:]
-        for channel in range(c):
-            #print(label)
-            label = label.astype(np.uint8)
-            #print(label)
-            temp = cv2.Canny(label[:,:,channel],0,1)
-            label[:,:,channel] = cv2.dilate(temp, cv2.getStructuringElement(cv2.MORPH_CROSS,_kernel_size) ,iterations = 1)
-
-        labels[n,:,:,:] = label
-
-        labels = labels.astype(np.float32)
-        labels /= 255.
-    return labels
-
-def get_boundary_labels(labels, _kernel_size = (3,3)):
-
-    labels = labels.copy()
-    num_patches, h, w, c = labels.shape
-    bounds = np.empty_like(labels,dtype=np.float32)
-    for n in range(num_patches):
-        label = labels[n,:,:,:]
-        for channel in range(c):
-            #print(label)
-            label = label.astype(np.uint8)
-            #print(label)
-            #temp = cv2.Canny(label[:,:,channel],0,1)
-            bound = cv2.Canny(label[:,:,channel],0,1)
-            bound = cv2.dilate(bound, cv2.getStructuringElement(cv2.MORPH_CROSS,_kernel_size) ,iterations = 1)
-
-            # bound = bound.astype(np.float32)
-            # bounds /= 255.
-
-            bounds[n,:,:,channel] = bound
-
-    bounds = bounds.astype(np.float32)
-    bounds /= 255.
+def get_boundary_label(label, kernel_size=(3, 3)):
+    _, _, channel = label.shape
+    bounds = np.empty_like(label, dtype=np.float32)
+    for c in range(channel):
+        tlabel = label.astype(np.uint8)
+        temp = cv2.Canny(tlabel, 0, 1)
+        tlabel = cv2.dilate(temp,
+                            cv2.getStructuringElement(
+                                cv2.MORPH_CROSS,
+                                kernel_size),
+                            iterations=1)
+        # Convert to be used on training (Need to be float32)
+        tlabel = tlabel.astype(np.float32)
+        # Normalize between [0, 1]
+        tlabel /= 255.
+        bounds[:, :, c] = tlabel
     return bounds
 
-def get_distance_labels(labels):
-    labels = labels.copy()
-    #print (label.shape)
-    dists = np.empty_like(labels,dtype=np.float32)
-    num_patches, h, w, c = labels.shape
-    # print('='*10 + ' Distance ' + '='*10)
-    # print(labels.shape)
-    for n in range(num_patches):
-        label = labels[n,:,:,:]
-        for channel in range(c):
-            label = label.astype(np.uint8)
-            dist = cv2.distanceTransform(label[:,:,channel], cv2.DIST_L2, 0)
-            dist = cv2.normalize(dist, dist, 0, 1.0, cv2.NORM_MINMAX)
-            dists[n,:,:,channel] = dist
+# def get_distance_labels(labels):
+#     labels = labels.copy()
+#     #print (label.shape)
+#     dists = np.empty_like(labels,dtype=np.float32)
+#     num_patches, h, w, c = labels.shape
+#     # print('='*10 + ' Distance ' + '='*10)
+#     # print(labels.shape)
+#     for n in range(num_patches):
+#         label = labels[n,:,:,:]
+#         for channel in range(c):
+#             label = label.astype(np.uint8)
+#             dist = cv2.distanceTransform(label[:,:,channel], cv2.DIST_L2, 0)
+#             dist = cv2.normalize(dist, dist, 0, 1.0, cv2.NORM_MINMAX)
+#             dists[n,:,:,channel] = dist
+#
+#     return dists
+
+
+def get_distance_label(label):
+    label = label.copy()
+    dists = np.empty_like(label, dtype=np.float32)
+    for channel in range(label.shape[2]):
+        patch = label[:, :, channel].astype(np.uint8)
+        dist = cv2.distanceTransform(patch, cv2.DIST_L2, 0)
+        dist = cv2.normalize(dist, dist, 0, 1.0, cv2.NORM_MINMAX)
+        dists[:, :, channel] = dist
 
     return dists
-
-def get_color_labels(patches):
-    try:
-        (amount, h, w, c) = patches.shape
-    except:
-        (h, w, c) = patches.shape
-        amount = 1
-
-    color_patches = np.zeros([amount, h, w, c])
-    for i in range(amount):
-        # Remember to convert to opencv color format (bgr) img = img[:,:,::-1]
-        hsv_patch = cv2.cvtColor(patches[i,:,:,::-1],cv2.COLOR_BGR2HSV)
-        # Normalizes the patches. Good for training. Otherwise loss explodes.
-        color_patches[i, :, :, :] = cv2.normalize(hsv_patch, hsv_patch, 0, 1.0, cv2.NORM_MINMAX)
-        #print(color_patches[i,:,:,:])
-    return color_patches
 
 
 # def Tanimoto_loss(label,pred):

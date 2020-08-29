@@ -269,32 +269,6 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
             train_metrics = dict(zip(net.metrics_names, loss_tr.tolist()[0]))
             print(loss_tr.tolist()[0])
             val_metrics = dict(zip(net.metrics_names, loss_val.tolist()[0]))
-            # Segmentation
-            # train_seg_loss = loss_tr[0, 1]
-            # train_seg_acc = loss_tr[0, 5]
-            # val_seg_loss = loss_val[0, 1]
-            # val_seg_acc = loss_val[0, 5]
-            # Boundary
-            # train_bound_loss = loss_tr[0, 2]
-            # train_bound_acc = loss_tr[0, 6]
-            # val_bound_loss = loss_val[0, 2]
-            # val_bound_acc = loss_val[0, 6]
-            # # Distance
-            # train_dist_loss = loss_tr[0, 3]
-            # train_dist_acc = loss_tr[0, 7]
-            # val_dist_loss = loss_val[0, 3]
-            # val_dist_acc = loss_val[0, 7]
-            # # Color
-            # train_color_loss = loss_tr[0, 4]
-            # train_color_acc = loss_tr[0, 8]
-            # val_color_loss = loss_val[0, 4]
-            # val_color_acc = loss_val[0, 8]
-            #
-            # train_loss = loss_tr[0, 0]
-            # total_train_loss.append(train_loss)
-
-            # train_acc = (train_seg_acc + train_bound_acc + train_dist_acc
-            #              + train_color_loss) / 4
             train_acc = 0.0
             for task in net.metrics_names:
                 if 'accuracy' in task:
@@ -366,10 +340,10 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
 
     return total_train_loss, total_train_acc, total_val_loss, total_val_acc
 
+
 # End functions definition -----------------------------------------------------
 
-
-def main():
+if __name__ == '__main__':
     gpu_devices = tf.config.experimental.list_physical_devices('GPU')
     tf.config.experimental.set_memory_growth(gpu_devices[0], True)
 
@@ -393,6 +367,8 @@ def main():
         print(f'Number of devices: {strategy.num_replicas_in_sync}')
     else:
         strategy = None
+
+    # Load images
 
     root_path = './DATASETS/patches_ps=256_stride=32'
     train_path = os.path.join(root_path, 'train')
@@ -426,7 +402,6 @@ def main():
     # stride = patch_size // 8
     batch_size = 4
     epochs = 500
-
 
 
     if args.multitasking:
@@ -643,7 +618,3 @@ def main():
     img_reconstructed_rgb = reconstruction_rgb_prdiction_patches(img_reconstructed, label_dict)
 
     plt.imsave(f'img_reconstructed_rgb_exp{exp}.jpeg', img_reconstructed_rgb)
-
-
-if __name__ == '__main__':
-    main()

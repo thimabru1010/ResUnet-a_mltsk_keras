@@ -4,11 +4,10 @@
 # EarlyStopping, ModelCheckpoint, identity_block, ResNet50, color_map, SGD, \
 # load_npy_image
 
-from utils import np, load_npy_image, normalization, data_augmentation
+from utils import np, load_npy_image, data_augmentation
 import tensorflow as tf
 
-from multitasking_utils import get_boundary_labels, get_distance_labels, \
-    get_color_labels
+from multitasking_utils import get_boundary_label, get_distance_label
 import argparse
 import os
 
@@ -16,6 +15,9 @@ from skimage.util.shape import view_as_windows
 
 import gc
 import psutil
+import cv2
+
+# from sklearn.preprocessing import StandardScaler
 
 
 parser = argparse.ArgumentParser()
@@ -24,7 +26,7 @@ parser.add_argument("--multitasking",
 args = parser.parse_args()
 
 
-def extract_patches_hw(image, reference, patch_size, stride):
+def extract_patches(image, reference, patch_size, stride):
     window_shape = patch_size
     window_shape_array = (window_shape, window_shape, image.shape[2])
     window_shape_ref = (window_shape, window_shape)
@@ -66,21 +68,45 @@ def binarize_matrix(img_train_ref, label_dict):
     return binary_img_train_ref
 
 
+def normalize_rgb(img, norm_type=1):
+    # TODO: Maybe should implement normalization with StandardScaler
+    # Normalize image between [0, 1]
+    if norm_type == 1:
+        img /= 255.
+    # Normalize image between [-1, 1]
+    elif norm_type == 2:
+        img /= 127.5 - 1
+
+
+def normalize_hsv(img, norm_type=1):
+    # TODO: Maybe should implement normalization with StandardScaler
+    # Normalize image between [0, 1]
+    if norm_type == 1:
+        img[:, :, 0] /= 179.
+        img[:, :, 1] /= 255.
+        img[:, :, 2] /= 255.
+    # Normalize image between [-1, 1]
+    elif norm_type == 2:
+        img[:, :, 0] /= 89.5 - 1
+        img[:, :, 1] /= 127.5 - 1
+        img[:, :, 2] /= 127.5 - 1
+
+
 root_path = './DATASETS/homework3_npy'
 # Load images
 img_train_path = 'Image_Train.npy'
 img_train = load_npy_image(os.path.join(root_path,
-                                        img_train_path)).astype(np.float32)
-# Normalizes the image
-img_train_normalized = normalization(img_train)
-# Transform the image into W x H x C shape
-img_train_normalized = img_train_normalized.transpose((1, 2, 0))
+                                        img_train_path))
+# Convert shape from C x H x W --> H x W x C
+img_train = img_train.transpose((1, 2, 0))
+# img_train_normalized = normalization(img_train)
 print('Imagem RGB')
-print(img_train_normalized.shape)
+print(img_train.shape)
 
 # Load reference
 img_train_ref_path = 'Reference_Train.npy'
 img_train_ref = load_npy_image(os.path.join(root_path, img_train_ref_path))
+# Convert from C x H x W --> H x W x C
 img_train_ref = img_train_ref.transpose((1, 2, 0))
 print('Imagem de referencia')
 print(img_train_ref.shape)
@@ -92,20 +118,20 @@ binary_img_train_ref = binarize_matrix(img_train_ref, label_dict)
 del img_train_ref
 
 number_class = 5
-patch_size = 128
+patch_size = 256
 stride = patch_size // 8
 
 
 # stride = patch_size
-patches_tr, patches_tr_ref = extract_patches_hw(img_train_normalized,
-                                                binary_img_train_ref,
-                                                patch_size, stride)
+patches_tr, patches_tr_ref = extract_patches(img_train,
+                                             binary_img_train_ref,
+                                             patch_size, stride)
 print('patches extraidos!')
 process = psutil.Process(os.getpid())
 print('[CHECKING MEMORY]')
 # print(process.memory_info().rss)
 print(process.memory_percent())
-del binary_img_train_ref, img_train_normalized, img_train
+del binary_img_train_ref, img_train
 # print(process.memory_info().rss)
 print(process.memory_percent())
 gc.collect()
@@ -133,21 +159,28 @@ print(f'Number of patches expected: {len(patches_tr)*5}')
 for i in range(len(patches_tr)):
     img_aug, label_aug = data_augmentation(patches_tr[i], patches_tr_ref[i])
     label_aug_h = tf.keras.utils.to_categorical(label_aug, number_class)
-    # All multitasking labels are saved in one-hot
-    # Create labels for boundary
-    patches_bound_labels_h = get_boundary_labels(label_aug_h)
-    # Create labels for distance
-    patches_dist_labels_h = get_distance_labels(label_aug_h)
-    # Create labels for color
-    patches_color_labels_h = get_color_labels(patches_tr)
     for j in range(len(img_aug)):
+        # Input image RGB
+        # Float32 its need to train the model
+        img_normalized = normalize_rgb(img_aug[j],
+                                       norm_type=1).astype(np.float32)
         np.save(os.path.join(folder_path, 'train', filename(i*5 + j)),
-                img_aug[j])
+                img_normalized)
+        # All multitasking labels are saved in one-hot
+        # Segmentation
         np.save(os.path.join(folder_path, 'labels/seg', filename(i*5 + j)),
                 label_aug_h[j])
+        # Boundary
+        bound_label_h = get_boundary_label(label_aug_h[j])
         np.save(os.path.join(folder_path, 'labels/bound', filename(i*5 + j)),
-                patches_bound_labels_h[j])
+                bound_label_h)
+        # Distance
+        dist_label_h = get_distance_label(label_aug_h[j])
         np.save(os.path.join(folder_path, 'labels/dist', filename(i*5 + j)),
-                patches_dist_labels_h[j])
+                dist_label_h)
+        # Color
+        hsv_patch = cv2.cvtColor(img_aug[j], cv2.COLOR_RGB2HSV)
+        # Float32 its need to train the model
+        hsv_patch = normalize_hsv(hsv_patch, norm_type=1).astype(np.float32)
         np.save(os.path.join(folder_path, 'labels/color', filename(i*5 + j)),
-                patches_color_labels_h[j])
+                hsv_patch)
