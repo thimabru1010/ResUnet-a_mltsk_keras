@@ -110,28 +110,34 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
     total_train_acc = []
     total_val_loss = []
     total_val_acc = []
-    x_train_b = np.zeros(x_shape_batch)
-    y_train_h_b_seg = np.zeros(y_shape_batch)
-    x_val_b = np.zeros(x_shape_batch)
-    y_val_h_b_seg = np.zeros(y_shape_batch)
+    x_train_b = np.zeros(x_shape_batch, dtype=np.float32)
+    y_train_h_b_seg = np.zeros(y_shape_batch, dtype=np.float32)
+    x_val_b = np.zeros(x_shape_batch, dtype=np.float32)
+    y_val_h_b_seg = np.zeros(y_shape_batch, dtype=np.float32)
     if args.multitasking:
         # Bounds
         if args.bound:
-            y_train_h_b_bound = np.zeros(y_shape_batch)
-            y_val_h_b_bound = np.zeros(y_shape_batch)
+            y_train_h_b_bound = np.zeros(y_shape_batch, dtype=np.float32)
+            y_val_h_b_bound = np.zeros(y_shape_batch, dtype=np.float32)
         # Dists
         if args.dist:
-            y_train_h_b_dist = np.zeros(y_shape_batch)
-            y_val_h_b_dist = np.zeros(y_shape_batch)
+            y_train_h_b_dist = np.zeros(y_shape_batch, dtype=np.float32)
+            y_val_h_b_dist = np.zeros(y_shape_batch, dtype=np.float32)
         # Colors
         if args.color:
-            y_train_h_b_color = np.zeros((y_shape_batch[0], y_shape_batch[1], y_shape_batch[2], 3))
-            y_val_h_b_color = np.zeros((y_shape_batch[0], y_shape_batch[1], y_shape_batch[2], 3))
+            y_train_h_b_color = np.zeros((y_shape_batch[0],
+                                          y_shape_batch[1],
+                                          y_shape_batch[2], 3),
+                                         dtype=np.float32)
+            y_val_h_b_color = np.zeros((y_shape_batch[0],
+                                        y_shape_batch[1],
+                                        y_shape_batch[2], 3),
+                                       dtype=np.float32)
     print(net.metrics_names)
     for epoch in range(epochs):
         if not args.multitasking:
-            loss_tr = np.zeros((1, 2))
-            loss_val = np.zeros((1, 2))
+            loss_tr = np.zeros((1, 2), dtype=np.float32)
+            loss_val = np.zeros((1, 2), dtype=np.float32)
         else:
             metrics_len = len(net.metrics_names)
             loss_tr = np.zeros((1, metrics_len))
