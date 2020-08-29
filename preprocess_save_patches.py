@@ -16,6 +16,7 @@ from skimage.util.shape import view_as_windows
 import gc
 import psutil
 import cv2
+from tqdm import tqdm
 
 # from sklearn.preprocessing import StandardScaler
 
@@ -156,7 +157,7 @@ def filename(i):
 
 print(f'Number of patches: {len(patches_tr)}')
 print(f'Number of patches expected: {len(patches_tr)*5}')
-for i in range(len(patches_tr)):
+for i in tqdm(range(len(patches_tr))):
     img_aug, label_aug = data_augmentation(patches_tr[i], patches_tr_ref[i])
     label_aug_h = tf.keras.utils.to_categorical(label_aug, number_class)
     for j in range(len(img_aug)):
