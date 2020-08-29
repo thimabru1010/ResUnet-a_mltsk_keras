@@ -56,7 +56,7 @@ def binarize_matrix(img_train_ref, label_dict):
     h = img_train_ref.shape[1]
     # c = img_train_ref.shape[2]
     # binary_img_train_ref = np.zeros((1,w,h))
-    binary_img_train_ref = np.full((w, h), -1)
+    binary_img_train_ref = np.full((w, h), -1, dtype=np.uint8)
     for i in range(w):
         for j in range(h):
             r = img_train_ref[i][j][0]

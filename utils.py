@@ -67,7 +67,7 @@ def extract_patches_mask_indices(input_image, patch_size, stride):
 
 def data_augmentation(image, labels):
     aug_imgs = np.zeros((5, image.shape[0], image.shape[1], image.shape[2]), dtype=np.uint8)
-    aug_lbs = np.zeros((5, image.shape[0], image.shape[1]), dtype=np.int64)
+    aug_lbs = np.zeros((5, image.shape[0], image.shape[1]), dtype=np.uint8)
 
     for i in range(0, len(aug_imgs)):
         aug_imgs[0, :, :, :] = image
