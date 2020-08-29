@@ -70,18 +70,20 @@ def binarize_matrix(img_train_ref, label_dict):
 
 
 def normalize_rgb(img, norm_type=1):
+    # OBS: Images need to be converted to before float32 to be normalized
     # TODO: Maybe should implement normalization with StandardScaler
     # Normalize image between [0, 1]
     if norm_type == 1:
         img /= 255.
     # Normalize image between [-1, 1]
     elif norm_type == 2:
-        img /= 127.5 - 1
+        img /= 127.5 - 1.
 
     return img
 
 
 def normalize_hsv(img, norm_type=1):
+    # OBS: Images need to be converted to before float32 to be normalized
     # TODO: Maybe should implement normalization with StandardScaler
     # Normalize image between [0, 1]
     if norm_type == 1:
@@ -90,9 +92,9 @@ def normalize_hsv(img, norm_type=1):
         img[:, :, 2] /= 255.
     # Normalize image between [-1, 1]
     elif norm_type == 2:
-        img[:, :, 0] /= 89.5 - 1
-        img[:, :, 1] /= 127.5 - 1
-        img[:, :, 2] /= 127.5 - 1
+        img[:, :, 0] /= 89.5 - 1.
+        img[:, :, 1] /= 127.5 - 1.
+        img[:, :, 2] /= 127.5 - 1.
 
     return img
 
@@ -167,8 +169,8 @@ for i in tqdm(range(len(patches_tr))):
     for j in range(len(img_aug)):
         # Input image RGB
         # Float32 its need to train the model
-        img_normalized = normalize_rgb(img_aug[j],
-                                       norm_type=1).astype(np.float32)
+        img_float = img_aug[j].astype(np.float32)
+        img_normalized = normalize_rgb(img_float, norm_type=1)
         np.save(os.path.join(folder_path, 'train', filename(i*5 + j)),
                 img_normalized)
         # All multitasking labels are saved in one-hot
@@ -184,8 +186,9 @@ for i in tqdm(range(len(patches_tr))):
         np.save(os.path.join(folder_path, 'labels/dist', filename(i*5 + j)),
                 dist_label_h)
         # Color
-        hsv_patch = cv2.cvtColor(img_aug[j], cv2.COLOR_RGB2HSV)
+        hsv_patch = cv2.cvtColor(img_aug[j],
+                                 cv2.COLOR_RGB2HSV).astype(np.float32)
         # Float32 its need to train the model
-        hsv_patch = normalize_hsv(hsv_patch, norm_type=1).astype(np.float32)
+        hsv_patch = normalize_hsv(hsv_patch, norm_type=1)
         np.save(os.path.join(folder_path, 'labels/color', filename(i*5 + j)),
                 hsv_patch)
