@@ -92,7 +92,7 @@ def normalize_hsv(img, norm_type=1):
         img[:, :, 2] /= 127.5 - 1
 
 
-root_path = './DATASETS/homework3_npy'
+root_path = './DATASETS/ISPRS_npy'
 # Load images
 img_train_path = 'Image_Train.npy'
 img_train = load_npy_image(os.path.join(root_path,
