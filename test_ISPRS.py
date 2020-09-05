@@ -346,16 +346,16 @@ if args.multitasking:
                 task_pred = patches_pred[task]
                 col_ref = (task + 1)*2
                 axes[n_class, col_ref].imshow(task_pred[i, :, :, n_class],
-                                            cmap=cm.Greys_r)
+                                              cmap=cm.Greys_r)
                 col = col_ref - 1
                 if task == 0:
                     # Segmentation
                     axes[n_class, col].imshow(img_ref_h[:, :, n_class],
-                                               cmap=cm.Greys_r)
+                                              cmap=cm.Greys_r)
                 elif task == 1:
                     # Boundary
                     axes[n_class, col].imshow(bound_ref_h[:, :, n_class],
-                                               cmap=cm.Greys_r)
+                                              cmap=cm.Greys_r)
                 elif task == 2:
                     # Distance Transform
                     axes[n_class, col].imshow(dist_ref_h[:, :, n_class],
