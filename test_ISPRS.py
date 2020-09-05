@@ -326,6 +326,16 @@ if args.multitasking:
         img_ref = patches_test_ref[i]
         img_ref_h = tf.keras.utils.to_categorical(img_ref, args.num_classes)
         bound_ref_h = get_boundary_label(img_ref_h)
+
+        fig5, axes = plt.subplots(nrows=1, ncols=4, figsize=(12, 9))
+
+        axes[0].imshow(bound_ref_h[:, :, 0], cmap=cm.Greys_r)
+        axes[1].imshow(bound_ref_h[:, :, 1], cmap=cm.Greys_r)
+        axes[2].imshow(bound_ref_h[:, :, 2], cmap=cm.Greys_r)
+        axes[3].imshow(bound_ref_h[:, :, 3], cmap=cm.Greys_r)
+        plt.show()
+        plt.close()
+
         dist_ref_h = get_distance_label(img_ref_h)
         # Put the first plot as the patch to be observed on each row
         for n_class in range(args.num_classes):

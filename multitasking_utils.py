@@ -31,7 +31,8 @@ def get_boundary_label(label, kernel_size=(3, 3)):
     bounds = np.empty_like(label, dtype=np.float32)
     for c in range(channel):
         tlabel = label.astype(np.uint8)
-        temp = cv2.Canny(tlabel, 0, 1)
+        # Apply filter per channel
+        temp = cv2.Canny(tlabel[:, :, c], 0, 1)
         tlabel = cv2.dilate(temp,
                             cv2.getStructuringElement(
                                 cv2.MORPH_CROSS,
