@@ -429,6 +429,9 @@ if __name__ == '__main__':
                         type=str, default='./DATASETS/patches_ps=256_stride=32')
     parser.add_argument("--batch_size", help="Batch size on training",
                         type=int, default=4)
+    parser.add_argument("-lr", "--learning_rate",
+                        help="Learning rate on training",
+                        type=float, default=1e-3)
     args = parser.parse_args()
 
     if args.gpu_parallel:
@@ -493,9 +496,8 @@ if __name__ == '__main__':
     rows = patch_size
     cols = patch_size
     channels = 3
-    lr = 1e-3
-    adam = Adam(lr=lr, beta_1=0.9)
-    sgd = SGD(lr=lr, momentum=0.8)
+    adam = Adam(lr=args.learning_rate, beta_1=0.9)
+    sgd = SGD(lr=args.learning_rate, momentum=0.8)
 
     weights = [4.34558461, 2.97682037, 3.92124661, 5.67350328, 374.0300152]
     print('='*60)
