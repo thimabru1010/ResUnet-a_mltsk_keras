@@ -21,6 +21,7 @@ import gc
 import psutil
 import ast
 from prettytable import PrettyTable
+import tensorflow as tf
 
 
 def extract_patches_test(binary_img_test_ref, patch_size):
@@ -104,6 +105,11 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
     print(f'Validating on {len(x_val_paths)} images')
     print('='*60)
     print(f'Total Epochs: {epochs}')
+    # Initialize tensorboard metrics
+    train_summary_writer = tf.summary.create_file_writer(
+        os.path.join(args.log_dir, 'train'))
+    val_summary_writer = tf.summary.create_file_writer(
+        os.path.join(args.log_dir, 'val'))
     # Initialize as maximum possible number
     min_loss = float('inf')
     cont = 0
@@ -181,9 +187,6 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
             if not args.multitasking:
                 loss_tr = loss_tr + net.train_on_batch(x_train_b, y_train_h_b_seg)
             else:
-                # Dict template: y_train_b = {"segmentation": y_train_h_b_seg,
-                # "boundary": y_train_h_b_bound, "distance":  y_train_h_b_dist,
-                # "color": y_train_h_b_color}
                 y_train_b = {"seg": y_train_h_b_seg}
                 if args.bound:
                     y_train_b['bound'] = y_train_h_b_bound
@@ -192,7 +195,6 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                 if args.color:
                     y_train_b['color'] = y_train_h_b_color
 
-                # return_dict argument not working
                 loss_tr = loss_tr + net.train_on_batch(x=x_train_b, y=y_train_b)
 
             # print('='*30 + ' [CHECKING LOSS] ' + '='*30)
@@ -297,6 +299,14 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
             #            + val_color_acc) / 4
             total_val_acc.append(val_acc)
 
+            # Tensorboard metrics
+            with train_summary_writer.as_default():
+                tf.summary.scalar('Seg loss', train_metrics['seg_loss'],
+                                  step=epoch)
+            with train_summary_writer.as_default():
+                tf.summary.scalar('Seg loss', val_metrics['seg_loss'],
+                                  step=epoch)
+
             metrics_table = PrettyTable()
             metrics_table.title = f'Epoch: {epoch}'
             metrics_table.field_names = ['Task', 'Loss', 'Val Loss',
@@ -367,6 +377,8 @@ if __name__ == '__main__':
                         type=int, default=1)
     parser.add_argument("--gpu_parallel", help="choose 1 to train one multiple gpu",
                         type=int, default=0)
+    parser.add_argument("--log_path", help="Path where to save logs",
+                        type=str, default='./log_run1')
     args = parser.parse_args()
 
     if args.gpu_parallel:
@@ -457,16 +469,6 @@ if __name__ == '__main__':
             resuneta = Resunet_a((rows, cols, channels), number_class, args)
             model = resuneta.model
             model.summary()
-            # losses = {
-            # 	"segmentation": weighted_cross_entropy,
-            # 	"boundary": weighted_cross_entropy,
-            #     "distance": weighted_cross_entropy,
-            #     "color": cross_entropy,
-            # }
-            # losses = {"segmentation": tanimoto,
-            #           "boundary": tanimoto,
-            #           "distance": tanimoto,
-            #           "color": tanimoto}
 
             losses = {'seg': tanimoto}
             lossWeights = {'seg': 1.0}
@@ -511,19 +513,23 @@ if __name__ == '__main__':
         x_shape_batch = (batch_size, patch_size, patch_size, 3)
         y_shape_batch = (batch_size, patch_size, patch_size, 5)
         start_time = time.time()
-        train_model(args, model, patches_tr, y_paths, patches_val, val_paths, batch_size, epochs, x_shape_batch=x_shape_batch, y_shape_batch=y_shape_batch)
+        train_model(args, model, patches_tr, y_paths, patches_val, val_paths,
+                    batch_size, epochs,
+                    x_shape_batch=x_shape_batch, y_shape_batch=y_shape_batch)
         end_time = time.time() - start_time
+        print(f'\nTraining took: {end_time / 3600} \n')
     else:
         x_shape_batch = (batch_size, patch_size, patch_size, 3)
         y_shape_batch = (batch_size, patch_size, patch_size, 5)
 
         start_time = time.time()
 
-        # train_model(args, model, patches_train, patches_tr_lb_h, patches_val, patches_val_lb_h, batch_size, epochs, patience=10, delta=0.001, x_shape_batch=x_shape_batch, y_shape_batch=y_shape_batch, seed=seed)
-        train_model(args, model, patches_tr, y_paths, patches_val, val_paths, batch_size, epochs, x_shape_batch=x_shape_batch, y_shape_batch=y_shape_batch)
+        train_model(args, model, patches_tr, y_paths, patches_val, val_paths,
+                    batch_size, epochs,
+                    x_shape_batch=x_shape_batch, y_shape_batch=y_shape_batch)
 
         end_time = time.time() - start_time
-        print(f'\nTraining took: {end_time} \n')
+        print(f'\nTraining took: {end_time / 3600} \n')
 
     #%% Test model
 
