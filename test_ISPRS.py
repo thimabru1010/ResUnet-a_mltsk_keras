@@ -5,6 +5,7 @@ RGB_image, extract_patches, patch_tiles, bal_aug_patches, extrac_patch2, test_FC
 weighted_categorical_crossentropy, mask_no_considered, tf, Adam, prediction, load_model, confusion_matrix, \
 EarlyStopping, ModelCheckpoint, identity_block, ResNet50, color_map, SGD, \
 load_npy_image
+from multitasking_utils import get_boundary_label, get_distance_label
 
 import argparse
 import os
@@ -287,18 +288,21 @@ print('='*40)
 print('[TEST]')
 
 if args.multitasking:
-    patches_seg = patches_pred[0]
+    seg_preds = patches_pred[0]
+    print(f'seg shape argmax: {seg_preds.shape}')
+    seg_pred = np.argmax(seg_preds, axis=-1)
+    print(f'seg shape argmax: {seg_pred.shape}')
 else:
-    patches_seg = patches_pred
+    seg_pred = patches_pred
 
 # Metrics
 true_labels = np.reshape(patches_test_ref, (patches_test_ref.shape[0] *
                                             patches_test_ref.shape[1] *
                                             patches_test_ref.shape[2]))
 
-predicted_labels = np.reshape(patches_pred, (patches_seg.shape[0] *
-                                             patches_seg.shape[1] *
-                                             patches_seg.shape[2]))
+predicted_labels = np.reshape(seg_pred, (seg_pred.shape[0] *
+                                         seg_pred.shape[1] *
+                                         seg_pred.shape[2]))
 
 # Metrics
 metrics = compute_metrics(true_labels, predicted_labels)
@@ -313,15 +317,55 @@ print('Precision: ', metrics[3])
 
 # Visualize inference per class
 if args.multitasking:
-    fig1, axes = plt.subplots(nrows=4, ncols=5, figsize=(12, 9))
-    for i in range(args.num_classes):
-        axes[i, 0].set_ylabel(f'Class {i}')
-    axes[0, 1].set_xlabel('Seg Ref')
-    axes[0, 2].set_xlabel('Seg Pred')
-    axes[0, 3].set_xlabel('Bound Ref')
-    axes[0, 4].set_xlabel('Bound Pred')
-    axes[0, 5].set_xlabel('Dist Ref')
-    axes[0, 6].set_xlabel('Dist Pred')
+
+    # axes[0, 0].set_xlabel('Patch')
+    # axes[0, 1].set_xlabel('Seg Ref')
+    # axes[0, 2].set_xlabel('Seg Pred')
+    # axes[0, 3].set_xlabel('Bound Ref')
+    # axes[0, 4].set_xlabel('Bound Pred')
+    # axes[0, 5].set_xlabel('Dist Ref')
+    # axes[0, 6].set_xlabel('Dist Pred')
+
+    for i in range(len(patches_test)):
+        # Plot predictions for each class and each task; Each row corresponds to a
+        # class and has its predictions of each task
+        fig1, axes = plt.subplots(nrows=args.num_classes, ncols=7, figsize=(12, 9))
+        img = patches_test[i]
+        img_ref = patches_test_ref[i]
+        img_ref_h = tf.keras.utils.to_categorical(img_ref, args.num_classes)
+        bound_ref_h = get_boundary_label(img_ref_h)
+        dist_ref_h = get_distance_label(img_ref_h)
+        # Put the first plot as the patch to be observed on each row
+        for n_class in range(args.num_classes):
+            axes[n_class, 0].imshow(img)
+            # Loop the columns to display each task prediction and reference
+            # Remeber we are not displaying color preds here, since this task
+            # do not use classes
+            # Multiply by 2 cause its always pred and ref side by side
+            for task in range(len(patches_pred) - 1):
+                task_pred = patches_pred[task]
+                col_ref = (task + 1)*2
+                axes[n_class, col_ref].imshow(task_pred[i, :, :, n_class],
+                                            cmap=cm.Greys_r)
+                col = col_ref - 1
+                if task == 0:
+                    # Segmentation
+                    axes[n_class, col].imshow(img_ref_h[:, :, n_class],
+                                               cmap=cm.Greys_r)
+                elif task == 1:
+                    # Boundary
+                    axes[n_class, col].imshow(bound_ref_h[:, :, n_class],
+                                               cmap=cm.Greys_r)
+                elif task == 2:
+                    # Distance Transform
+                    axes[n_class, col].imshow(dist_ref_h[:, :, n_class],
+                                              cmap=cm.Greys_r)
+        for i in range(args.num_classes):
+            axes[i, 0].set_ylabel(f'Class {i}')
+        print('aqui')
+        plt.show()
+        plt.close()
+
 
 # if not args.multitasking:
 #     img_reconstructed = pred_recostruction(patch_size, patches_pred, binary_img_test_ref, 1)
