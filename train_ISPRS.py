@@ -22,6 +22,7 @@ import psutil
 import ast
 from prettytable import PrettyTable
 
+
 def extract_patches_test(binary_img_test_ref, patch_size):
     # Extract training patches
     stride = patch_size

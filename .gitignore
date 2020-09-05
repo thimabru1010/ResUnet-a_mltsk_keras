@@ -10,6 +10,7 @@ zips
 DATASETS
 unet_results
 models_amazon
+weights
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
