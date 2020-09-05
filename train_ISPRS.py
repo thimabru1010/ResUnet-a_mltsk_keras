@@ -95,6 +95,23 @@ def compute_metrics_hw(true_labels, predicted_labels):
     return accuracy, f1score, recall, precision
 
 
+def add_tensorboard_scalars(train_writer, val_writer, epoch,
+                            metric_name, train_loss, val_loss,
+                            train_acc=None, val_acc=None):
+    with train_writer.as_default():
+        tf.summary.scalar(metric_name+'/Loss', train_loss,
+                          step=epoch)
+        if train_acc is not None:
+            tf.summary.scalar(metric_name+'/Accuracy', train_acc,
+                              step=epoch)
+    with val_writer.as_default():
+        tf.summary.scalar(metric_name+'/Loss', val_loss,
+                          step=epoch)
+        if val_acc is not None:
+            tf.summary.scalar(metric_name+'/Accuracy', val_acc,
+                              step=epoch)
+
+
 def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                 y_val_paths, batch_size, epochs, x_shape_batch, y_shape_batch,
                 patience=10, delta=0.001):
@@ -107,9 +124,9 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
     print(f'Total Epochs: {epochs}')
     # Initialize tensorboard metrics
     train_summary_writer = tf.summary.create_file_writer(
-        os.path.join(args.log_dir, 'train'))
+        os.path.join(args.log_path, 'train'))
     val_summary_writer = tf.summary.create_file_writer(
-        os.path.join(args.log_dir, 'val'))
+        os.path.join(args.log_path, 'val'))
     # Initialize as maximum possible number
     min_loss = float('inf')
     cont = 0
@@ -258,7 +275,7 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                 loss_val = loss_val + net.test_on_batch(x=x_val_b, y=y_val_b)
 
         # validation loss
-        print(loss_val)
+        # print(loss_val)
         loss_val = loss_val/n_batchs_val
         if not args.multitasking:
             train_loss = loss_tr[0, 0]
@@ -274,38 +291,34 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                     Train acc.: {100*train_acc:.5f}% \t \
                     Validation loss: {val_loss :.5f} \t \
                     Validation acc.: {100*val_acc:.5f}%")
+
+            add_tensorboard_scalars(train_summary_writer, val_summary_writer,
+                                    epoch, 'Total', train_loss, val_loss,
+                                    train_acc, val_acc)
         else:
             train_metrics = dict(zip(net.metrics_names, loss_tr.tolist()[0]))
-            print(loss_tr.tolist()[0])
+            # print(loss_tr.tolist()[0])
             val_metrics = dict(zip(net.metrics_names, loss_val.tolist()[0]))
-            train_acc = 0.0
-            for task in net.metrics_names:
-                if 'accuracy' in task:
-                    train_acc += train_metrics[task]
-            train_acc = train_acc / 4
-            # train_acc = (train_seg_acc + train_bound_acc + train_dist_acc
-            #              + train_color_loss) / 4
-            total_train_acc.append(train_acc)
-
-            # val_loss = loss_val[0, 0]
-            # total_val_loss.append(val_loss)
-
-            val_acc = 0.0
-            for task in net.metrics_names:
-                if 'accuracy' in task:
-                    val_acc += val_metrics[task]
-            val_acc = val_acc / 4
-            # val_acc = (val_seg_acc + val_bound_acc + val_dist_acc
-            #            + val_color_acc) / 4
-            total_val_acc.append(val_acc)
-
-            # Tensorboard metrics
-            with train_summary_writer.as_default():
-                tf.summary.scalar('Seg loss', train_metrics['seg_loss'],
-                                  step=epoch)
-            with train_summary_writer.as_default():
-                tf.summary.scalar('Seg loss', val_metrics['seg_loss'],
-                                  step=epoch)
+            # train_acc = 0.0
+            # for task in net.metrics_names:
+            #     if 'accuracy' in task:
+            #         train_acc += train_metrics[task]
+            # train_acc = train_acc / 4
+            # # train_acc = (train_seg_acc + train_bound_acc + train_dist_acc
+            # #              + train_color_loss) / 4
+            # total_train_acc.append(train_acc)
+            #
+            # # val_loss = loss_val[0, 0]
+            # # total_val_loss.append(val_loss)
+            #
+            # val_acc = 0.0
+            # for task in net.metrics_names:
+            #     if 'accuracy' in task:
+            #         val_acc += val_metrics[task]
+            # val_acc = val_acc / 4
+            # # val_acc = (val_seg_acc + val_bound_acc + val_dist_acc
+            # #            + val_color_acc) / 4
+            # total_val_acc.append(val_acc)
 
             metrics_table = PrettyTable()
             metrics_table.title = f'Epoch: {epoch}'
@@ -315,25 +328,59 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                                   round(val_metrics['seg_loss'], 5),
                                   round(100*train_metrics['seg_accuracy'], 5),
                                   round(100*val_metrics['seg_accuracy'], 5)])
+
+            add_tensorboard_scalars(train_summary_writer, val_summary_writer,
+                                    epoch, 'Segmentation',
+                                    train_metrics['seg_loss'],
+                                    val_metrics['seg_loss'],
+                                    train_metrics['seg_accuracy'],
+                                    val_metrics['seg_accuracy'])
+
             if args.bound:
                 metrics_table.add_row(['Bound', round(train_metrics['bound_loss'], 5),
                                       round(val_metrics['bound_loss'], 5),
                                       round(100*train_metrics['bound_accuracy'], 5),
                                       round(100*val_metrics['bound_accuracy'], 5)])
+
+                add_tensorboard_scalars(train_summary_writer,
+                                        val_summary_writer,
+                                        epoch, 'Boundary',
+                                        train_metrics['bound_loss'],
+                                        val_metrics['bound_loss'],
+                                        train_metrics['bound_accuracy'],
+                                        val_metrics['bound_accuracy'])
             if args.dist:
-                metrics_table.add_row(['Dist', round(train_metrics['dist_loss'], 5),
-                                      round(val_metrics['dist_loss'], 5),
-                                      round(100*train_metrics['dist_accuracy'], 5),
-                                      round(100*val_metrics['dist_accuracy'], 5)])
+                metrics_table.add_row(['Dist',
+                                       round(train_metrics['dist_loss'], 5),
+                                       round(val_metrics['dist_loss'], 5),
+                                       0, 0])
+
+                add_tensorboard_scalars(train_summary_writer,
+                                        val_summary_writer,
+                                        epoch, 'Distance',
+                                        train_metrics['dist_loss'],
+                                        val_metrics['dist_loss'])
             if args.color:
-                metrics_table.add_row(['Color', round(train_metrics['color_loss'], 5),
-                                      round(val_metrics['color_loss'], 5),
-                                      round(100*train_metrics['color_accuracy'], 5),
-                                      round(100*val_metrics['color_accuracy'], 5)])
+                metrics_table.add_row(['Color',
+                                       round(train_metrics['color_loss'], 5),
+                                       round(val_metrics['color_loss'], 5),
+                                       0, 0])
+
+                add_tensorboard_scalars(train_summary_writer,
+                                        val_summary_writer,
+                                        epoch, 'Color',
+                                        train_metrics['color_loss'],
+                                        val_metrics['color_loss'])
+
             metrics_table.add_row(['Total', round(train_metrics['loss'], 5),
                                   round(val_metrics['loss'], 5),
-                                  round(100*train_acc, 5),
-                                  round(100*val_acc, 5)])
+                                  0, 0])
+
+            add_tensorboard_scalars(train_summary_writer,
+                                    val_summary_writer,
+                                    epoch, 'Total',
+                                    train_metrics['loss'],
+                                    val_metrics['loss'])
             val_loss = val_metrics['loss']
             print(metrics_table)
         # Early stop
@@ -355,10 +402,8 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
             print("Saving best model...")
             net.save('weights/best_model.h5')
 
-    return total_train_loss, total_train_acc, total_val_loss, total_val_acc
-
-
 # End functions definition -----------------------------------------------------
+
 
 if __name__ == '__main__':
     gpu_devices = tf.config.experimental.list_physical_devices('GPU')
@@ -375,10 +420,15 @@ if __name__ == '__main__':
                         type=int, default=1)
     parser.add_argument("--color", help="choose resunet-a color task or not",
                         type=int, default=1)
-    parser.add_argument("--gpu_parallel", help="choose 1 to train one multiple gpu",
+    parser.add_argument("--gpu_parallel",
+                        help="choose 1 to train one multiple gpu",
                         type=int, default=0)
     parser.add_argument("--log_path", help="Path where to save logs",
-                        type=str, default='./log_run1')
+                        type=str, default='./results/log_run1')
+    parser.add_argument("--dataset_path", help="Path where to load dataset",
+                        type=str, default='./DATASETS/patches_ps=256_stride=32')
+    parser.add_argument("--batch_size", help="Batch size on training",
+                        type=int, default=4)
     args = parser.parse_args()
 
     if args.gpu_parallel:
@@ -389,9 +439,10 @@ if __name__ == '__main__':
 
     # Load images
 
-    root_path = './DATASETS/patches_ps=256_stride=32'
+    root_path = args.dataset_path
     train_path = os.path.join(root_path, 'train')
-    patches_tr = [os.path.join(train_path, name) for name in os.listdir(train_path)]
+    patches_tr = [os.path.join(train_path, name)
+                  for name in os.listdir(train_path)]
 
     ref_path = os.path.join(root_path, 'labels/seg')
     patches_tr_lb_h = [os.path.join(ref_path, name) for name
@@ -419,12 +470,9 @@ if __name__ == '__main__':
     number_class = 5
     patch_size = 256
     # stride = patch_size // 8
-    batch_size = 4
     epochs = 500
 
-
     if args.multitasking:
-        # y_paths={"segmentation": patches_tr_lb_h, "boundary": patches_bound_labels_tr, "distance":  patches_dist_labels_tr, "color": patches_color_labels_tr}
         '''
             index maps:
                 0 --> segmentation
@@ -432,26 +480,22 @@ if __name__ == '__main__':
                 2 --> distance
                 3 --> color
         '''
-        y_paths=[patches_tr_lb_h, patches_bound_labels_tr, patches_dist_labels_tr, patches_color_labels_tr]
+        y_paths = [patches_tr_lb_h, patches_bound_labels_tr,
+                   patches_dist_labels_tr, patches_color_labels_tr]
 
-        # val_paths={"segmentation": patches_val_lb_h, "boundary": patches_bound_labels_val, "distance":  patches_dist_labels_val, "color": patches_color_labels_val}
-        val_paths = [patches_val_lb_h, patches_bound_labels_val, patches_dist_labels_val, patches_color_labels_val]
+        val_paths = [patches_val_lb_h, patches_bound_labels_val,
+                     patches_dist_labels_val, patches_color_labels_val]
     else:
-        # y_paths={"segmentation": patches_tr_lb_h, "boundary": [], "distance":  [], "color": []}
         y_paths = [patches_tr_lb_h]
 
-        # val_paths={"segmentation": patches_val_lb_h, "boundary": [], "distance":  [], "color": []}
         val_paths = [patches_val_lb_h]
 
-
-
-    exp = 1
     rows = patch_size
     cols = patch_size
     channels = 3
     lr = 1e-3
-    adam = Adam(lr = lr , beta_1=0.9)
-    sgd = SGD(lr=lr,momentum=0.8)
+    adam = Adam(lr=lr, beta_1=0.9)
+    sgd = SGD(lr=lr, momentum=0.8)
 
     weights = [4.34558461, 2.97682037, 3.92124661, 5.67350328, 374.0300152]
     print('='*60)
@@ -487,7 +531,8 @@ if __name__ == '__main__':
             if args.gpu_parallel:
                 with strategy.scope():
                     model.compile(optimizer=adam, loss=losses,
-                                  loss_weights=lossWeights, metrics=['accuracy'])
+                                  loss_weights=lossWeights,
+                                  metrics=['accuracy'])
             else:
                 model.compile(optimizer=adam, loss=losses,
                               loss_weights=lossWeights, metrics=['accuracy'])
@@ -503,131 +548,129 @@ if __name__ == '__main__':
         model.summary()
 
         model.compile(optimizer=adam, loss=loss, metrics=['accuracy'])
-        # model.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['accuracy'])
-
 
     filepath = './models/'
 
     # train the model
     if args.multitasking:
-        x_shape_batch = (batch_size, patch_size, patch_size, 3)
-        y_shape_batch = (batch_size, patch_size, patch_size, 5)
+        x_shape_batch = (args.batch_size, patch_size, patch_size, 3)
+        y_shape_batch = (args.batch_size, patch_size, patch_size, 5)
         start_time = time.time()
         train_model(args, model, patches_tr, y_paths, patches_val, val_paths,
-                    batch_size, epochs,
+                    args.batch_size, epochs,
                     x_shape_batch=x_shape_batch, y_shape_batch=y_shape_batch)
         end_time = time.time() - start_time
         print(f'\nTraining took: {end_time / 3600} \n')
     else:
-        x_shape_batch = (batch_size, patch_size, patch_size, 3)
-        y_shape_batch = (batch_size, patch_size, patch_size, 5)
+        x_shape_batch = (args.batch_size, patch_size, patch_size, 3)
+        y_shape_batch = (args.batch_size, patch_size, patch_size, 5)
 
         start_time = time.time()
 
         train_model(args, model, patches_tr, y_paths, patches_val, val_paths,
-                    batch_size, epochs,
+                    args.batch_size, epochs,
                     x_shape_batch=x_shape_batch, y_shape_batch=y_shape_batch)
 
         end_time = time.time() - start_time
         print(f'\nTraining took: {end_time / 3600} \n')
 
-    #%% Test model
-
-    # Load images
-    img_test_path = 'Image_Test.npy'
-    img_test = load_npy_image(os.path.join(root_path, img_test_path)).astype(np.float32)
-    # Normalizes the image
-    img_test_normalized = normalization(img_test)
-    # Transform the image into W x H x C shape
-    img_test_normalized = img_test_normalized.transpose((1,2,0))
-    print(img_test_normalized.shape)
-
-    # Load reference
-    img_test_ref_path = 'Reference_Test.npy'
-    img_test_ref = load_npy_image(os.path.join(root_path, img_test_ref_path))
-    img_test_ref = img_test_ref.transpose((1,2,0))
-    print(img_test_ref.shape)
-
-    # Create binarized matrix
-    w = img_test_ref.shape[0]
-    h = img_test_ref.shape[1]
-    c = img_test_ref.shape[2]
-    # binary_img_train_ref = np.zeros((1,w,h))
-    binary_img_test_ref = np.full((w, h), -1)
-    # Dictionary used in training
-    label_dict = {'(255, 255, 255)': 0, '(0, 255, 0)': 1, '(0, 255, 255)': 2, '(0, 0, 255)': 3, '(255, 255, 0)': 4}
-    # label = 0
-    for i in range(w):
-        for j in range(h):
-            r = img_test_ref[i][j][0]
-            g = img_test_ref[i][j][1]
-            b = img_test_ref[i][j][2]
-            rgb = (r,g,b)
-            rgb_key = str(rgb)
-            binary_img_test_ref[i][j] = label_dict[rgb_key]
-    print(label_dict)
-
-    # Put the patch size according to you training here
-    patches_test = extract_patches_train(img_test_normalized, patch_size)
-    patches_test_ref = extract_patches_test(binary_img_test_ref, patch_size)
-
-    #% Load model
-    model = load_model(filepath+'unet_exp_'+str(exp)+'.h5', compile=False)
-    # Prediction
-    # Test the model
-    patches_pred = Test(model, patches_test, args)
-    print(patches_pred.shape)
-
-    # Metrics
-    true_labels = np.reshape(patches_test_ref, (patches_test_ref.shape[0]* patches_test_ref.shape[1]*patches_test_ref.shape[2]))
-    predicted_labels = np.reshape(patches_pred, (patches_pred.shape[0]* patches_pred.shape[1]*patches_pred.shape[2]))
-
-    # Metrics
-    metrics = compute_metrics(true_labels,predicted_labels)
-    cm = confusion_matrix(true_labels, predicted_labels, labels=[0,1,2,3,4])
-
-    print('Confusion  matrix \n', cm)
-    print()
-    print('Accuracy: ', metrics[0])
-    print('F1score: ', metrics[1])
-    print('Recall: ', metrics[2])
-    print('Precision: ', metrics[3])
-
-    def pred_recostruction(patch_size, pred_labels, binary_img_test_ref):
-        # Patches Reconstruction
-        stride = patch_size
-
-        height, width = binary_img_test_ref.shape
-
-        num_patches_h = height // stride
-        num_patches_w = width // stride
-
-        new_shape = (height, width)
-        img_reconstructed = np.zeros(new_shape)
-        cont = 0
-        # rows
-        for h in range(num_patches_h):
-            # columns
-            for w in range(num_patches_w):
-                img_reconstructed[h*stride:(h+1)*stride, w*stride:(w+1)*stride] = patches_pred[cont]
-                cont += 1
-        print('Reconstruction Done!')
-        return img_reconstructed
-
-
-    def reconstruction_rgb_prdiction_patches(img_reconstructed, label_dict):
-        reversed_label_dict = {value : key for (key, value) in label_dict.items()}
-        print(reversed_label_dict)
-        height, width = img_reconstructed.shape
-        img_reconstructed_rgb = np.zeros((height,width,3))
-        for h in range(height):
-            for w in range(width):
-                pixel_class = img_reconstructed[h, w]
-                img_reconstructed_rgb[h, w, :] = ast.literal_eval(reversed_label_dict[pixel_class])
-        print('Conversion to RGB Done!')
-        return img_reconstructed_rgb.astype(np.uint8)
-
-    img_reconstructed = pred_recostruction(patch_size, patches_pred, binary_img_test_ref)
-    img_reconstructed_rgb = reconstruction_rgb_prdiction_patches(img_reconstructed, label_dict)
-
-    plt.imsave(f'img_reconstructed_rgb_exp{exp}.jpeg', img_reconstructed_rgb)
+    # #%% Test model
+    #
+    # # Load images
+    # img_test_path = 'Image_Test.npy'
+    # img_test = load_npy_image(os.path.join(root_path, img_test_path)).astype(np.float32)
+    # # Normalizes the image
+    # img_test_normalized = normalization(img_test)
+    # # Transform the image into W x H x C shape
+    # img_test_normalized = img_test_normalized.transpose((1,2,0))
+    # print(img_test_normalized.shape)
+    #
+    # # Load reference
+    # img_test_ref_path = 'Reference_Test.npy'
+    # img_test_ref = load_npy_image(os.path.join(root_path, img_test_ref_path))
+    # img_test_ref = img_test_ref.transpose((1,2,0))
+    # print(img_test_ref.shape)
+    #
+    # # Create binarized matrix
+    # w = img_test_ref.shape[0]
+    # h = img_test_ref.shape[1]
+    # c = img_test_ref.shape[2]
+    # # binary_img_train_ref = np.zeros((1,w,h))
+    # binary_img_test_ref = np.full((w, h), -1)
+    # # Dictionary used in training
+    # label_dict = {'(255, 255, 255)': 0, '(0, 255, 0)': 1, '(0, 255, 255)': 2, '(0, 0, 255)': 3, '(255, 255, 0)': 4}
+    # # label = 0
+    # for i in range(w):
+    #     for j in range(h):
+    #         r = img_test_ref[i][j][0]
+    #         g = img_test_ref[i][j][1]
+    #         b = img_test_ref[i][j][2]
+    #         rgb = (r,g,b)
+    #         rgb_key = str(rgb)
+    #         binary_img_test_ref[i][j] = label_dict[rgb_key]
+    # print(label_dict)
+    #
+    # # Put the patch size according to you training here
+    # patches_test = extract_patches_train(img_test_normalized, patch_size)
+    # patches_test_ref = extract_patches_test(binary_img_test_ref, patch_size)
+    #
+    # #% Load model
+    # model = load_model(filepath+'unet_exp_'+str(exp)+'.h5', compile=False)
+    # # Prediction
+    # # Test the model
+    # patches_pred = Test(model, patches_test, args)
+    # print(patches_pred.shape)
+    #
+    # # Metrics
+    # true_labels = np.reshape(patches_test_ref, (patches_test_ref.shape[0]* patches_test_ref.shape[1]*patches_test_ref.shape[2]))
+    # predicted_labels = np.reshape(patches_pred, (patches_pred.shape[0]* patches_pred.shape[1]*patches_pred.shape[2]))
+    #
+    # # Metrics
+    # metrics = compute_metrics(true_labels,predicted_labels)
+    # cm = confusion_matrix(true_labels, predicted_labels, labels=[0,1,2,3,4])
+    #
+    # print('Confusion  matrix \n', cm)
+    # print()
+    # print('Accuracy: ', metrics[0])
+    # print('F1score: ', metrics[1])
+    # print('Recall: ', metrics[2])
+    # print('Precision: ', metrics[3])
+    #
+    # def pred_recostruction(patch_size, pred_labels, binary_img_test_ref):
+    #     # Patches Reconstruction
+    #     stride = patch_size
+    #
+    #     height, width = binary_img_test_ref.shape
+    #
+    #     num_patches_h = height // stride
+    #     num_patches_w = width // stride
+    #
+    #     new_shape = (height, width)
+    #     img_reconstructed = np.zeros(new_shape)
+    #     cont = 0
+    #     # rows
+    #     for h in range(num_patches_h):
+    #         # columns
+    #         for w in range(num_patches_w):
+    #             img_reconstructed[h*stride:(h+1)*stride, w*stride:(w+1)*stride] = patches_pred[cont]
+    #             cont += 1
+    #     print('Reconstruction Done!')
+    #     return img_reconstructed
+    #
+    #
+    # def reconstruction_rgb_prdiction_patches(img_reconstructed, label_dict):
+    #     reversed_label_dict = {value : key for (key, value) in label_dict.items()}
+    #     print(reversed_label_dict)
+    #     height, width = img_reconstructed.shape
+    #     img_reconstructed_rgb = np.zeros((height,width,3))
+    #     for h in range(height):
+    #         for w in range(width):
+    #             pixel_class = img_reconstructed[h, w]
+    #             img_reconstructed_rgb[h, w, :] = ast.literal_eval(reversed_label_dict[pixel_class])
+    #     print('Conversion to RGB Done!')
+    #     return img_reconstructed_rgb.astype(np.uint8)
+    #
+    # img_reconstructed = pred_recostruction(patch_size, patches_pred, binary_img_test_ref)
+    # img_reconstructed_rgb = reconstruction_rgb_prdiction_patches(img_reconstructed, label_dict)
+    #
+    # plt.imsave(f'img_reconstructed_rgb_exp{exp}.jpeg', img_reconstructed_rgb)

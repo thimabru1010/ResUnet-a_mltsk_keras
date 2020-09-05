@@ -126,7 +126,7 @@ del img_train_ref
 
 number_class = 5
 patch_size = 256
-stride = patch_size // 8
+stride = patch_size // 1
 
 
 # stride = patch_size
