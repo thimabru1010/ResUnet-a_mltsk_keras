@@ -551,6 +551,9 @@ if __name__ == '__main__':
 
     filepath = './models/'
 
+    if not os.path.exists(args.log_path):
+        os.makedirs(args.log_path)
+
     # train the model
     if args.multitasking:
         x_shape_batch = (args.batch_size, patch_size, patch_size, 3)
