@@ -273,7 +273,7 @@ for i in range(len(patches_tr)):
     show_each_channel(patches_dist_labels_h, axes, row=2)
     # Create labels for color
     print('color')
-    axes[3, 0].set_ylabel('Boundary')
+    axes[3, 0].set_ylabel('Color')
     hsv_patch = cv2.cvtColor(patches_tr[i], cv2.COLOR_RGB2HSV)
     # hsv_patch = hsv_patch / np.array([179, 255, 255])
     axes[3, 0].imshow(hsv_patch)

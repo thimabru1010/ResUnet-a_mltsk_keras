@@ -318,18 +318,10 @@ print('Precision: ', metrics[3])
 # Visualize inference per class
 if args.multitasking:
 
-    # axes[0, 0].set_xlabel('Patch')
-    # axes[0, 1].set_xlabel('Seg Ref')
-    # axes[0, 2].set_xlabel('Seg Pred')
-    # axes[0, 3].set_xlabel('Bound Ref')
-    # axes[0, 4].set_xlabel('Bound Pred')
-    # axes[0, 5].set_xlabel('Dist Ref')
-    # axes[0, 6].set_xlabel('Dist Pred')
-
     for i in range(len(patches_test)):
         # Plot predictions for each class and each task; Each row corresponds to a
         # class and has its predictions of each task
-        fig1, axes = plt.subplots(nrows=args.num_classes, ncols=7, figsize=(12, 9))
+        fig1, axes = plt.subplots(nrows=args.num_classes, ncols=7, figsize=(15, 10))
         img = patches_test[i]
         img_ref = patches_test_ref[i]
         img_ref_h = tf.keras.utils.to_categorical(img_ref, args.num_classes)
@@ -354,15 +346,39 @@ if args.multitasking:
                                               cmap=cm.Greys_r)
                 elif task == 1:
                     # Boundary
+                    print(f' bound class: {n_class}')
                     axes[n_class, col].imshow(bound_ref_h[:, :, n_class],
                                               cmap=cm.Greys_r)
                 elif task == 2:
                     # Distance Transform
                     axes[n_class, col].imshow(dist_ref_h[:, :, n_class],
                                               cmap=cm.Greys_r)
+        # Color
+        fig2, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3, figsize=(10, 5))
+        ax1.set_title('Original')
+        ax1.imshow(img)
+        ax2.set_title('Pred HSV in RGB')
+        task = 3
+        # As long as the normalization process was just img = img / 255
+        hsv_patch = patches_pred[task][i]
+        # print(f'HSV max {i}: {hsv_patch.max()}, HSV min: {hsv_patch.min()}')
+        hsv_patch = (hsv_patch * 255).astype(np.uint8)
+        # hsv_patch = hsv_patch.astype(np.uint8)
+        rgb_patch = cv2.cvtColor(hsv_patch, cv2.COLOR_HSV2RGB)
+        ax2.imshow(rgb_patch)
+        ax3.set_title('Difference between both')
+        ax3.imshow(img - rgb_patch)
+
         for i in range(args.num_classes):
             axes[i, 0].set_ylabel(f'Class {i}')
-        print('aqui')
+
+        axes[0, 0].set_title('Patch')
+        axes[0, 1].set_title('Seg Ref')
+        axes[0, 2].set_title('Seg Pred')
+        axes[0, 3].set_title('Bound Ref')
+        axes[0, 4].set_title('Bound Pred')
+        axes[0, 5].set_title('Dist Ref')
+        axes[0, 6].set_title('Dist Pred')
         plt.show()
         plt.close()
 
