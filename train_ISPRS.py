@@ -22,6 +22,7 @@ import psutil
 import ast
 from prettytable import PrettyTable
 import tensorflow as tf
+from tqdm import tqdm
 
 
 def extract_patches_test(binary_img_test_ref, patch_size):
@@ -167,7 +168,6 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
             loss_tr = np.zeros((1, metrics_len))
             loss_val = np.zeros((1, metrics_len))
         # Computing the number of batchs on training
-        # n_batchs_tr = patches_train.shape[0]//batch_size
         n_batchs_tr = len(x_train_paths)//batch_size
         # Random shuffle the data
         if not args.multitasking:
@@ -181,7 +181,7 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                        y_train_paths[2], y_train_paths[3])
 
         # Training the network per batch
-        for batch in range(n_batchs_tr):
+        for batch in tqdm(range(n_batchs_tr), desc="Train"):
             x_train_paths_b = x_train_paths_rand[batch * batch_size:(batch + 1) * batch_size]
             y_train_paths_b_seg = y_train_paths_rand_seg[batch * batch_size:(batch + 1) * batch_size]
             if args.multitasking:
@@ -221,27 +221,18 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
             # print(loss_tr)
             # print(loss_tr.shape)
 
-        # Training loss; Divide for the numberof batches
+        # Training loss; Divide by the number of batches
         print(loss_tr)
         loss_tr = loss_tr/n_batchs_tr
 
         # Computing the number of batchs on validation
-        # n_batchs_val = x_val_paths.shape[0]//batch_size
         n_batchs_val = len(x_val_paths)//batch_size
 
-        '''
-            Talvez fosse bom deletar as matrizes :
-            x_train_b
-            y_train_h_b
-            Antes de começar o validation
-        '''
-
         # Evaluating the model in the validation set
-        for batch in range(n_batchs_val):
+        for batch in tqdm(range(n_batchs_val), desc="Validation"):
             x_val_paths_b = x_val_paths[batch * batch_size:(batch + 1) * batch_size]
             y_val_paths_b_seg = y_val_paths[0][batch * batch_size:(batch + 1) * batch_size]
             if args.multitasking:
-                # y_train_paths_b_bound
                 y_val_paths_b_bound = y_val_paths[1][batch * batch_size:(batch + 1) * batch_size]
 
                 y_val_paths_b_dist = y_val_paths[2][batch * batch_size:(batch + 1) * batch_size]
@@ -274,8 +265,6 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
 
                 loss_val = loss_val + net.test_on_batch(x=x_val_b, y=y_val_b)
 
-        # validation loss
-        # print(loss_val)
         loss_val = loss_val/n_batchs_val
         if not args.multitasking:
             train_loss = loss_tr[0, 0]
@@ -337,7 +326,8 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                                     val_metrics['seg_accuracy'])
 
             if args.bound:
-                metrics_table.add_row(['Bound', round(train_metrics['bound_loss'], 5),
+                metrics_table.add_row(['Bound',
+                                       round(train_metrics['bound_loss'], 5),
                                       round(val_metrics['bound_loss'], 5),
                                       round(100*train_metrics['bound_accuracy'], 5),
                                       round(100*val_metrics['bound_accuracy'], 5)])

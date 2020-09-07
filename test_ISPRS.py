@@ -327,14 +327,14 @@ if args.multitasking:
         img_ref_h = tf.keras.utils.to_categorical(img_ref, args.num_classes)
         bound_ref_h = get_boundary_label(img_ref_h)
 
-        fig5, axes = plt.subplots(nrows=1, ncols=4, figsize=(12, 9))
-
-        axes[0].imshow(bound_ref_h[:, :, 0], cmap=cm.Greys_r)
-        axes[1].imshow(bound_ref_h[:, :, 1], cmap=cm.Greys_r)
-        axes[2].imshow(bound_ref_h[:, :, 2], cmap=cm.Greys_r)
-        axes[3].imshow(bound_ref_h[:, :, 3], cmap=cm.Greys_r)
-        plt.show()
-        plt.close()
+        # fig5, axes = plt.subplots(nrows=1, ncols=4, figsize=(12, 9))
+        #
+        # axes[0].imshow(bound_ref_h[:, :, 0], cmap=cm.Greys_r)
+        # axes[1].imshow(bound_ref_h[:, :, 1], cmap=cm.Greys_r)
+        # axes[2].imshow(bound_ref_h[:, :, 2], cmap=cm.Greys_r)
+        # axes[3].imshow(bound_ref_h[:, :, 3], cmap=cm.Greys_r)
+        # plt.show()
+        # plt.close()
 
         dist_ref_h = get_distance_label(img_ref_h)
         # Put the first plot as the patch to be observed on each row
@@ -373,11 +373,13 @@ if args.multitasking:
         hsv_patch = patches_pred[task][i]
         # print(f'HSV max {i}: {hsv_patch.max()}, HSV min: {hsv_patch.min()}')
         hsv_patch = (hsv_patch * 255).astype(np.uint8)
-        # hsv_patch = hsv_patch.astype(np.uint8)
         rgb_patch = cv2.cvtColor(hsv_patch, cv2.COLOR_HSV2RGB)
         ax2.imshow(rgb_patch)
         ax3.set_title('Difference between both')
-        ax3.imshow(img - rgb_patch)
+        diff = np.mean(rgb_patch - img ,axis=-1)
+        diff = 2*(diff-diff.min())/(diff.max()-diff.min()) - np.ones_like(diff)
+        # ax3.imshow(img - rgb_patch)
+        ax3.imshow(diff)
 
         for i in range(args.num_classes):
             axes[i, 0].set_ylabel(f'Class {i}')
