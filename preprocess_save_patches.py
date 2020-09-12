@@ -165,7 +165,7 @@ print('[GC COLLECT]')
 print(process.memory_percent())
 
 print('saving images...')
-folder_path = f'./DATASETS/patches_ps={args.patch_size}_' + \
+folder_path = f'./DATASETS/patch_size={args.patch_size}_' + \
             f'stride={args.stride}_norm_type={args.norm_type}'
 if not os.path.exists(folder_path):
     os.makedirs(folder_path)
