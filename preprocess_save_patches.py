@@ -116,6 +116,13 @@ def normalize_hsv(img, norm_type=1):
     return img
 
 
+print('='*50)
+print('Parameters')
+print(f'patch size={args.patch_size}')
+print(f'stride={args.stride}')
+print(f'Number of classes={args.num_classes} ')
+print('='*50)
+
 root_path = './DATASETS/ISPRS_npy'
 # Load images
 img_train_path = 'Image_Train.npy'
