@@ -1,9 +1,3 @@
-# from utils import np, plt, load_tiff_image, load_SAR_image, compute_metrics, data_augmentation, unet, normalization, \
-# RGB_image, extract_patches, patch_tiles, bal_aug_patches, extrac_patch2, test_FCN, pred_recostruction, \
-# weighted_categorical_crossentropy, mask_no_considered, tf, Adam, prediction, load_model, confusion_matrix, \
-# EarlyStopping, ModelCheckpoint, identity_block, ResNet50, color_map, SGD, \
-# load_npy_image
-
 from utils import np, load_npy_image, data_augmentation
 import tensorflow as tf
 
@@ -27,6 +21,14 @@ parser.add_argument("--multitasking",
 parser.add_argument("--norm_type",
                     help="Choose type of normalization to be used", type=int,
                     default=1, choices=[1, 2, 3])
+parser.add_argument("--patch_size",
+                    help="Choose size of patches", type=int, default=256)
+parser.add_argument("--stride",
+                    help="Choose stride to be using on patches extraction",
+                    type=int, default=32)
+parser.add_argument("--num_classes",
+                    help="Choose number of classes to convert \
+                    labels to one hot encoding", type=int, default=5)
 args = parser.parse_args()
 
 
@@ -139,15 +141,10 @@ label_dict = {'(255, 255, 255)': 0, '(0, 255, 0)': 1,
 binary_img_train_ref = binarize_matrix(img_train_ref, label_dict)
 del img_train_ref
 
-number_class = 5
-patch_size = 256
-stride = patch_size // 1
-
-
 # stride = patch_size
 patches_tr, patches_tr_ref = extract_patches(img_train,
                                              binary_img_train_ref,
-                                             patch_size, stride)
+                                             args.patch_size, args.stride)
 print('patches extraidos!')
 process = psutil.Process(os.getpid())
 print('[CHECKING MEMORY]')
@@ -161,7 +158,8 @@ print('[GC COLLECT]')
 print(process.memory_percent())
 
 print('saving images...')
-folder_path = f'./DATASETS/patches_ps={patch_size}_stride={stride}'
+folder_path = f'./DATASETS/patches_ps={args.patch_size}_' + \
+            f'stride={args.stride}_norm_type={args.norm_type}'
 if not os.path.exists(folder_path):
     os.makedirs(folder_path)
     os.makedirs(os.path.join(folder_path, 'train'))
@@ -180,7 +178,7 @@ print(f'Number of patches: {len(patches_tr)}')
 print(f'Number of patches expected: {len(patches_tr)*5}')
 for i in tqdm(range(len(patches_tr))):
     img_aug, label_aug = data_augmentation(patches_tr[i], patches_tr_ref[i])
-    label_aug_h = tf.keras.utils.to_categorical(label_aug, number_class)
+    label_aug_h = tf.keras.utils.to_categorical(label_aug, args.num_classes)
     for j in range(len(img_aug)):
         # Input image RGB
         # Float32 its need to train the model
