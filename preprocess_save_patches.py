@@ -24,6 +24,9 @@ from sklearn.preprocessing import StandardScaler
 parser = argparse.ArgumentParser()
 parser.add_argument("--multitasking",
                     help="choose resunet-a model or not", type=int, default=0)
+parser.add_argument("--norm_type",
+                    help="Choose type of normalization to be used", type=int,
+                    default=1, choices=[1, 2, 3])
 args = parser.parse_args()
 
 
@@ -182,7 +185,7 @@ for i in tqdm(range(len(patches_tr))):
         # Input image RGB
         # Float32 its need to train the model
         img_float = img_aug[j].astype(np.float32)
-        img_normalized = normalize_rgb(img_float, norm_type=1)
+        img_normalized = normalize_rgb(img_float, norm_type=args.norm_type)
         np.save(os.path.join(folder_path, 'train', filename(i*5 + j)),
                 img_normalized)
         # All multitasking labels are saved in one-hot
@@ -201,6 +204,6 @@ for i in tqdm(range(len(patches_tr))):
         hsv_patch = cv2.cvtColor(img_aug[j],
                                  cv2.COLOR_RGB2HSV).astype(np.float32)
         # Float32 its need to train the model
-        hsv_patch = normalize_hsv(hsv_patch, norm_type=1)
+        hsv_patch = normalize_hsv(hsv_patch, norm_type=args.norm_type)
         np.save(os.path.join(folder_path, 'labels/color', filename(i*5 + j)),
                 hsv_patch)
