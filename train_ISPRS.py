@@ -416,12 +416,31 @@ if __name__ == '__main__':
     parser.add_argument("--log_path", help="Path where to save logs",
                         type=str, default='./results/log_run1')
     parser.add_argument("--dataset_path", help="Path where to load dataset",
-                        type=str, default='./DATASETS/patches_ps=256_stride=32')
-    parser.add_argument("--batch_size", help="Batch size on training",
+                        type=str, default='./DATASETS/patch_size=256_stride=32')
+    parser.add_argument("-bs", "--batch_size", help="Batch size on training",
                         type=int, default=4)
     parser.add_argument("-lr", "--learning_rate",
                         help="Learning rate on training",
                         type=float, default=1e-3)
+    parser.add_argument("--loss", help="choose which loss you want to use",
+                        type=str, default='weighted_cross_entropy',
+                        choices=['weighted_cross_entropy', 'cross_entropy',
+                                 'tanimoto'])
+    parser.add_argument("-optm", "--optimizer",
+                        help="Choose which optmizer to use",
+                        type=str, choices=['adam', 'sgd'], default='adam')
+    parser.add_argument("--num_classes", help="Number of classes",
+                        type=int, default=5)
+    parser.add_argument("--epochs", help="Number of epochs",
+                        type=int, default=500)
+    parser.add_argument("-ps", "--patch_size", help="Size of patches extracted",
+                        type=int, default=256)
+    parser.add_argument("--bound_weight", help="Boundary loss weight",
+                        type=float, default=1.0)
+    parser.add_argument("--dist_weight", help="Distance transform loss weight",
+                        type=float, default=1.0)
+    parser.add_argument("--color_weight", help="HSV transform loss weight",
+                        type=float, default=1.0)
     args = parser.parse_args()
 
     if args.gpu_parallel:
@@ -460,11 +479,6 @@ if __name__ == '__main__':
     else:
         patches_tr, patches_val, patches_tr_lb_h, patches_val_lb_h = train_test_split(patches_tr, patches_tr_lb_h, test_size=0.2, random_state=42)
 
-    number_class = 5
-    patch_size = 256
-    # stride = patch_size // 8
-    epochs = 500
-
     if args.multitasking:
         '''
             index maps:
@@ -483,63 +497,73 @@ if __name__ == '__main__':
 
         val_paths = [patches_val_lb_h]
 
-    rows = patch_size
-    cols = patch_size
+    rows = args.patch_size
+    cols = args.patch_size
     channels = 3
-    adam = Adam(lr=args.learning_rate, beta_1=0.9)
-    sgd = SGD(lr=args.learning_rate, momentum=0.8)
 
-    weights = [4.34558461, 2.97682037, 3.92124661, 5.67350328, 374.0300152]
+    if args.optmizer == 'adam':
+        optm = Adam(lr=args.learning_rate, beta_1=0.9)
+    elif args.optimizer == 'sgd':
+        optm = SGD(lr=args.learning_rate, momentum=0.8)
+
     print('='*60)
-    print(weights)
-    loss = weighted_categorical_crossentropy(weights)
-    if args.multitasking:
-        # weighted_cross_entropy = weighted_categorical_crossentropy(weights)
-        # cross_entropy = "categorical_crossentropy"
-        tanimoto = Tanimoto_dual_loss()
+    if args.loss == 'cross_entropy':
+        print('Using Cross Entropy')
+        loss = "categorical_crossentropy"
+        loss_color = "categorical_crossentropy"
+    elif args.loss == "tanimoto":
+        print('Using Tanimoto Dual Loss')
+        loss = Tanimoto_dual_loss()
+        loss_color = Tanimoto_dual_loss()
+    else:
+        print('Using Weighted cross entropy')
+        weights = [4.34558461, 2.97682037, 3.92124661, 5.67350328, 374.0300152]
+        print(weights)
+        loss = weighted_categorical_crossentropy(weights)
+        loss_color = "categorical_crossentropy"
+    print('='*60)
 
     if args.resunet_a:
 
         if args.multitasking:
             print('Multitasking enabled!')
-            resuneta = Resunet_a((rows, cols, channels), number_class, args)
+            resuneta = Resunet_a((rows, cols, channels), args.num_classes, args)
             model = resuneta.model
             model.summary()
 
-            losses = {'seg': tanimoto}
+            losses = {'seg': loss}
             lossWeights = {'seg': 1.0}
             if args.bound:
-                losses['bound'] = tanimoto
-                lossWeights["bound"] = 1.0
+                losses['bound'] = loss
+                lossWeights["bound"] = args.bound_weight
             if args.dist:
-                losses['dist'] = tanimoto
-                lossWeights["dist"] = 1.0
+                losses['dist'] = loss
+                lossWeights["dist"] = args.dist_weight
             if args.color:
-                losses['color'] = tanimoto
-                lossWeights["color"] = 1.0
+                losses['color'] = loss_color
+                lossWeights["color"] = args.color_weight
 
-            print(losses)
-            print(lossWeights)
+            print(f'Loss Weights: {lossWeights}')
             if args.gpu_parallel:
                 with strategy.scope():
-                    model.compile(optimizer=adam, loss=losses,
+                    model.compile(optimizer=optm, loss=losses,
                                   loss_weights=lossWeights,
                                   metrics=['accuracy'])
             else:
-                model.compile(optimizer=adam, loss=losses,
+                model.compile(optimizer=optm, loss=losses,
                               loss_weights=lossWeights, metrics=['accuracy'])
         else:
-            resuneta = Resunet_a((rows, cols, channels), number_class, args)
+            resuneta = Resunet_a((rows, cols, channels), args.num_classes, args)
             model = resuneta.model
             model.summary()
-            model.compile(optimizer=adam, loss=loss, metrics=['accuracy'])
+            model.compile(optimizer=optm, loss=loss, metrics=['accuracy'])
 
         print('ResUnet-a compiled!')
     else:
-        model = unet((rows, cols, channels), number_class)
+        model = unet((rows, cols, channels), args.num_classes)
         model.summary()
 
-        model.compile(optimizer=adam, loss=loss, metrics=['accuracy'])
+        model.compile(optimizer=optm, loss=loss, metrics=['accuracy'])
 
     filepath = './models/'
 
@@ -548,22 +572,22 @@ if __name__ == '__main__':
 
     # train the model
     if args.multitasking:
-        x_shape_batch = (args.batch_size, patch_size, patch_size, 3)
-        y_shape_batch = (args.batch_size, patch_size, patch_size, 5)
+        x_shape_batch = (args.batch_size, args.patch_size, args.patch_size, 3)
+        y_shape_batch = (args.batch_size, args.patch_size, args.patch_size, 5)
         start_time = time.time()
         train_model(args, model, patches_tr, y_paths, patches_val, val_paths,
-                    args.batch_size, epochs,
+                    args.batch_size, args.epochs,
                     x_shape_batch=x_shape_batch, y_shape_batch=y_shape_batch)
         end_time = time.time() - start_time
         print(f'\nTraining took: {end_time / 3600} \n')
     else:
-        x_shape_batch = (args.batch_size, patch_size, patch_size, 3)
-        y_shape_batch = (args.batch_size, patch_size, patch_size, 5)
+        x_shape_batch = (args.batch_size, args.patch_size, args.patch_size, 3)
+        y_shape_batch = (args.batch_size, args.patch_size, args.patch_size, 5)
 
         start_time = time.time()
 
         train_model(args, model, patches_tr, y_paths, patches_val, val_paths,
-                    args.batch_size, epochs,
+                    args.batch_size, args.epochs,
                     x_shape_batch=x_shape_batch, y_shape_batch=y_shape_batch)
 
         end_time = time.time() - start_time
