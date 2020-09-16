@@ -501,7 +501,7 @@ if __name__ == '__main__':
     cols = args.patch_size
     channels = 3
 
-    if args.optmizer == 'adam':
+    if args.optimizer == 'adam':
         optm = Adam(lr=args.learning_rate, beta_1=0.9)
     elif args.optimizer == 'sgd':
         optm = SGD(lr=args.learning_rate, momentum=0.8)
