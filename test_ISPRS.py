@@ -249,6 +249,9 @@ parser.add_argument("--norm_type", choices=[1, 2, 3],
 parser.add_argument("--num_classes",
                     help="Number of classes",
                     type=int, default=5)
+parser.add_argument("--output_path",
+                    help="Path to where save predictions",
+                    type=str, default='results/preds_run')
 args = parser.parse_args()
 
 # Test model
@@ -383,10 +386,10 @@ if args.multitasking:
         rgb_patch = cv2.cvtColor(hsv_patch, cv2.COLOR_HSV2RGB)
         ax2.imshow(rgb_patch)
         ax3.set_title('Difference between both')
-        diff = np.mean(rgb_patch - img ,axis=-1)
-        diff = 2*(diff-diff.min())/(diff.max()-diff.min()) - np.ones_like(diff)
-        # ax3.imshow(img - rgb_patch)
-        ax3.imshow(diff)
+        # diff = np.mean(rgb_patch - img ,axis=-1)
+        # diff = 2*(diff-diff.min())/(diff.max()-diff.min()) - np.ones_like(diff)
+        ax3.imshow(img - rgb_patch)
+        #ax3.imshow(diff)
 
         for i in range(args.num_classes):
             axes[i, 0].set_ylabel(f'Class {i}')
@@ -400,6 +403,8 @@ if args.multitasking:
         axes[0, 6].set_title('Dist Pred')
         plt.show()
         plt.close()
+
+        plt.savefig(os.path.join(''))
 
 
 # if not args.multitasking:
