@@ -329,6 +329,7 @@ print('Precision: ', metrics[3])
 if args.multitasking:
 
     for i in range(len(patches_test)):
+        print(f'Patch: {i}')
         # Plot predictions for each class and each task; Each row corresponds to a
         # class and has its predictions of each task
         fig1, axes = plt.subplots(nrows=args.num_classes, ncols=7, figsize=(15, 10))
@@ -402,9 +403,9 @@ if args.multitasking:
         axes[0, 5].set_title('Dist Ref')
         axes[0, 6].set_title('Dist Pred')
         plt.show()
+        plt.savefig(os.path.join(args.output_path, f'pred{i}_classes.jpg'))
+        plt.savefig(os.path.join(args.output_path, f'pred{i}_color.jpg'))
         plt.close()
-
-        plt.savefig(os.path.join(''))
 
 
 # if not args.multitasking:
