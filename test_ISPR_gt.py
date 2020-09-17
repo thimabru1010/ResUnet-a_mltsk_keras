@@ -105,6 +105,7 @@ def pred_recostruction(patch_size, pred_labels, binary_img_test_ref, img_type=1)
         print('Reconstruction Done!')
     return img_reconstructed
 
+
 def convert_preds2rgb(img_reconstructed, label_dict):
     reversed_label_dict = {value:key for (key, value) in label_dict.items()}
     print(reversed_label_dict)
@@ -249,11 +250,12 @@ parser.add_argument("--num_classes",
                     help="Number of classes",
                     type=int, default=5)
 parser.add_argument("--output_path",
-                    help="Path to where save predictions",
-                    type=str, default='results/preds_run')
+                    help="Folder output path where to save predictions",
+                    type=str, default='results/preds_run1')
 args = parser.parse_args()
 
-# Test model
+if not os.path.exists(args.output_path):
+    os.makedirs(args.output_path)
 
 root_path = args.dataset_path
 
@@ -332,28 +334,17 @@ img_reconstructed_rgb = convert_preds2rgb(img_reconstructed,
 plt.imsave(os.path.join(args.output_path, 'pred_seg_reconstructed.jpeg'),
            img_reconstructed_rgb)
 
-# Visualize inference per class
 if args.multitasking:
-
+    # Visualize inference per class
     for i in range(len(patches_test)):
-        print(f'Patch: {i}')
         # Plot predictions for each class and each task; Each row corresponds to a
         # class and has its predictions of each task
-        fig1, axes = plt.subplots(nrows=args.num_classes, ncols=7, figsize=(15, 10))
+        fig1, axes = plt.subplots(nrows=args.num_classes,
+                                  ncols=7, figsize=(15, 10))
         img = patches_test[i]
         img_ref = patches_test_ref[i]
         img_ref_h = tf.keras.utils.to_categorical(img_ref, args.num_classes)
         bound_ref_h = get_boundary_label(img_ref_h)
-
-        # fig5, axes = plt.subplots(nrows=1, ncols=4, figsize=(12, 9))
-        #
-        # axes[0].imshow(bound_ref_h[:, :, 0], cmap=cm.Greys_r)
-        # axes[1].imshow(bound_ref_h[:, :, 1], cmap=cm.Greys_r)
-        # axes[2].imshow(bound_ref_h[:, :, 2], cmap=cm.Greys_r)
-        # axes[3].imshow(bound_ref_h[:, :, 3], cmap=cm.Greys_r)
-        # plt.show()
-        # plt.close()
-
         dist_ref_h = get_distance_label(img_ref_h)
         # Put the first plot as the patch to be observed on each row
         for n_class in range(args.num_classes):
@@ -381,15 +372,6 @@ if args.multitasking:
                     # Distance Transform
                     axes[n_class, col].imshow(dist_ref_h[:, :, n_class],
                                               cmap=cm.Greys_r)
-        axes[0, 0].set_title('Patch')
-        axes[0, 1].set_title('Seg Ref')
-        axes[0, 2].set_title('Seg Pred')
-        axes[0, 3].set_title('Bound Ref')
-        axes[0, 4].set_title('Bound Pred')
-        axes[0, 5].set_title('Dist Ref')
-        axes[0, 6].set_title('Dist Pred')
-        plt.savefig(os.path.join(args.output_path, f'pred{i}_classes.jpg'))
-
         # Color
         fig2, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3, figsize=(10, 5))
         ax1.set_title('Original')
@@ -406,14 +388,23 @@ if args.multitasking:
         # diff = np.mean(rgb_patch - img ,axis=-1)
         # diff = 2*(diff-diff.min())/(diff.max()-diff.min()) - np.ones_like(diff)
         ax3.imshow(img - rgb_patch)
-        #ax3.imshow(diff)
+        # ax3.imshow(diff)
 
-        for n_class in range(args.num_classes):
-            axes[n_class, 0].set_ylabel(f'Class {n_class}')
+        for i in range(args.num_classes):
+            axes[i, 0].set_ylabel(f'Class {i}')
 
+        axes[0, 0].set_title('Patch')
+        axes[0, 1].set_title('Seg Ref')
+        axes[0, 2].set_title('Seg Pred')
+        axes[0, 3].set_title('Bound Ref')
+        axes[0, 4].set_title('Bound Pred')
+        axes[0, 5].set_title('Dist Ref')
+        axes[0, 6].set_title('Dist Pred')
+        plt.savefig(os.path.join(args.output_path, f'pred{i}_classes.jpg'))
         plt.savefig(os.path.join(args.output_path, f'pred{i}_color.jpg'))
         plt.show()
         plt.close()
+
 
 
 # if not args.multitasking:
