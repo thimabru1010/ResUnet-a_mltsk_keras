@@ -10,11 +10,42 @@ ISPRS
             [PARAMETROS]
 Patch size = 256
 Stride = patch_size//8 = 32
+batch size = 16
+Adam
+lr = 1e-4
+data aug = True
+loss --> tanimoto
+norm type = 3 (StandardScaler)
+
+
+Confusion  matrix
+ [[ 749539   59721  260017   30179     316]
+ [  33590 1648984  238762    6274       0]
+ [ 119525  958930 1081736   55575       0]
+ [ 134878   72693   89288  920994      21]
+ [  11436    1199    9921    2602    1884]]
+
+Accuracy:  67.86519060231218
+F1score:  [69.76544393 70.63335259 55.53786558 82.47099393 12.87632847]
+Recall:  [68.15403556 85.5455201  48.81995662 75.62309401  6.96694032]
+Precision:  [71.45489662 60.14837716 64.39962756 90.68257544 84.82665466]
+
+=====================================
+
+=====================================
+---- Unet
+ISPRS
+
+            [PARAMETROS]
+Patch size = 256
+Stride = patch_size//8 = 32
 batch size = 32
 Adam
 lr = 1e-4
 data aug = True
 loss --> weighted cross entropy
+norm type = 3 (StandardScaler)
+
 
 Confusion  matrix
  [[ 456675   59851  548156   34114     976]
@@ -42,6 +73,7 @@ Adam
 lr = 1e-2
 data aug = True
 loss --> weighted cross entropy
+norm type = 3
 
 Confusion  matrix
  [[ 896327   40859  103223   56602    2761]
@@ -69,6 +101,7 @@ Adam
 lr = 1e-2
 data aug = True
 loss --> tanimoto dual loss
+norm type = 3
 
 Confusion  matrix
  [[ 923379   34367  114140   26665    1221]
@@ -95,6 +128,7 @@ Adam
 lr = 1e-3
 data aug = True
 loss --> tanimoto dual loss
+norm type = 1
 
 Confusion  matrix
  [[ 804524   69689  125923   99077     559]

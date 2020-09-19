@@ -399,7 +399,7 @@ if args.multitasking:
         # As long as the normalization process was just img = img / 255
         hsv_patch = patches_pred[task][i]
         # print(f'HSV max {i}: {hsv_patch.max()}, HSV min: {hsv_patch.min()}')
-        hsv_patch = (hsv_patch * 255).astype(np.uint8)
+        hsv_patch = (hsv_patch * np.array([179, 255, 255])).astype(np.uint8)
         rgb_patch = cv2.cvtColor(hsv_patch, cv2.COLOR_HSV2RGB)
         ax2.imshow(rgb_patch)
         ax3.set_title('Difference between both')
