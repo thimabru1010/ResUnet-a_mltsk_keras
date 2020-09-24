@@ -95,20 +95,73 @@ def compute_metrics_hw(true_labels, predicted_labels):
     precision = 100*precision_score(true_labels, predicted_labels, average=None)
     return accuracy, f1score, recall, precision
 
+
+def compute_mcc(y_true, y_pred):
+    true_positives = tf.keras.metrics.TruePositives()
+    true_positives.update_state(y_true, y_pred)
+    tp = true_positives.result()
+    true_negatives = tf.keras.metrics.TrueNegatives()
+    true_negatives.update_state(y_true, y_pred)
+    tn = true_negatives.result()
+    false_positive = tf.keras.metrics.FalsePositives()
+    false_positive.update_state(y_true, y_pred)
+    fp = false_positive.result()
+    false_negative = tf.keras.metrics.FalseNegatives()
+    false_negative.update_state(y_true, y_pred)
+    fn = false_negative.result()
+    mcc = (tp*tn - fp*fn) / tf.math.sqrt((tp + fp)*(tp + fn)*(tn + fp)*(tn+fn))
+    return mcc
+
+
 def compute_metrics_seg(y_true, y_pred):
     print('[CHECKING METRICS]')
-    print('y_true')
-    print(y_true.shape)
-    print(y_true)
-    print('y_pred')
-    print(y_pred.shape)
-    print(y_pred)
-    accuracy = 100*accuracy_score(y_true, y_pred)
-    #avg_accuracy = 100*accuracy_score(y_true, y_pred, average=None)
-    f1score = 100*f1_score(y_true, y_pred, average=None)
-    recall = 100*recall_score(y_true, y_pred, average=None)
-    precision = 100*precision_score(y_true, y_pred, average=None)
-    return accuracy, f1score, recall, precision
+    # print('y_true')
+    # print(y_true.shape)
+    # #print(type(y_true))
+    # print('y_pred')
+    # print(y_pred.shape)
+    #print(y_pred)
+
+    # # Metrics
+    # with tf.device("CPU:0"):
+    #     patches_test_ref = np.argmax(y_true.numpy(), axis=-1)
+    #     seg_pred = np.argmax(y_pred.numpy(), axis=-1)
+    # print('y_true')
+    # print(y_true.shape)
+    # #print(type(y_true))
+    # print('y_pred')
+    # print(y_pred.shape)
+    # y_true = np.reshape(patches_test_ref, (patches_test_ref.shape[0] *
+    #                                             patches_test_ref.shape[1] *
+    #                                             patches_test_ref.shape[2]))
+    #
+    # y_pred = np.reshape(seg_pred, (seg_pred.shape[0] *
+    #                                          seg_pred.shape[1] *
+    #                                          seg_pred.shape[2]))
+    #
+    # accuracy = 100*accuracy_score(y_true, y_pred)
+    # f1score = 100*f1_score(y_true, y_pred, average=None)
+    # recall = 100*recall_score(y_true, y_pred, average=None)
+    # precision = 100*precision_score(y_true, y_pred, average=None)
+    precision = tf.keras.metrics.Precision()
+    precision.update_state(y_true, y_pred)
+    prec_res = precision.result()
+    print(f'precision: {prec_res}')
+    recall = tf.keras.metrics.Recall()
+    recall.update_state(y_true, y_pred)
+    recall_res = recall.result()
+    print(f'recall: {recall_res}')
+    mcc = compute_mcc(y_true, y_pred)
+    print(mcc)
+    # out = np.zeros((4,5))
+    # out[0, 0] = accuracy
+    # print(f1score)
+    # out[1] = f1score
+    # out[2] = recall
+    # out[3] = precision
+    # return tf.convert_to_tensor(out)
+    #return [accuracy, f1score, recall, precision]
+    return mcc
 
 
 def add_tensorboard_scalars(train_writer, val_writer, epoch,
@@ -176,8 +229,8 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
     print(net.metrics_names)
     for epoch in range(epochs):
         if not args.multitasking:
-            loss_tr = np.zeros((1, 2), dtype=np.float32)
-            loss_val = np.zeros((1, 2), dtype=np.float32)
+            loss_tr = np.zeros((1, 3), dtype=np.float32)
+            loss_val = np.zeros((1, 3), dtype=np.float32)
         else:
             metrics_len = len(net.metrics_names)
             loss_tr = np.zeros((1, metrics_len))
@@ -218,6 +271,7 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
 
             if not args.multitasking:
                 loss_tr = loss_tr + net.train_on_batch(x_train_b, y_train_h_b_seg)
+                #print(net.train_on_batch(x_train_b, y_train_h_b_seg))
             else:
                 y_train_b = {"seg": y_train_h_b_seg}
                 if args.bound:
@@ -464,6 +518,8 @@ if __name__ == '__main__':
     else:
         strategy = None
 
+    tf.config.experimental_run_functions_eagerly(True)
+
     # Load images
 
     root_path = args.dataset_path
@@ -571,14 +627,14 @@ if __name__ == '__main__':
             resuneta = Resunet_a((rows, cols, channels), args.num_classes, args)
             model = resuneta.model
             model.summary()
-            model.compile(optimizer=optm, loss=loss, metrics=['accuracy', compute_metrics_seg])
+            model.compile(optimizer=optm, loss=loss, metrics=['accuracy'])
 
         print('ResUnet-a compiled!')
     else:
         model = unet((rows, cols, channels), args.num_classes)
         model.summary()
 
-        model.compile(optimizer=optm, loss=loss, metrics=['accuracy'])
+        model.compile(optimizer=optm, loss=loss, metrics=['accuracy', compute_metrics_seg])
 
     filepath = './models/'
 
