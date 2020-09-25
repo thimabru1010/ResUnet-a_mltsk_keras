@@ -25,6 +25,17 @@ import tensorflow as tf
 from tqdm import tqdm
 
 
+def str2bool(v):
+    if isinstance(v, bool):
+       return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
+
 def extract_patches_test(binary_img_test_ref, patch_size):
     # Extract training patches
     stride = patch_size
@@ -97,6 +108,11 @@ def compute_metrics_hw(true_labels, predicted_labels):
 
 
 def compute_mcc(y_true, y_pred):
+    print('[CHECKING METRICS]')
+    print(len(y_pred))
+    print(len(y_true))
+    print(y_true.shape)
+    print(y_pred.shape)
     true_positives = tf.keras.metrics.TruePositives()
     true_positives.update_state(y_true, y_pred)
     tp = true_positives.result()
@@ -115,34 +131,6 @@ def compute_mcc(y_true, y_pred):
 
 def compute_metrics_seg(y_true, y_pred):
     print('[CHECKING METRICS]')
-    # print('y_true')
-    # print(y_true.shape)
-    # #print(type(y_true))
-    # print('y_pred')
-    # print(y_pred.shape)
-    #print(y_pred)
-
-    # # Metrics
-    # with tf.device("CPU:0"):
-    #     patches_test_ref = np.argmax(y_true.numpy(), axis=-1)
-    #     seg_pred = np.argmax(y_pred.numpy(), axis=-1)
-    # print('y_true')
-    # print(y_true.shape)
-    # #print(type(y_true))
-    # print('y_pred')
-    # print(y_pred.shape)
-    # y_true = np.reshape(patches_test_ref, (patches_test_ref.shape[0] *
-    #                                             patches_test_ref.shape[1] *
-    #                                             patches_test_ref.shape[2]))
-    #
-    # y_pred = np.reshape(seg_pred, (seg_pred.shape[0] *
-    #                                          seg_pred.shape[1] *
-    #                                          seg_pred.shape[2]))
-    #
-    # accuracy = 100*accuracy_score(y_true, y_pred)
-    # f1score = 100*f1_score(y_true, y_pred, average=None)
-    # recall = 100*recall_score(y_true, y_pred, average=None)
-    # precision = 100*precision_score(y_true, y_pred, average=None)
     precision = tf.keras.metrics.Precision()
     precision.update_state(y_true, y_pred)
     prec_res = precision.result()
@@ -151,22 +139,14 @@ def compute_metrics_seg(y_true, y_pred):
     recall.update_state(y_true, y_pred)
     recall_res = recall.result()
     print(f'recall: {recall_res}')
-    mcc = compute_mcc(y_true, y_pred)
-    print(mcc)
-    # out = np.zeros((4,5))
-    # out[0, 0] = accuracy
-    # print(f1score)
-    # out[1] = f1score
-    # out[2] = recall
-    # out[3] = precision
-    # return tf.convert_to_tensor(out)
-    #return [accuracy, f1score, recall, precision]
-    return mcc
+    # mcc = compute_mcc(y_true, y_pred)
+    # print(mcc)
+    return
 
 
 def add_tensorboard_scalars(train_writer, val_writer, epoch,
                             metric_name, train_loss, val_loss,
-                            train_acc=None, val_acc=None):
+                            train_acc=None, val_acc=None, val_mcc=None):
     with train_writer.as_default():
         tf.summary.scalar(metric_name+'/Loss', train_loss,
                           step=epoch)
@@ -179,6 +159,10 @@ def add_tensorboard_scalars(train_writer, val_writer, epoch,
         if val_acc is not None:
             tf.summary.scalar(metric_name+'/Accuracy', val_acc,
                               step=epoch)
+
+        if val_mcc is not None:
+            tf.summary.scalar(metric_name+'/MCC', val_mcc,
+                            step=epoch)
 
 
 def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
@@ -271,7 +255,6 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
 
             if not args.multitasking:
                 loss_tr = loss_tr + net.train_on_batch(x_train_b, y_train_h_b_seg)
-                #print(net.train_on_batch(x_train_b, y_train_h_b_seg))
             else:
                 y_train_b = {"seg": y_train_h_b_seg}
                 if args.bound:
@@ -336,52 +319,34 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
 
         loss_val = loss_val/n_batchs_val
         if not args.multitasking:
+            print(f'loss_val shape: {loss_val.shape}')
             train_loss = loss_tr[0, 0]
             train_acc = loss_tr[0, 1]
             val_loss = loss_val[0, 0]
             val_acc = loss_val[0, 1]
+            val_mcc = loss_val[0, 2]
             total_train_loss.append(train_loss)
             total_train_acc.append(train_acc)
             total_val_loss.append(val_loss)
             total_val_acc.append(val_acc)
-            print(f"Epoch: {epoch} \t \
-                    Training loss: {train_loss :.5f} \t \
-                    Train acc.: {100*train_acc:.5f}% \t \
-                    Validation loss: {val_loss :.5f} \t \
-                    Validation acc.: {100*val_acc:.5f}%")
+            print(f"Epoch: {epoch}" +
+                    f"Training loss: {train_loss :.5f}" +
+                    f"Train acc.: {100*train_acc:.5f}%" +
+                    f"Validation loss: {val_loss :.5f}" +
+                    f"Validation acc.: {100*val_acc:.5f}%" +
+                    f"Validation mcc.: {val_mcc:.5f}%")
 
             add_tensorboard_scalars(train_summary_writer, val_summary_writer,
                                     epoch, 'Total', train_loss, val_loss,
-                                    train_acc, val_acc)
+                                    train_acc, val_acc, val_mcc)
         else:
             train_metrics = dict(zip(net.metrics_names, loss_tr.tolist()[0]))
-            # print(loss_tr.tolist()[0])
             val_metrics = dict(zip(net.metrics_names, loss_val.tolist()[0]))
-            # train_acc = 0.0
-            # for task in net.metrics_names:
-            #     if 'accuracy' in task:
-            #         train_acc += train_metrics[task]
-            # train_acc = train_acc / 4
-            # # train_acc = (train_seg_acc + train_bound_acc + train_dist_acc
-            # #              + train_color_loss) / 4
-            # total_train_acc.append(train_acc)
-            #
-            # # val_loss = loss_val[0, 0]
-            # # total_val_loss.append(val_loss)
-            #
-            # val_acc = 0.0
-            # for task in net.metrics_names:
-            #     if 'accuracy' in task:
-            #         val_acc += val_metrics[task]
-            # val_acc = val_acc / 4
-            # # val_acc = (val_seg_acc + val_bound_acc + val_dist_acc
-            # #            + val_color_acc) / 4
-            # total_val_acc.append(val_acc)
 
             metrics_table = PrettyTable()
             metrics_table.title = f'Epoch: {epoch}'
             metrics_table.field_names = ['Task', 'Loss', 'Val Loss',
-                                         'Acc %', 'Val Acc %']
+                                         'Acc %', 'Val Acc %', 'Val MCC']
             metrics_table.add_row(['Seg', round(train_metrics['seg_loss'], 5),
                                   round(val_metrics['seg_loss'], 5),
                                   round(100*train_metrics['seg_accuracy'], 5),
@@ -392,22 +357,20 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                                     train_metrics['seg_loss'],
                                     val_metrics['seg_loss'],
                                     train_metrics['seg_accuracy'],
-                                    val_metrics['seg_accuracy'])
+                                    val_metrics['seg_accuracy'],
+                                    val_mcc=val_metrics['compute_mcc'])
 
             if args.bound:
                 metrics_table.add_row(['Bound',
                                        round(train_metrics['bound_loss'], 5),
                                       round(val_metrics['bound_loss'], 5),
-                                      round(100*train_metrics['bound_accuracy'], 5),
-                                      round(100*val_metrics['bound_accuracy'], 5)])
+                                      0, 0])
 
                 add_tensorboard_scalars(train_summary_writer,
                                         val_summary_writer,
                                         epoch, 'Boundary',
                                         train_metrics['bound_loss'],
-                                        val_metrics['bound_loss'],
-                                        train_metrics['bound_accuracy'],
-                                        val_metrics['bound_accuracy'])
+                                        val_metrics['bound_loss'])
             if args.dist:
                 metrics_table.add_row(['Dist',
                                        round(train_metrics['dist_loss'], 5),
@@ -470,18 +433,18 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--resunet_a", help="choose resunet-a model or not",
-                        type=int, default=0)
+                        type=str2bool, default=False)
     parser.add_argument("--multitasking", help="choose resunet-a multitasking \
-                        or not", type=int, default=0)
+                        or not", type=str2bool, default=False)
     parser.add_argument("--bound", help="choose resunet-a boundary task or not",
-                        type=int, default=1)
+                        type=str2bool, default=True)
     parser.add_argument("--dist", help="choose resunet-a distance task or not",
-                        type=int, default=1)
+                        type=str2bool, default=True)
     parser.add_argument("--color", help="choose resunet-a color task or not",
-                        type=int, default=1)
+                        type=str2bool, default=True)
     parser.add_argument("--gpu_parallel",
                         help="choose 1 to train one multiple gpu",
-                        type=int, default=0)
+                        type=str2bool, default=False)
     parser.add_argument("--log_path", help="Path where to save logs",
                         type=str, default='./results/log_run1')
     parser.add_argument("--dataset_path", help="Path where to load dataset",
@@ -622,19 +585,19 @@ if __name__ == '__main__':
                                   metrics=['accuracy'])
             else:
                 model.compile(optimizer=optm, loss=losses,
-                              loss_weights=lossWeights, metrics=['accuracy'])
+                              loss_weights=lossWeights, metrics=['accuracy', compute_mcc])
         else:
             resuneta = Resunet_a((rows, cols, channels), args.num_classes, args)
             model = resuneta.model
             model.summary()
-            model.compile(optimizer=optm, loss=loss, metrics=['accuracy'])
+            model.compile(optimizer=optm, loss=loss, metrics=['accuracy', compute_mcc])
 
         print('ResUnet-a compiled!')
     else:
         model = unet((rows, cols, channels), args.num_classes)
         model.summary()
 
-        model.compile(optimizer=optm, loss=loss, metrics=['accuracy', compute_metrics_seg])
+        model.compile(optimizer=optm, loss=loss, metrics=['accuracy', compute_mcc])
 
     filepath = './models/'
 
