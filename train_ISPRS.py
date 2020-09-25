@@ -108,11 +108,11 @@ def compute_metrics_hw(true_labels, predicted_labels):
 
 
 def compute_mcc(y_true, y_pred):
-    print('[CHECKING METRICS]')
-    print(len(y_pred))
-    print(len(y_true))
-    print(y_true.shape)
-    print(y_pred.shape)
+    # print('[CHECKING METRICS]')
+    # print(len(y_pred))
+    # print(len(y_true))
+    # print(y_true.shape)
+    # print(y_pred.shape)
     true_positives = tf.keras.metrics.TruePositives()
     true_positives.update_state(y_true, y_pred)
     tp = true_positives.result()
@@ -266,15 +266,15 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
 
                 loss_tr = loss_tr + net.train_on_batch(x=x_train_b, y=y_train_b)
 
-            print('='*30 + ' [CHECKING LOSS] ' + '='*30)
-            print(net.metrics_names)
-            print(type(loss_tr))
-            print(len(loss_tr))
-            print(loss_tr)
-            print(loss_tr.shape)
+            # print('='*30 + ' [CHECKING LOSS] ' + '='*30)
+            # print(net.metrics_names)
+            # print(type(loss_tr))
+            # print(len(loss_tr))
+            # print(loss_tr)
+            # print(loss_tr.shape)
 
         # Training loss; Divide by the number of batches
-        print(loss_tr)
+        # print(loss_tr)
         loss_tr = loss_tr/n_batchs_tr
 
         # Computing the number of batchs on validation
