@@ -569,10 +569,8 @@ if __name__ == '__main__':
 
         if args.multitasking:
             print('Multitasking enabled!')
-            resuneta = Resunet_a((rows, cols, channels), args.num_classes, args)
-            if args.gpu_parallel:
-                inp_out = resuneta.model
-            else:
+            if not args.gpu_parallel:
+                resuneta = Resunet_a((rows, cols, channels), args.num_classes, args)
                 model = resuneta.model
                 model.summary()
 
@@ -591,6 +589,8 @@ if __name__ == '__main__':
             print(f'Loss Weights: {lossWeights}')
             if args.gpu_parallel:
                 with strategy.scope():
+                    resuneta = Resunet_a((rows, cols, channels), args.num_classes, args)
+                    inp_out = resuneta.model
                     inputs, out = inp_out
                     model = KM.Model(inputs=inputs, outputs=out)
                     model.summary()
