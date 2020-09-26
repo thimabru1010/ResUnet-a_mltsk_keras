@@ -477,8 +477,10 @@ if __name__ == '__main__':
     print(f'GPUS DEVICES: {gpu_devices}')
     print(gpu_devices[0])
     print(gpu_devices[1])
-    tf.config.experimental.set_memory_growth(gpu_devices[0][0], True)
-    tf.config.experimental.set_memory_growth(gpu_devices[1][0], True)
+    for device in gpu_devices:
+        tf.config.experimental.set_memory_growth(device, True)
+    # tf.config.experimental.set_memory_growth(gpu_devices[0][0], True)
+    # tf.config.experimental.set_memory_growth(gpu_devices[1][0], True)
     if args.gpu_parallel:
         strategy = tf.distribute.MirroredStrategy()
         print(f'Number of devices: {strategy.num_replicas_in_sync}')
