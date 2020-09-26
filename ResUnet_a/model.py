@@ -154,7 +154,7 @@ class Resunet_a(object):
                 return self.inputs, out
                 # model=KM.Model(inputs=inputs,outputs=out)
             else:
-                model = KM.Model(inputs=self.inputs, outputs={'seg': out_seg, 'bound': out_bound, 'dist': out_bound,
+                model = KM.Model(inputs=self.inputs, outputs={'seg': out_seg, 'bound': out_bound, 'dist': out_dist,
                                                               'color': out_color})
 
         return model
