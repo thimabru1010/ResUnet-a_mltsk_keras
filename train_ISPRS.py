@@ -573,7 +573,9 @@ if __name__ == '__main__':
             print('Multitasking enabled!')
             if not args.gpu_parallel:
                 with tf.device("/cpu:0"):
-                    resuneta = Resunet_a((rows, cols, channels), args.num_classes, args)
+                    inputs = KE.Input(shape=(args.patch_size,
+                                      args.patch_size, 3))
+                    resuneta = Resunet_a(inputs, (rows, cols, channels), args.num_classes, args)
                     model = resuneta.model
                 model = multi_gpu_model(model, gpus=2)
                 model.summary()
