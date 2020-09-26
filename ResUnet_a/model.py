@@ -159,9 +159,9 @@ class Resunet_a(object):
 
             # out = [out_seg, out_bound, out_dist, out_color]
             if self.args.gpu_parallel:
-                return inputs, out
+                return self.inputs, out
                 # model=KM.Model(inputs=inputs,outputs=out)
             else:
-                model = KM.Model(inputs=inputs, outputs=out)
+                model = KM.Model(inputs=self.inputs, outputs=out)
 
         return model
