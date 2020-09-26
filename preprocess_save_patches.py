@@ -178,7 +178,7 @@ print(process.memory_percent())
 
 print('saving images...')
 folder_path = f'./DATASETS/patch_size={args.patch_size}_' + \
-            f'stride={args.stride}_norm_type={args.norm_type}'
+            f'stride={args.stride}_norm_type={args.norm_type}_data_aug={args.data_aug}'
 if not os.path.exists(folder_path):
     os.makedirs(folder_path)
     os.makedirs(os.path.join(folder_path, 'train'))
