@@ -482,7 +482,9 @@ if __name__ == '__main__':
     else:
         strategy = None
 
-    tf.config.experimental_run_functions_eagerly(True)
+    tf.config.experimental_run_functions_eagerly(False)
+    #tf.config.run_functions_eagerly(True)
+
 
     # Load images
 
@@ -592,7 +594,7 @@ if __name__ == '__main__':
                                   metrics={'seg': ['accuracy', compute_mcc]})
             else:
                 model.compile(optimizer=optm, loss=losses,
-                              loss_weights=lossWeights, metrics={'seg': ['accuracy', compute_mcc]})
+                              loss_weights=lossWeights, metrics={'seg': ['accuracy']})
         else:
             resuneta = Resunet_a((rows, cols, channels), args.num_classes, args)
             model = resuneta.model
