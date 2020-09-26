@@ -23,7 +23,7 @@ import ast
 from prettytable import PrettyTable
 import tensorflow as tf
 from tqdm import tqdm
-
+import tensorflow.keras.models as KM
 
 def str2bool(v):
     if isinstance(v, bool):
@@ -475,6 +475,7 @@ if __name__ == '__main__':
                         type=float, default=1.0)
     args = parser.parse_args()
 
+    print('='*30 + 'INITIALIZING' + '='*30)
     if args.gpu_parallel:
         strategy = tf.distribute.MirroredStrategy()
         print(f'Number of devices: {strategy.num_replicas_in_sync}')
@@ -562,8 +563,11 @@ if __name__ == '__main__':
         if args.multitasking:
             print('Multitasking enabled!')
             resuneta = Resunet_a((rows, cols, channels), args.num_classes, args)
-            model = resuneta.model
-            model.summary()
+            if args.gpu_parallel:
+                inp_out = resuneta.model
+            else:
+                model = resuneta.model
+                model.summary()
 
             losses = {'seg': loss}
             lossWeights = {'seg': 1.0}
@@ -580,6 +584,9 @@ if __name__ == '__main__':
             print(f'Loss Weights: {lossWeights}')
             if args.gpu_parallel:
                 with strategy.scope():
+                    inputs, out = inp_out
+                    model = KM.Model(inputs=inputs, outputs=out)
+                    model.summary()
                     model.compile(optimizer=optm, loss=losses,
                                   loss_weights=lossWeights,
                                   metrics=['accuracy'])
