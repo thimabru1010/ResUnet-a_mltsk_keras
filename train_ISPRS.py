@@ -279,7 +279,7 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
 
                 loss_val = loss_val + net.test_on_batch(x=x_val_b, y=y_val_b)
         loss_val = loss_val/n_batchs_val
-        
+
         if not args.multitasking:
             # print(f'loss_val shape: {loss_val.shape}')
             train_metrics = dict(zip(net.metrics_names, loss_tr.tolist()[0]))
@@ -307,6 +307,11 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
             train_metrics = dict(zip(net.metrics_names, loss_tr.tolist()[0]))
             val_metrics = dict(zip(net.metrics_names, loss_val.tolist()[0]))
 
+            mcc = compute_mcc(val_metrics['seg_true_positives'],
+                              val_metrics['seg_true_negatives'],
+                              val_metrics['seg_false_positives'],
+                              val_metrics['seg_false_negatives'])
+
             metrics_table = PrettyTable()
             metrics_table.title = f'Epoch: {epoch}'
             metrics_table.field_names = ['Task', 'Loss', 'Val Loss',
@@ -315,11 +320,6 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                                   round(val_metrics['seg_loss'], 5),
                                   round(100*train_metrics['seg_accuracy'], 5),
                                   round(100*val_metrics['seg_accuracy'], 5)])
-
-            mcc = compute_mcc(val_metrics['seg_true_positives'],
-                              val_metrics['seg_true_negatives'],
-                              val_metrics['seg_false_positives'],
-                              val_metrics['seg_false_negatives'])
 
             add_tensorboard_scalars(train_summary_writer, val_summary_writer,
                                     epoch, 'Segmentation',
