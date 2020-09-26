@@ -178,16 +178,9 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
     print(net.metrics_names)
     print(net.output_names)
     for epoch in range(epochs):
-        if not args.multitasking:
-            metrics_len = len(net.metrics_names)
-            loss_tr = np.zeros((1, metrics_len))
-            loss_val = np.zeros((1, metrics_len))
-            # loss_tr = np.zeros((1, 3), dtype=np.float32)
-            # loss_val = np.zeros((1, 3), dtype=np.float32)
-        else:
-            metrics_len = len(net.metrics_names)
-            loss_tr = np.zeros((1, metrics_len))
-            loss_val = np.zeros((1, metrics_len))
+        metrics_len = len(net.metrics_names)
+        loss_tr = np.zeros((1, metrics_len))
+        loss_val = np.zeros((1, metrics_len))
         # Computing the number of batchs on training
         n_batchs_tr = len(x_train_paths)//batch_size
         # Random shuffle the data
@@ -235,12 +228,12 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
 
                 loss_tr = loss_tr + net.train_on_batch(x=x_train_b, y=y_train_b)
 
-            print('='*30 + ' [CHECKING LOSS] ' + '='*30)
-            print(net.metrics_names)
-            print(type(loss_tr))
-            print(len(loss_tr))
-            print(loss_tr)
-            print(loss_tr.shape)
+            # print('='*30 + ' [CHECKING LOSS] ' + '='*30)
+            # print(net.metrics_names)
+            # print(type(loss_tr))
+            # print(len(loss_tr))
+            # print(loss_tr)
+            # print(loss_tr.shape)
 
         # Training loss; Divide by the number of batches
         # print(loss_tr)
@@ -285,8 +278,8 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                     y_val_b['color'] = y_val_h_b_color
 
                 loss_val = loss_val + net.test_on_batch(x=x_val_b, y=y_val_b)
-
         loss_val = loss_val/n_batchs_val
+        
         if not args.multitasking:
             # print(f'loss_val shape: {loss_val.shape}')
             train_metrics = dict(zip(net.metrics_names, loss_tr.tolist()[0]))
