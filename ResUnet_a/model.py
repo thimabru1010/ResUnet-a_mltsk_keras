@@ -1,22 +1,10 @@
 import tensorflow.keras.models as KM
 import tensorflow.keras as KE
 import tensorflow.keras.layers as KL
-# import tensorflow.keras.engine as KE
-# import tensorflow.keras.backend as KB
-# from tensorflow.keras.utils import plot_model
-# from tensorflow.keras.preprocessing.image import img_to_array
-# from tensorflow.keras.applications.resnet50 import ResNet50
-# from tensorflow.keras.optimizers import Adam, SGD
-# import tensorflow as tf
-#
-# from ResUnet_a.config import UnetConfig
-# import utils
-# import math
-# import numpy as np
 
 
 class Resunet_a(object):
-    def __init__(self, inputs, input_shape, num_classes, args):
+    def __init__(self, input_shape, num_classes, args, inputs=None):
         self.num_classes = num_classes
         self.img_height, self.img_width, self.img_channel = input_shape
         self.args = args
@@ -112,6 +100,10 @@ class Resunet_a(object):
 
         x_comb = combine(x, c1, 32)
         x_psp = PSPPooling(x_comb, 32)
+
+        if self.inputs is not None:
+            inputs = KE.Input(shape=(self.img_height,
+                          self.img_width, self.img_channel))
 
         if not self.args.multitasking:
             x = KL.Conv2D(self.num_classes, (1, 1))(x_psp)

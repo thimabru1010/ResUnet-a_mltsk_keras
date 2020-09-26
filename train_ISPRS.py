@@ -25,7 +25,6 @@ import tensorflow as tf
 from tqdm import tqdm
 import tensorflow.keras.models as KM
 import tensorflow.keras as KE
-from tensorflow.compat.v2.keras.utils import multi_gpu_model
 
 def str2bool(v):
     if isinstance(v, bool):
@@ -109,41 +108,9 @@ def compute_metrics_hw(true_labels, predicted_labels):
     return accuracy, f1score, recall, precision
 
 
-def compute_mcc(y_true, y_pred):
-    # print('[CHECKING METRICS]')
-    # print(len(y_pred))
-    # print(len(y_true))
-    # print(y_true.shape)
-    # print(y_pred.shape)
-    true_positives = tf.keras.metrics.TruePositives()
-    true_positives.update_state(y_true, y_pred)
-    tp = true_positives.result()
-    true_negatives = tf.keras.metrics.TrueNegatives()
-    true_negatives.update_state(y_true, y_pred)
-    tn = true_negatives.result()
-    false_positive = tf.keras.metrics.FalsePositives()
-    false_positive.update_state(y_true, y_pred)
-    fp = false_positive.result()
-    false_negative = tf.keras.metrics.FalseNegatives()
-    false_negative.update_state(y_true, y_pred)
-    fn = false_negative.result()
+def compute_mcc(tp, tn, fp, fn):
     mcc = (tp*tn - fp*fn) / tf.math.sqrt((tp + fp)*(tp + fn)*(tn + fp)*(tn+fn))
     return mcc
-
-
-def compute_metrics_seg(y_true, y_pred):
-    print('[CHECKING METRICS]')
-    precision = tf.keras.metrics.Precision()
-    precision.update_state(y_true, y_pred)
-    prec_res = precision.result()
-    print(f'precision: {prec_res}')
-    recall = tf.keras.metrics.Recall()
-    recall.update_state(y_true, y_pred)
-    recall_res = recall.result()
-    print(f'recall: {recall_res}')
-    # mcc = compute_mcc(y_true, y_pred)
-    # print(mcc)
-    return
 
 
 def add_tensorboard_scalars(train_writer, val_writer, epoch,
@@ -572,12 +539,8 @@ if __name__ == '__main__':
         if args.multitasking:
             print('Multitasking enabled!')
             if not args.gpu_parallel:
-                with tf.device("/cpu:0"):
-                    inputs = KE.Input(shape=(args.patch_size,
-                                      args.patch_size, 3))
-                    resuneta = Resunet_a(inputs, (rows, cols, channels), args.num_classes, args)
-                    model = resuneta.model
-                model = multi_gpu_model(model, gpus=2)
+                resuneta = Resunet_a((rows, cols, channels), args.num_classes, args)
+                model = resuneta.model
                 model.summary()
 
             losses = {'seg': loss}
@@ -594,19 +557,17 @@ if __name__ == '__main__':
 
             print(f'Loss Weights: {lossWeights}')
             if args.gpu_parallel:
-                # with strategy.scope():
-                with tf.device("/cpu:0"):
+                with strategy.scope():
                     inputs = KE.Input(shape=(args.patch_size,
                                       args.patch_size, 3))
-                    resuneta = Resunet_a(inputs, (rows, cols, channels), args.num_classes, args)
+                    resuneta = Resunet_a((rows, cols, channels), args.num_classes, args, inputs=inputs)
                     inp_out = resuneta.model
                     inputs, out = inp_out
                     model = KM.Model(inputs=inputs, outputs=out)
                     model.summary()
-                model = multi_gpu_model(model, gpus=2)
                 model.compile(optimizer=optm, loss=losses,
                               loss_weights=lossWeights,
-                              metrics={'seg': ['accuracy', compute_mcc]})
+                              metrics={'seg': ['accuracy']})
             else:
                 model.compile(optimizer=optm, loss=losses,
                               loss_weights=lossWeights, metrics={'seg': ['accuracy', tf.keras.metrics.TruePositives(),
