@@ -152,10 +152,6 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
     # Initialize as maximum possible number
     min_loss = float('inf')
     cont = 0
-    total_train_loss = []
-    total_train_acc = []
-    total_val_loss = []
-    total_val_acc = []
     x_train_b = np.zeros(x_shape_batch, dtype=np.float32)
     y_train_h_b_seg = np.zeros(y_shape_batch, dtype=np.float32)
     x_val_b = np.zeros(x_shape_batch, dtype=np.float32)
@@ -182,8 +178,11 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
     print(net.metrics_names)
     for epoch in range(epochs):
         if not args.multitasking:
-            loss_tr = np.zeros((1, 3), dtype=np.float32)
-            loss_val = np.zeros((1, 3), dtype=np.float32)
+            metrics_len = len(net.metrics_names)
+            loss_tr = np.zeros((1, metrics_len))
+            loss_val = np.zeros((1, metrics_len))
+            # loss_tr = np.zeros((1, 3), dtype=np.float32)
+            # loss_val = np.zeros((1, 3), dtype=np.float32)
         else:
             metrics_len = len(net.metrics_names)
             loss_tr = np.zeros((1, metrics_len))
@@ -291,24 +290,20 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
             # print(f'loss_val shape: {loss_val.shape}')
             train_metrics = dict(zip(net.metrics_names, loss_tr.tolist()[0]))
             val_metrics = dict(zip(net.metrics_names, loss_val.tolist()[0]))
-            train_loss = train_metrics['seg_loss']
-            train_acc = train_metrics['seg_accuracy']
-            val_loss = val_metrics['seg_loss']
-            val_acc = val_metrics['seg_accuracy']
+            train_loss = train_metrics['loss']
+            train_acc = train_metrics['accuracy']
+            val_loss = val_metrics['loss']
+            val_acc = val_metrics['accuracy']
 
-            mcc = compute_mcc(val_metrics['seg_true_positives'],
-                              val_metrics['seg_true_negatives'],
-                              val_metrics['seg_false_positives'],
-                              val_metrics['seg_false_negatives'])
+            mcc = compute_mcc(val_metrics['true_positives'],
+                              val_metrics['true_negatives'],
+                              val_metrics['false_positives'],
+                              val_metrics['false_negatives'])
 
-            total_train_loss.append(train_loss)
-            total_train_acc.append(train_acc)
-            total_val_loss.append(val_loss)
-            total_val_acc.append(val_acc)
-            print(f"Epoch: {epoch}" +
-                    f"Training loss: {train_loss :.5f}" +
-                    f"Train acc.: {100*train_acc:.5f}%" +
-                    f"Validation loss: {val_loss :.5f}" +
+            print(f"Epoch: {epoch} " +
+                    f"Training loss: {train_loss :.5f} " +
+                    f"Train acc.: {100*train_acc:.5f}% " +
+                    f"Validation loss: {val_loss :.5f} " +
                     f"Validation acc.: {100*val_acc:.5f}%")
 
             add_tensorboard_scalars(train_summary_writer, val_summary_writer,
@@ -454,9 +449,8 @@ if __name__ == '__main__':
     print('='*30 + 'INITIALIZING' + '='*30)
     gpu_devices = tf.config.experimental.list_physical_devices('GPU')
     print(f'GPUS DEVICES: {gpu_devices}')
-    print(gpu_devices[0])
-    print(gpu_devices[1])
     for device in gpu_devices:
+        print(device)
         tf.config.experimental.set_memory_growth(device, True)
     # tf.config.experimental.set_memory_growth(gpu_devices[0][0], True)
     # tf.config.experimental.set_memory_growth(gpu_devices[1][0], True)
@@ -591,14 +585,19 @@ if __name__ == '__main__':
             resuneta = Resunet_a((rows, cols, channels), args.num_classes, args)
             model = resuneta.model
             model.summary()
-            model.compile(optimizer=optm, loss=loss, metrics=['accuracy', compute_mcc])
+            model.compile(optimizer=optm, loss=loss, metrics=['accuracy', tf.keras.metrics.TruePositives(),
+                                                       tf.keras.metrics.FalsePositives(),
+                                                       tf.keras.metrics.TrueNegatives(),
+                                                       tf.keras.metrics.FalseNegatives()])
 
         print('ResUnet-a compiled!')
     else:
         model = unet((rows, cols, channels), args.num_classes)
         model.summary()
-
-        model.compile(optimizer=optm, loss=loss, metrics=['accuracy', compute_mcc])
+        model.compile(optimizer=optm, loss=loss, metrics=['accuracy', tf.keras.metrics.TruePositives(),
+                                                   tf.keras.metrics.FalsePositives(),
+                                                   tf.keras.metrics.TrueNegatives(),
+                                                   tf.keras.metrics.FalseNegatives()])
 
     filepath = './models/'
 

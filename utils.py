@@ -21,6 +21,7 @@ import skimage.morphology
 from contextlib import redirect_stdout
 import time
 import tensorflow.keras.backend as K
+import tensorflow.keras.layers as KL
 
 # physical_devices = tf.config.experimental.list_physical_devices('GPU')
 # tf.config.experimental.set_memory_growth(physical_devices[0], True)
@@ -125,7 +126,9 @@ def unet(input_shape, num_classes):
     upsample4 = Conv2D(f1, (3 , 3), activation = 'relu', padding = 'same', name = 'upsampling4')(UpSampling2D(size = (2,2))(merged3))
     merged4 = concatenate([conv1, upsample4], name='concatenate4')
 
-    output = Conv2D(num_classes,(1,1), activation = 'softmax')(merged4)
+    # output = Conv2D(num_classes,(1,1), activation='softmax')(merged4)
+    output = Conv2D(num_classes, (1,1))(merged4)
+    output = KL.Activation('softmax', name='seg')(output)
 
     return Model(input_img , output)
 
