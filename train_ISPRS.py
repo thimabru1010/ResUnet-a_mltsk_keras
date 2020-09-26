@@ -176,6 +176,7 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                                         y_shape_batch[2], 3),
                                        dtype=np.float32)
     print(net.metrics_names)
+    print(net.output_names)
     for epoch in range(epochs):
         if not args.multitasking:
             metrics_len = len(net.metrics_names)
@@ -234,12 +235,12 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
 
                 loss_tr = loss_tr + net.train_on_batch(x=x_train_b, y=y_train_b)
 
-            # print('='*30 + ' [CHECKING LOSS] ' + '='*30)
-            # print(net.metrics_names)
-            # print(type(loss_tr))
-            # print(len(loss_tr))
-            # print(loss_tr)
-            # print(loss_tr.shape)
+            print('='*30 + ' [CHECKING LOSS] ' + '='*30)
+            print(net.metrics_names)
+            print(type(loss_tr))
+            print(len(loss_tr))
+            print(loss_tr)
+            print(loss_tr.shape)
 
         # Training loss; Divide by the number of batches
         # print(loss_tr)
