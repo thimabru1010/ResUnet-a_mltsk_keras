@@ -585,7 +585,7 @@ if __name__ == '__main__':
                                   metrics=['accuracy'])
             else:
                 model.compile(optimizer=optm, loss=losses,
-                              loss_weights=lossWeights, metrics=['accuracy'])
+                              loss_weights=lossWeights, metrics={'seg': ['accuracy', compute_mcc]})
         else:
             resuneta = Resunet_a((rows, cols, channels), args.num_classes, args)
             model = resuneta.model
