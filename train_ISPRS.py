@@ -358,7 +358,7 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                                     val_metrics['seg_loss'],
                                     train_metrics['seg_accuracy'],
                                     val_metrics['seg_accuracy'])
-                                    #val_mcc=val_metrics['seg_compute_mcc'])
+                                    val_mcc=val_metrics['seg_compute_mcc'])
 
             if args.bound:
                 metrics_table.add_row(['Bound',
@@ -589,7 +589,7 @@ if __name__ == '__main__':
                     model.summary()
                     model.compile(optimizer=optm, loss=losses,
                                   loss_weights=lossWeights,
-                                  metrics=['accuracy'])
+                                  metrics={'seg': ['accuracy', compute_mcc]})
             else:
                 model.compile(optimizer=optm, loss=losses,
                               loss_weights=lossWeights, metrics={'seg': ['accuracy', compute_mcc]})
