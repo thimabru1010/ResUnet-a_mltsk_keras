@@ -346,7 +346,7 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
             metrics_table = PrettyTable()
             metrics_table.title = f'Epoch: {epoch}'
             metrics_table.field_names = ['Task', 'Loss', 'Val Loss',
-                                         'Acc %', 'Val Acc %', 'Val MCC']
+                                         'Acc %', 'Val Acc %']
             metrics_table.add_row(['Seg', round(train_metrics['seg_loss'], 5),
                                   round(val_metrics['seg_loss'], 5),
                                   round(100*train_metrics['seg_accuracy'], 5),
@@ -357,8 +357,8 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                                     train_metrics['seg_loss'],
                                     val_metrics['seg_loss'],
                                     train_metrics['seg_accuracy'],
-                                    val_metrics['seg_accuracy'],
-                                    val_mcc=val_metrics['seg_compute_mcc'])
+                                    val_metrics['seg_accuracy'])
+                                    #val_mcc=val_metrics['seg_compute_mcc'])
 
             if args.bound:
                 metrics_table.add_row(['Bound',
@@ -585,7 +585,7 @@ if __name__ == '__main__':
                                   metrics=['accuracy'])
             else:
                 model.compile(optimizer=optm, loss=losses,
-                              loss_weights=lossWeights, metrics=['accuracy', compute_mcc])
+                              loss_weights=lossWeights, metrics=['accuracy'])
         else:
             resuneta = Resunet_a((rows, cols, channels), args.num_classes, args)
             model = resuneta.model
