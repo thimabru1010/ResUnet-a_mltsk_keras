@@ -25,6 +25,7 @@ import tensorflow as tf
 from tqdm import tqdm
 import tensorflow.keras.models as KM
 import tensorflow.keras as KE
+from tensorflow.compat.v2.keras.utils import multi_gpu_model
 
 def str2bool(v):
     if isinstance(v, bool):
@@ -571,8 +572,10 @@ if __name__ == '__main__':
         if args.multitasking:
             print('Multitasking enabled!')
             if not args.gpu_parallel:
-                resuneta = Resunet_a((rows, cols, channels), args.num_classes, args)
-                model = resuneta.model
+                with tf.device("/cpu:0"):
+                    resuneta = Resunet_a((rows, cols, channels), args.num_classes, args)
+                    model = resuneta.model
+                model = multi_gpu_model(model, gpus=2)
                 model.summary()
 
             losses = {'seg': loss}
