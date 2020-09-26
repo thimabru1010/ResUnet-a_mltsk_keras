@@ -113,7 +113,6 @@ def compute_mcc(y_true, y_pred):
     # print(len(y_true))
     # print(y_true.shape)
     # print(y_pred.shape)
-    tf.config.experimental_run_functions_eagerly(True)
     true_positives = tf.keras.metrics.TruePositives()
     true_positives.update_state(y_true, y_pred)
     tp = true_positives.result()
@@ -126,7 +125,6 @@ def compute_mcc(y_true, y_pred):
     false_negative = tf.keras.metrics.FalseNegatives()
     false_negative.update_state(y_true, y_pred)
     fn = false_negative.result()
-    tf.config.experimental_run_functions_eagerly(False)
     mcc = (tp*tn - fp*fn) / tf.math.sqrt((tp + fp)*(tp + fn)*(tn + fp)*(tn+fn))
     return mcc
 
@@ -596,7 +594,10 @@ if __name__ == '__main__':
                                   metrics={'seg': ['accuracy', compute_mcc]})
             else:
                 model.compile(optimizer=optm, loss=losses,
-                              loss_weights=lossWeights, metrics={'seg': ['accuracy', compute_mcc]})
+                              loss_weights=lossWeights, metrics={'seg': ['accuracy', tf.keras.metrics.TruePositives(),
+                                                                         tf.keras.metrics.FalsePositives(),
+                                                                         tf.keras.metrics.TrueNegatives(),
+                                                                         tf.keras.metrics.FalseNegatives()]})
         else:
             resuneta = Resunet_a((rows, cols, channels), args.num_classes, args)
             model = resuneta.model
