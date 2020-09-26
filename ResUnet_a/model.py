@@ -60,6 +60,10 @@ class Resunet_a(object):
             x = KL.Conv2D(filter, (1, 1))(x)
             return x
 
+        if self.inputs is None:
+            self.inputs = KE.Input(shape=(self.img_height,
+                          self.img_width, self.img_channel))
+
         # Encoder
         c1 = x = KL.Conv2D(32, (1, 1), strides=(1, 1), dilation_rate=1)(self.inputs)
         c2 = x = ResBlock(x, 32, (3, 3), [1, 3, 15, 31], (1, 1))
@@ -100,10 +104,6 @@ class Resunet_a(object):
 
         x_comb = combine(x, c1, 32)
         x_psp = PSPPooling(x_comb, 32)
-
-        if self.inputs is not None:
-            inputs = KE.Input(shape=(self.img_height,
-                          self.img_width, self.img_channel))
 
         if not self.args.multitasking:
             x = KL.Conv2D(self.num_classes, (1, 1))(x_psp)

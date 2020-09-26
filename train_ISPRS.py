@@ -321,6 +321,11 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                                   round(100*train_metrics['seg_accuracy'], 5),
                                   round(100*val_metrics['seg_accuracy'], 5)])
 
+            mcc = compute_mcc(val_metrics['seg_true_positives'],
+                              val_metrics['seg_true_negatives'],
+                              val_metrics['seg_false_positives'],
+                              val_metrics['seg_false_negatives'])
+
             add_tensorboard_scalars(train_summary_writer, val_summary_writer,
                                     epoch, 'Segmentation',
                                     train_metrics['seg_loss'],
@@ -567,7 +572,10 @@ if __name__ == '__main__':
                     model.summary()
                     model.compile(optimizer=optm, loss=losses,
                                   loss_weights=lossWeights,
-                                  metrics={'seg': ['accuracy']})
+                                  metrics={'seg': ['accuracy', tf.keras.metrics.TruePositives(),
+                                                 tf.keras.metrics.FalsePositives(),
+                                                 tf.keras.metrics.TrueNegatives(),
+                                                 tf.keras.metrics.FalseNegatives()]})
             else:
                 model.compile(optimizer=optm, loss=losses,
                               loss_weights=lossWeights, metrics={'seg': ['accuracy', tf.keras.metrics.TruePositives(),
