@@ -594,7 +594,8 @@ if __name__ == '__main__':
 
             print(f'Loss Weights: {lossWeights}')
             if args.gpu_parallel:
-                with strategy.scope():
+                # with strategy.scope():
+                with tf.device("/cpu:0"):
                     inputs = KE.Input(shape=(args.patch_size,
                                       args.patch_size, 3))
                     resuneta = Resunet_a(inputs, (rows, cols, channels), args.num_classes, args)
@@ -602,9 +603,10 @@ if __name__ == '__main__':
                     inputs, out = inp_out
                     model = KM.Model(inputs=inputs, outputs=out)
                     model.summary()
-                    model.compile(optimizer=optm, loss=losses,
-                                  loss_weights=lossWeights,
-                                  metrics={'seg': ['accuracy', compute_mcc]})
+                model = multi_gpu_model(model, gpus=2)
+                model.compile(optimizer=optm, loss=losses,
+                              loss_weights=lossWeights,
+                              metrics={'seg': ['accuracy', compute_mcc]})
             else:
                 model.compile(optimizer=optm, loss=losses,
                               loss_weights=lossWeights, metrics={'seg': ['accuracy', tf.keras.metrics.TruePositives(),
