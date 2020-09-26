@@ -24,6 +24,7 @@ from prettytable import PrettyTable
 import tensorflow as tf
 from tqdm import tqdm
 import tensorflow.keras.models as KM
+import tensorflow.keras as KE
 
 def str2bool(v):
     if isinstance(v, bool):
@@ -589,7 +590,9 @@ if __name__ == '__main__':
             print(f'Loss Weights: {lossWeights}')
             if args.gpu_parallel:
                 with strategy.scope():
-                    resuneta = Resunet_a((rows, cols, channels), args.num_classes, args)
+                    inputs = KE.Input(shape=(args.patch_size,
+                                      args.patch_size, 3))
+                    resuneta = Resunet_a(inputs, (rows, cols, channels), args.num_classes, args)
                     inp_out = resuneta.model
                     inputs, out = inp_out
                     model = KM.Model(inputs=inputs, outputs=out)

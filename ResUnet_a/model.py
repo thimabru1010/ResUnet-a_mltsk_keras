@@ -16,10 +16,11 @@ import tensorflow.keras.layers as KL
 
 
 class Resunet_a(object):
-    def __init__(self, input_shape, num_classes, args):
+    def __init__(self, inputs, input_shape, num_classes, args):
         self.num_classes = num_classes
         self.img_height, self.img_width, self.img_channel = input_shape
         self.args = args
+        self.inputs = inputs
         self.model = self.build_model_ResUneta()
 
     def build_model_ResUneta(self):
@@ -71,11 +72,8 @@ class Resunet_a(object):
             x = KL.Conv2D(filter, (1, 1))(x)
             return x
 
-        inputs = KE.Input(shape=(self.img_height,
-                          self.img_width, self.img_channel))
-
         # Encoder
-        c1 = x = KL.Conv2D(32, (1, 1), strides=(1, 1), dilation_rate=1)(inputs)
+        c1 = x = KL.Conv2D(32, (1, 1), strides=(1, 1), dilation_rate=1)(self.inputs)
         c2 = x = ResBlock(x, 32, (3, 3), [1, 3, 15, 31], (1, 1))
         x = KL.Conv2D(64, (1, 1), strides=(2, 2))(x)
         c3 = x = ResBlock(x, 64, (3, 3), [1, 3, 15, 31], (1, 1))
