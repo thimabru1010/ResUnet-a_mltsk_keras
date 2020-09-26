@@ -565,9 +565,9 @@ if __name__ == '__main__':
                     inputs, out = inp_out
                     model = KM.Model(inputs=inputs, outputs=out)
                     model.summary()
-                model.compile(optimizer=optm, loss=losses,
-                              loss_weights=lossWeights,
-                              metrics={'seg': ['accuracy']})
+                    model.compile(optimizer=optm, loss=losses,
+                                  loss_weights=lossWeights,
+                                  metrics={'seg': ['accuracy']})
             else:
                 model.compile(optimizer=optm, loss=losses,
                               loss_weights=lossWeights, metrics={'seg': ['accuracy', tf.keras.metrics.TruePositives(),
