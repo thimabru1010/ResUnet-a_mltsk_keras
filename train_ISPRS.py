@@ -357,7 +357,7 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                                     train_metrics['seg_loss'],
                                     val_metrics['seg_loss'],
                                     train_metrics['seg_accuracy'],
-                                    val_metrics['seg_accuracy'])
+                                    val_metrics['seg_accuracy'],
                                     val_mcc=val_metrics['seg_compute_mcc'])
 
             if args.bound:
