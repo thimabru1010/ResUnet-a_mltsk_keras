@@ -428,9 +428,6 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
 
 
 if __name__ == '__main__':
-    gpu_devices = tf.config.experimental.list_physical_devices('GPU')
-    tf.config.experimental.set_memory_growth(gpu_devices[0], True)
-
     parser = argparse.ArgumentParser()
     parser.add_argument("--resunet_a", help="choose resunet-a model or not",
                         type=str2bool, default=False)
@@ -476,6 +473,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     print('='*30 + 'INITIALIZING' + '='*30)
+    gpu_devices = tf.config.experimental.list_physical_devices('GPU')
+    print(f'GPUS DEVICES: {gpu_devices}')
+    tf.config.experimental.set_memory_growth(gpu_devices[0], True)
     if args.gpu_parallel:
         strategy = tf.distribute.MirroredStrategy()
         print(f'Number of devices: {strategy.num_replicas_in_sync}')
