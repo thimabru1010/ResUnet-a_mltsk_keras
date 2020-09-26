@@ -288,12 +288,19 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
 
         loss_val = loss_val/n_batchs_val
         if not args.multitasking:
-            print(f'loss_val shape: {loss_val.shape}')
-            train_loss = loss_tr[0, 0]
-            train_acc = loss_tr[0, 1]
-            val_loss = loss_val[0, 0]
-            val_acc = loss_val[0, 1]
-            val_mcc = loss_val[0, 2]
+            # print(f'loss_val shape: {loss_val.shape}')
+            train_metrics = dict(zip(net.metrics_names, loss_tr.tolist()[0]))
+            val_metrics = dict(zip(net.metrics_names, loss_val.tolist()[0]))
+            train_loss = train_metrics['seg_loss']
+            train_acc = train_metrics['seg_accuracy']
+            val_loss = val_metrics['seg_loss']
+            val_acc = val_metrics['seg_accuracy']
+
+            mcc = compute_mcc(val_metrics['seg_true_positives'],
+                              val_metrics['seg_true_negatives'],
+                              val_metrics['seg_false_positives'],
+                              val_metrics['seg_false_negatives'])
+
             total_train_loss.append(train_loss)
             total_train_acc.append(train_acc)
             total_val_loss.append(val_loss)
@@ -302,12 +309,11 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                     f"Training loss: {train_loss :.5f}" +
                     f"Train acc.: {100*train_acc:.5f}%" +
                     f"Validation loss: {val_loss :.5f}" +
-                    f"Validation acc.: {100*val_acc:.5f}%" +
-                    f"Validation mcc.: {val_mcc:.5f}%")
+                    f"Validation acc.: {100*val_acc:.5f}%")
 
             add_tensorboard_scalars(train_summary_writer, val_summary_writer,
                                     epoch, 'Total', train_loss, val_loss,
-                                    train_acc, val_acc, val_mcc)
+                                    train_acc, val_acc, val_mcc=mcc)
         else:
             train_metrics = dict(zip(net.metrics_names, loss_tr.tolist()[0]))
             val_metrics = dict(zip(net.metrics_names, loss_val.tolist()[0]))
@@ -332,7 +338,7 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                                     val_metrics['seg_loss'],
                                     train_metrics['seg_accuracy'],
                                     val_metrics['seg_accuracy'],
-                                    val_mcc=val_metrics['seg_compute_mcc'])
+                                    val_mcc=mcc)
 
             if args.bound:
                 metrics_table.add_row(['Bound',
@@ -389,8 +395,7 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                 print("Early Stopping! \t Training Stopped")
                 print("Saving model...")
                 net.save('weights/model_early_stopping.h5')
-                return total_train_loss, total_train_acc,
-                total_val_loss, total_val_acc
+                return net
         else:
             cont = 0
             # best_score = score
