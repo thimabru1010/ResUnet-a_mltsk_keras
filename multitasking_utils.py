@@ -2,6 +2,7 @@ import tensorflow as tf
 import cv2
 import numpy as np
 
+
 def get_boundary_label(label, kernel_size=(3, 3)):
     _, _, channel = label.shape
     bounds = np.empty_like(label, dtype=np.float32)
@@ -34,7 +35,7 @@ def get_distance_label(label):
     return dists
 
 
-def Tanimoto_loss(label,pred):
+def Tanimoto_loss(label, pred):
     """
     Implementation of Tanimoto loss in tensorflow 2.x
     -------------------------------------------------------------------------
@@ -42,7 +43,7 @@ def Tanimoto_loss(label,pred):
     """
     smooth = 1e-5
 
-    Vli = tf.reduce_mean(tf.reduce_sum(label,axis=[1,2]),axis=0)
+    Vli = tf.reduce_mean(tf.reduce_sum(label, axis=[1,2]), axis=0)
     # wli =  1.0/Vli**2 # weighting scheme
     wli = tf.math.reciprocal(Vli**2) # weighting scheme
 
@@ -57,32 +58,33 @@ def Tanimoto_loss(label,pred):
     # print(label.shape)
     # print(pred.shape)
 
-    square_pred=tf.square(pred)
-    square_label=tf.square(label)
-    add_squared_label_pred = tf.add(square_pred,square_label)
-    sum_square=tf.reduce_sum(add_squared_label_pred,axis=[1,2])
+    square_pred = tf.square(pred)
+    square_label = tf.square(label)
+    add_squared_label_pred = tf.add(square_pred, square_label)
+    sum_square = tf.reduce_sum(add_squared_label_pred, axis=[1, 2])
     # print('sum square')
     # print(sum_square.shape)
 
-    product=tf.multiply(pred,label)
-    sum_product=tf.reduce_sum(product,axis=[1,2])
+    product = tf.multiply(pred, label)
+    sum_product = tf.reduce_sum(product, axis=[1, 2])
     # print('sum product')
     # print(sum_product.shape)
     sum_product_labels = tf.reduce_sum(tf.multiply(wli, sum_product), axis=-1)
     # print('sum product labels')
     # print(sum_product_labels.shape)
 
-    denomintor=tf.subtract(sum_square,sum_product)
+    denomintor = tf.subtract(sum_square, sum_product)
     # print('denominator')
     # print(denomintor.shape)
     denomintor_sum_labels = tf.reduce_sum(tf.multiply(wli, denomintor), axis=-1)
     # print('denominator sum labels')
     # print(denomintor_sum_labels.shape)
     # Add smooth to avoid numerical instability
-    loss=tf.divide(sum_product_labels + smooth,denomintor_sum_labels + smooth)
+    loss = tf.divide(sum_product_labels + smooth, denomintor_sum_labels + smooth)
     # print('loss')
     # print(loss.shape)
     return loss
+
 
 def Tanimoto_dual_loss():
     '''
@@ -91,11 +93,11 @@ def Tanimoto_dual_loss():
             Note: to use it in deep learning training use: return 1. - 0.5*(loss1+loss2)
             OBS: Do use note's advice. Otherwise tanimoto doesn't work
     '''
-    def loss(label,pred):
-        loss1=Tanimoto_loss(pred,label)
-        pred=tf.subtract(1.0,pred)
-        label=tf.subtract(1.0,label)
-        loss2=Tanimoto_loss(label,pred)
-        loss=(loss1+loss2)*0.5
+    def loss(label, pred):
+        loss1 = Tanimoto_loss(pred, label)
+        pred = tf.subtract(1.0, pred)
+        label = tf.subtract(1.0, label)
+        loss2 = Tanimoto_loss(label, pred)
+        loss = (loss1+loss2)*0.5
         return 1.0 - loss
     return loss

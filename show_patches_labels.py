@@ -1,8 +1,4 @@
-# from utils import np, plt, load_tiff_image, load_SAR_image, compute_metrics, data_augmentation, unet, normalization, \
-# RGB_image, extract_patches, patch_tiles, bal_aug_patches, extrac_patch2, test_FCN, pred_recostruction, \
-# weighted_categorical_crossentropy, mask_no_considered, tf, Adam, prediction, load_model, confusion_matrix, \
-# EarlyStopping, ModelCheckpoint, identity_block, ResNet50, color_map, SGD, \
-# load_npy_image
+
 
 from utils import np, load_npy_image, normalization, data_augmentation, plt
 import tensorflow as tf
@@ -21,7 +17,7 @@ import cv2
 from osgeo import ogr, gdal
 from matplotlib import cm
 
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
+# from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--multitasking",
@@ -38,7 +34,7 @@ def load_tiff_image(patch):
     return img
 
 
-def extract_patches_hw(image, reference, patch_size, stride):
+def extract_patches(image, reference, patch_size, stride):
     window_shape = patch_size
     window_shape_array = (window_shape, window_shape, image.shape[2])
     window_shape_ref = (window_shape, window_shape)
@@ -158,7 +154,7 @@ stride = patch_size // 1
 
 
 # stride = patch_size
-patches_tr, patches_tr_ref = extract_patches_hw(img_train,
+patches_tr, patches_tr_ref = extract_patches(img_train,
                                                 binary_img_train_ref,
                                                 patch_size, stride)
 print('patches extraidos!')

@@ -47,7 +47,7 @@ image_array = normalization(image_array1, type_norm)
 # Load Mask area
 img_mask_ref_path = 'mask_ref.npy'
 img_mask_ref = load_npy_image(os.path.join(root_path, img_mask_ref_path))
-img_mask_ref = img_mask_ref[:6100,:6600]
+img_mask_ref = img_mask_ref[:6100, :6600]
 print(f"Mask area reference shape: {img_mask_ref.shape}")
 
 # Load deforastation reference
@@ -62,10 +62,10 @@ past_ref1 = load_npy_image(os.path.join(root_path,'labels/binary_clipped_2013_20
 past_ref2 = load_npy_image(os.path.join(root_path,'labels/binary_clipped_1988_2012.npy'))
 past_ref_sum = past_ref1 + past_ref2
 # Clip to fit tiles of your specific image
-past_ref_sum = past_ref_sum[:6100,:6600]
+past_ref_sum = past_ref_sum[:6100, :6600]
 #past_ref_sum[img_mask_ref==-99] = -1
 # Doing the sum, there are some pixels with value 2 (Case when both were deforastation).
-past_ref_sum[past_ref_sum==2] = 1
+past_ref_sum[past_ref_sum == 2] = 1
 # Same thing for background area (different from no deforastation)
 #past_ref_sum[past_ref_sum==-2] = -1
 print(f"Past reference shape: {past_ref_sum.shape}")
