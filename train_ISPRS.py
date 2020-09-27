@@ -158,23 +158,20 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
     y_val_h_b_seg = np.zeros(y_shape_batch, dtype=np.float32)
     if args.multitasking:
         # Bounds
-        if args.bound:
-            y_train_h_b_bound = np.zeros(y_shape_batch, dtype=np.float32)
-            y_val_h_b_bound = np.zeros(y_shape_batch, dtype=np.float32)
+        y_train_h_b_bound = np.zeros(y_shape_batch, dtype=np.float32)
+        y_val_h_b_bound = np.zeros(y_shape_batch, dtype=np.float32)
         # Dists
-        if args.dist:
-            y_train_h_b_dist = np.zeros(y_shape_batch, dtype=np.float32)
-            y_val_h_b_dist = np.zeros(y_shape_batch, dtype=np.float32)
+        y_train_h_b_dist = np.zeros(y_shape_batch, dtype=np.float32)
+        y_val_h_b_dist = np.zeros(y_shape_batch, dtype=np.float32)
         # Colors
-        if args.color:
-            y_train_h_b_color = np.zeros((y_shape_batch[0],
-                                          y_shape_batch[1],
-                                          y_shape_batch[2], 3),
-                                         dtype=np.float32)
-            y_val_h_b_color = np.zeros((y_shape_batch[0],
-                                        y_shape_batch[1],
-                                        y_shape_batch[2], 3),
-                                       dtype=np.float32)
+        y_train_h_b_color = np.zeros((y_shape_batch[0],
+                                      y_shape_batch[1],
+                                      y_shape_batch[2], 3),
+                                     dtype=np.float32)
+        y_val_h_b_color = np.zeros((y_shape_batch[0],
+                                    y_shape_batch[1],
+                                    y_shape_batch[2], 3),
+                                   dtype=np.float32)
     print(net.metrics_names)
     print(net.output_names)
     for epoch in range(epochs):
@@ -208,23 +205,17 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                 x_train_b[b] = np.load(x_train_paths_b[b])
                 y_train_h_b_seg[b] = np.load(y_train_paths_b_seg[b])
                 if args.multitasking:
-                    if args.bound:
-                        y_train_h_b_bound[b] = np.load(y_train_paths_b_bound[b])
-                    if args.dist:
-                        y_train_h_b_dist[b] = np.load(y_train_paths_b_dist[b])
-                    if args.color:
-                        y_train_h_b_color[b] = np.load(y_train_paths_b_color[b])
+                    y_train_h_b_bound[b] = np.load(y_train_paths_b_bound[b])
+                    y_train_h_b_dist[b] = np.load(y_train_paths_b_dist[b])
+                    y_train_h_b_color[b] = np.load(y_train_paths_b_color[b])
 
             if not args.multitasking:
                 loss_tr = loss_tr + net.train_on_batch(x_train_b, y_train_h_b_seg)
             else:
                 y_train_b = {"seg": y_train_h_b_seg}
-                if args.bound:
-                    y_train_b['bound'] = y_train_h_b_bound
-                if args.dist:
-                    y_train_b['dist'] = y_train_h_b_dist
-                if args.color:
-                    y_train_b['color'] = y_train_h_b_color
+                y_train_b['bound'] = y_train_h_b_bound
+                y_train_b['dist'] = y_train_h_b_dist
+                y_train_b['color'] = y_train_h_b_color
 
                 loss_tr = loss_tr + net.train_on_batch(x=x_train_b, y=y_train_b)
 
@@ -256,12 +247,9 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                 x_val_b[b] = np.load(x_val_paths_b[b])
                 y_val_h_b_seg[b] = np.load(y_val_paths_b_seg[b])
                 if args.multitasking:
-                    if args.bound:
-                        y_val_h_b_bound[b] = np.load(y_val_paths_b_bound[b])
-                    if args.dist:
-                        y_val_h_b_dist[b] = np.load(y_val_paths_b_dist[b])
-                    if args.color:
-                        y_val_h_b_color[b] = np.load(y_val_paths_b_color[b])
+                    y_val_h_b_bound[b] = np.load(y_val_paths_b_bound[b])
+                    y_val_h_b_dist[b] = np.load(y_val_paths_b_dist[b])
+                    y_val_h_b_color[b] = np.load(y_val_paths_b_color[b])
 
             if not args.multitasking:
                 loss_val = loss_val + net.test_on_batch(x_val_b, y_val_h_b_seg)
@@ -270,12 +258,9 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                 # "boundary": y_val_h_b_bound, "distance":  y_val_h_b_dist,
                 # "color": y_val_h_b_color}
                 y_val_b = {"seg": y_val_h_b_seg}
-                if args.bound:
-                    y_val_b['bound'] = y_val_h_b_bound
-                if args.dist:
-                    y_val_b['dist'] = y_val_h_b_dist
-                if args.color:
-                    y_val_b['color'] = y_val_h_b_color
+                y_val_b['bound'] = y_val_h_b_bound
+                y_val_b['dist'] = y_val_h_b_dist
+                y_val_b['color'] = y_val_h_b_color
 
                 loss_val = loss_val + net.test_on_batch(x=x_val_b, y=y_val_b)
         loss_val = loss_val/n_batchs_val
@@ -316,11 +301,11 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
             metrics_table.title = f'Epoch: {epoch}'
             metrics_table.field_names = ['Task', 'Loss', 'Val Loss',
                                          'Acc %', 'Val Acc %']
+
             metrics_table.add_row(['Seg', round(train_metrics['seg_loss'], 5),
                                   round(val_metrics['seg_loss'], 5),
                                   round(100*train_metrics['seg_accuracy'], 5),
                                   round(100*val_metrics['seg_accuracy'], 5)])
-
             add_tensorboard_scalars(train_summary_writer, val_summary_writer,
                                     epoch, 'Segmentation',
                                     train_metrics['seg_loss'],
@@ -329,44 +314,39 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                                     val_metrics['seg_accuracy'],
                                     val_mcc=mcc)
 
-            if args.bound:
-                metrics_table.add_row(['Bound',
-                                       round(train_metrics['bound_loss'], 5),
-                                      round(val_metrics['bound_loss'], 5),
-                                      0, 0])
+            metrics_table.add_row(['Bound',
+                                   round(train_metrics['bound_loss'], 5),
+                                  round(val_metrics['bound_loss'], 5),
+                                  0, 0])
+            add_tensorboard_scalars(train_summary_writer,
+                                    val_summary_writer,
+                                    epoch, 'Boundary',
+                                    train_metrics['bound_loss'],
+                                    val_metrics['bound_loss'])
 
-                add_tensorboard_scalars(train_summary_writer,
-                                        val_summary_writer,
-                                        epoch, 'Boundary',
-                                        train_metrics['bound_loss'],
-                                        val_metrics['bound_loss'])
-            if args.dist:
-                metrics_table.add_row(['Dist',
-                                       round(train_metrics['dist_loss'], 5),
-                                       round(val_metrics['dist_loss'], 5),
-                                       0, 0])
+            metrics_table.add_row(['Dist',
+                                   round(train_metrics['dist_loss'], 5),
+                                   round(val_metrics['dist_loss'], 5),
+                                   0, 0])
+            add_tensorboard_scalars(train_summary_writer,
+                                    val_summary_writer,
+                                    epoch, 'Distance',
+                                    train_metrics['dist_loss'],
+                                    val_metrics['dist_loss'])
 
-                add_tensorboard_scalars(train_summary_writer,
-                                        val_summary_writer,
-                                        epoch, 'Distance',
-                                        train_metrics['dist_loss'],
-                                        val_metrics['dist_loss'])
-            if args.color:
-                metrics_table.add_row(['Color',
-                                       round(train_metrics['color_loss'], 5),
-                                       round(val_metrics['color_loss'], 5),
-                                       0, 0])
-
-                add_tensorboard_scalars(train_summary_writer,
-                                        val_summary_writer,
-                                        epoch, 'Color',
-                                        train_metrics['color_loss'],
-                                        val_metrics['color_loss'])
+            metrics_table.add_row(['Color',
+                                   round(train_metrics['color_loss'], 5),
+                                   round(val_metrics['color_loss'], 5),
+                                   0, 0])
+            add_tensorboard_scalars(train_summary_writer,
+                                    val_summary_writer,
+                                    epoch, 'Color',
+                                    train_metrics['color_loss'],
+                                    val_metrics['color_loss'])
 
             metrics_table.add_row(['Total', round(train_metrics['loss'], 5),
                                   round(val_metrics['loss'], 5),
                                   0, 0])
-
             add_tensorboard_scalars(train_summary_writer,
                                     val_summary_writer,
                                     epoch, 'Total',
@@ -457,9 +437,7 @@ if __name__ == '__main__':
     tf.config.experimental_run_functions_eagerly(False)
     #tf.config.run_functions_eagerly(True)
 
-
     # Load images
-
     root_path = args.dataset_path
     train_path = os.path.join(root_path, 'train')
     patches_tr = [os.path.join(train_path, name)
@@ -471,7 +449,6 @@ if __name__ == '__main__':
 
     if args.multitasking:
         ref_bound_path = os.path.join(root_path, 'labels/bound')
-        print(ref_bound_path)
         patches_bound_labels = [os.path.join(ref_bound_path, name) for name
                                 in os.listdir(ref_bound_path)]
 
@@ -533,7 +510,6 @@ if __name__ == '__main__':
     print('='*60)
 
     if args.resunet_a:
-
         if args.multitasking:
             print('Multitasking enabled!')
             if not args.gpu_parallel:
@@ -541,17 +517,10 @@ if __name__ == '__main__':
                 model = resuneta.model
                 model.summary()
 
-            losses = {'seg': loss}
-            lossWeights = {'seg': 1.0}
-            if args.bound:
-                losses['bound'] = loss
-                lossWeights["bound"] = args.bound_weight
-            if args.dist:
-                losses['dist'] = loss
-                lossWeights["dist"] = args.dist_weight
-            if args.color:
-                losses['color'] = loss_color
-                lossWeights["color"] = args.color_weight
+            losses = {'seg': loss, 'bound': loss,
+                      'dist': loss, 'color': loss_color}
+            lossWeights = {'seg': 1.0, 'bound': args.bound_weight,
+                           'dist': args.dist_weight, 'color': args.color_weight}
 
             print(f'Loss Weights: {lossWeights}')
             if args.gpu_parallel:
