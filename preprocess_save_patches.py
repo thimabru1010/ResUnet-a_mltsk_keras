@@ -25,8 +25,6 @@ def str2bool(v):
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--multitasking",
-                    help="choose resunet-a model or not", type=str2bool, default=False)
 parser.add_argument("--norm_type",
                     help="Choose type of normalization to be used", type=int,
                     default=1, choices=[1, 2, 3])
@@ -194,12 +192,13 @@ def filename(i):
 
 
 print(f'Number of patches: {len(patches_tr)}')
-print(f'Number of patches expected: {len(patches_tr)*5}')
+if args.data_aug:
+    print(f'Number of patches expected: {len(patches_tr)*5}')
 for i in tqdm(range(len(patches_tr))):
     if args.data_aug:
         img_aug, label_aug = data_augmentation(patches_tr[i], patches_tr_ref[i])
     else:
-        img_aug, label_aug = patches_tr[i], patches_tr_ref[i]
+        img_aug, label_aug = np.expand_dims(patches_tr[i], axis=0), np.expand_dims(patches_tr_ref[i], axis=0)
     label_aug_h = tf.keras.utils.to_categorical(label_aug, args.num_classes)
     for j in range(len(img_aug)):
         # Input image RGB
