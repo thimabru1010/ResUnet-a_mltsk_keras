@@ -24,23 +24,6 @@ def str2bool(v):
     else:
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--norm_type",
-                    help="Choose type of normalization to be used", type=int,
-                    default=1, choices=[1, 2, 3])
-parser.add_argument("--patch_size",
-                    help="Choose size of patches", type=int, default=256)
-parser.add_argument("--stride",
-                    help="Choose stride to be using on patches extraction",
-                    type=int, default=32)
-parser.add_argument("--num_classes",
-                    help="Choose number of classes to convert \
-                    labels to one hot encoding", type=int, default=5)
-parser.add_argument("--data_aug",
-                    help="Choose number of classes to convert \
-                    labels to one hot encoding", type=str2bool, default=True)
-args = parser.parse_args()
-
 
 def extract_patches(image, reference, patch_size, stride):
     window_shape = patch_size
@@ -125,6 +108,23 @@ def normalize_hsv(img, norm_type=1):
 
     return img
 
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--norm_type",
+                    help="Choose type of normalization to be used", type=int,
+                    default=1, choices=[1, 2, 3])
+parser.add_argument("--patch_size",
+                    help="Choose size of patches", type=int, default=256)
+parser.add_argument("--stride",
+                    help="Choose stride to be using on patches extraction",
+                    type=int, default=32)
+parser.add_argument("--num_classes",
+                    help="Choose number of classes to convert \
+                    labels to one hot encoding", type=int, default=5)
+parser.add_argument("--data_aug",
+                    help="Choose number of classes to convert \
+                    labels to one hot encoding", type=str2bool, default=True)
+args = parser.parse_args()
 
 print('='*50)
 print('Parameters')

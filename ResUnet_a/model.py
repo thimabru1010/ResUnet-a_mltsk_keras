@@ -108,7 +108,7 @@ class Resunet_a(object):
         if not self.args.multitasking:
             x = KL.Conv2D(self.num_classes, (1, 1))(x_psp)
             x = KL.Activation('softmax')(x)
-            model = KM.Model(inputs=inputs, outputs=x)
+            model = KM.Model(inputs=self.inputs, outputs=x)
         else:
             # Models' output
             out = []

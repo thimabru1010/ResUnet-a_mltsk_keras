@@ -490,13 +490,14 @@ def weighted_categorical_crossentropy(weights):
             return loss
         return loss
 
+
 def mask_no_considered(image_ref, buffer, past_ref):
     # Creation of buffer for pixel no considered
     image_ref_ = image_ref.copy()
     im_dilate = skimage.morphology.dilation(image_ref_, disk(buffer))
-    outer_buffer = im_dilate-image_ref_
-    outer_buffer[outer_buffer==1]=2
-    # 1 deforestation, 2 unknown
+    outer_buffer = im_dilate - image_ref_
+    outer_buffer[outer_buffer == 1] = 2
+    # 1 deforestation, 2 past deforastation
     final_mask = image_ref_ + outer_buffer
     final_mask[past_ref == 1] = 2
     return final_mask

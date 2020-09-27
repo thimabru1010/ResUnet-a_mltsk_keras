@@ -51,15 +51,16 @@ img_mask_ref = img_mask_ref[:6100, :6600]
 print(f"Mask area reference shape: {img_mask_ref.shape}")
 
 # Load deforastation reference
-image_ref = load_npy_image(os.path.join(root_path,'labels/binary_clipped_2019.npy'))
+image_ref = load_npy_image(os.path.join(root_path,
+                                        'labels/binary_clipped_2019.npy'))
 # Clip to fit tiles of your specific image
-image_ref = image_ref[:6100,:6600]
-image_ref[img_mask_ref==-99] = -1
+image_ref = image_ref[:6100, :6600]
+image_ref[img_mask_ref == -99] = -1
 print(f"Image reference shape: {image_ref.shape}")
 
 # Load past deforastation reference
-past_ref1 = load_npy_image(os.path.join(root_path,'labels/binary_clipped_2013_2018.npy'))
-past_ref2 = load_npy_image(os.path.join(root_path,'labels/binary_clipped_1988_2012.npy'))
+past_ref1 = load_npy_image(os.path.join(root_path, 'labels/binary_clipped_2013_2018.npy'))
+past_ref2 = load_npy_image(os.path.join(root_path, 'labels/binary_clipped_1988_2012.npy'))
 past_ref_sum = past_ref1 + past_ref2
 # Clip to fit tiles of your specific image
 past_ref_sum = past_ref_sum[:6100, :6600]
@@ -85,7 +86,7 @@ final_mask[img_mask_ref==-99] = 0
 
 # Mask with tiles
 # Divide tiles in 5 rows and 3 columns. Total = 15 tiles
-tile_number = np.ones((1220,2200))
+tile_number = np.ones((1220, 2200))
 mask_c_1 = np.concatenate((tile_number, 2*tile_number, 3*tile_number), axis=1)
 mask_c_2 = np.concatenate((4*tile_number, 5*tile_number, 6*tile_number), axis=1)
 mask_c_3 = np.concatenate((7*tile_number, 8*tile_number, 9*tile_number), axis=1)
