@@ -1,4 +1,4 @@
-from utils import np, load_npy_image, data_augmentation, mask_no_considered
+from utils import np, load_npy_image, data_augmentation, mask_no_considered, patch_tiles2
 import tensorflow as tf
 
 from multitasking_utils import get_boundary_label, get_distance_label
@@ -265,6 +265,11 @@ if __name__ == '__main__':
     # mask_tr_val[mask_tiles == tr5] = 1
     # mask_tr_val[mask_tiles == tr6] = 1
 
+
+    patches_tr, patches_tr_ref = patch_tiles2(tr_tiles, mask_tiles, image_array, final_mask, img_mask_ref, patch_size, stride, percent)
+
+    print(f"Trainig patches size: {patches_tr.shape}")
+    print(f"Trainig ref patches size: {patches_tr_ref.shape}")
 
     # stride = patch_size
     patches_tr, patches_tr_ref = extract_patches(img_train,

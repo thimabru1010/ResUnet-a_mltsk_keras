@@ -124,30 +124,27 @@ class Resunet_a(object):
             out.append(out_seg)
 
             # Boundary
-            if self.args.bound:
-                x_bound = KL.Conv2D(32, (3, 3), activation='relu',
-                                    padding='same')(x_psp)
-                x_bound = KL.Conv2D(self.num_classes, (1, 1),
-                                    padding='valid')(x_bound)
-                out_bound = KL.Activation('sigmoid', name='bound')(x_bound)
-                out.append(out_bound)
+            x_bound = KL.Conv2D(32, (3, 3), activation='relu',
+                                padding='same')(x_psp)
+            x_bound = KL.Conv2D(self.num_classes, (1, 1),
+                                padding='valid')(x_bound)
+            out_bound = KL.Activation('sigmoid', name='bound')(x_bound)
+            out.append(out_bound)
 
             # Distance
-            if self.args.dist:
-                x_dist = KL.Conv2D(32, (3, 3), activation='relu',
-                                   padding='same')(x_comb)
-                x_dist = KL.Conv2D(32, (3, 3), activation='relu',
-                                   padding='same')(x_dist)
-                x_dist = KL.Conv2D(self.num_classes, (1, 1),
-                                   padding='valid')(x_dist)
-                out_dist = KL.Activation('softmax', name='dist')(x_dist)
-                out.append(out_dist)
+            x_dist = KL.Conv2D(32, (3, 3), activation='relu',
+                               padding='same')(x_comb)
+            x_dist = KL.Conv2D(32, (3, 3), activation='relu',
+                               padding='same')(x_dist)
+            x_dist = KL.Conv2D(self.num_classes, (1, 1),
+                               padding='valid')(x_dist)
+            out_dist = KL.Activation('softmax', name='dist')(x_dist)
+            out.append(out_dist)
 
             # Color
-            if self.args.color:
-                out_color = KL.Conv2D(3, (1, 1), activation='sigmoid',
-                                      padding='valid', name='color')(x_comb)
-                out.append(out_color)
+            out_color = KL.Conv2D(3, (1, 1), activation='sigmoid',
+                                  padding='valid', name='color')(x_comb)
+            out.append(out_color)
 
             # out = [out_seg, out_bound, out_dist, out_color]
             if self.args.gpu_parallel:
