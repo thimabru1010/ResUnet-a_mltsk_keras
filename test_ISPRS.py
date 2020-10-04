@@ -312,7 +312,7 @@ img_reconstructed_rgb = convert_preds2rgb(img_reconstructed,
 
 if not os.path.exists(args.output_path):
     os.makedirs(args.output_path)
-    
+
 plt.imsave(os.path.join(args.output_path, 'pred_seg_reconstructed.jpeg'),
            img_reconstructed_rgb)
 
@@ -325,18 +325,11 @@ if args.use_multitasking:
         # class and has its predictions of each task
         fig1, axes = plt.subplots(nrows=args.num_classes, ncols=7, figsize=(15, 10))
         img = patches_test[i]
+        img = (img * np.array([255, 255, 255])).astype(np.uint8)
         img_ref = patches_test_ref[i]
         img_ref_h = tf.keras.utils.to_categorical(img_ref, args.num_classes)
         bound_ref_h = get_boundary_label(img_ref_h)
 
-        # fig5, axes = plt.subplots(nrows=1, ncols=4, figsize=(12, 9))
-        #
-        # axes[0].imshow(bound_ref_h[:, :, 0], cmap=cm.Greys_r)
-        # axes[1].imshow(bound_ref_h[:, :, 1], cmap=cm.Greys_r)
-        # axes[2].imshow(bound_ref_h[:, :, 2], cmap=cm.Greys_r)
-        # axes[3].imshow(bound_ref_h[:, :, 3], cmap=cm.Greys_r)
-        # plt.show()
-        # plt.close()
 
         dist_ref_h = get_distance_label(img_ref_h)
         # Put the first plot as the patch to be observed on each row
@@ -372,6 +365,10 @@ if args.use_multitasking:
         axes[0, 4].set_title('Bound Pred')
         axes[0, 5].set_title('Dist Ref')
         axes[0, 6].set_title('Dist Pred')
+
+        for n_class in range(args.num_classes):
+            axes[n_class, 0].set_ylabel(f'Class {n_class}')
+            
         plt.savefig(os.path.join(args.output_path, f'pred{i}_classes.jpg'))
 
         # Color
@@ -380,20 +377,24 @@ if args.use_multitasking:
         ax1.imshow(img)
         ax2.set_title('Pred HSV in RGB')
         task = 3
-        # As long as the normalization process was just img = img / 255
-        hsv_patch = patches_pred[task][i]
+        hsv_pred = patches_pred[task][i]
         # print(f'HSV max {i}: {hsv_patch.max()}, HSV min: {hsv_patch.min()}')
-        hsv_patch = (hsv_patch * np.array([179, 255, 255])).astype(np.uint8)
+        # As long as the normalization process was just img = img / 255
+        hsv_patch = (hsv_pred * np.array([179, 255, 255])).astype(np.uint8)
         rgb_patch = cv2.cvtColor(hsv_patch, cv2.COLOR_HSV2RGB)
         ax2.imshow(rgb_patch)
-        ax3.set_title('Difference between both')
-        # diff = np.mean(rgb_patch - img ,axis=-1)
+        # ax3.set_title('Difference between both')
+        # diff = np.mean(rgb_patch - img, axis=-1)
         # diff = 2*(diff-diff.min())/(diff.max()-diff.min()) - np.ones_like(diff)
-        ax3.imshow(img - rgb_patch)
-        #ax3.imshow(diff)
-
-        for n_class in range(args.num_classes):
-            axes[n_class, 0].set_ylabel(f'Class {n_class}')
+        # # ax3.imshow(img - rgb_patch)
+        # im = ax3.imshow(diff, cmap=cm.Greys_r)
+        # colorbar(im, ax3, fig2)
+        ax3.set_title('Difference between both')
+        hsv_label = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
+        diff = np.mean(hsv_patch - hsv_label, axis=-1)
+        diff = 2*(diff-diff.min())/(diff.max()-diff.min()) - np.ones_like(diff)
+        im = ax3.imshow(diff, cmap=cm.Greys_r)
+        colorbar(im, ax3, fig2)
 
         plt.savefig(os.path.join(args.output_path, f'pred{i}_color.jpg'))
         plt.show()
