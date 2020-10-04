@@ -21,31 +21,11 @@ from matplotlib import cm
 from matplotlib.colors import hsv_to_rgb
 from sklearn.preprocessing import StandardScaler
 
-# def Test(model, patches, args, num_classes=5):
-#     num_patches, weight, height, _ = patches.shape
-#     preds = np.full((num_patches, weight, height, num_classes),
-#                     fill_value=-1, dtype=np.float32)
-#     print(f'preds shape: {preds.shape}')
-#     for i in range(len(patches)):
-#         print(f'patch shape: {patches[i].shape}')
-#         patch = np.expand_dims(patches[i], axis=0)
-#         print(f'patch shape: {patch.shape}')
-#         preds[i] = model.predict(patch)
-#     if args.multitasking:
-#         print('Multitasking Enabled!')
-#         print(preds.shape)
-#         print(preds[0].shape)
-#         return preds
-#     else:
-#         print(preds.shape)
-#         predicted_class = np.argmax(preds, axis=-1)
-#         print(predicted_class.shape)
-#         return predicted_class
 
 def Test(model, patches, args):
     num_patches, weight, height, _ = patches.shape
     preds = model.predict(patches, batch_size=1)
-    if args.multitasking:
+    if args.use_multitasking:
         print('Multitasking Enabled!')
         return preds
     else:
@@ -231,8 +211,8 @@ gpu_devices = tf.config.experimental.list_physical_devices('GPU')
 tf.config.experimental.set_memory_growth(gpu_devices[0], True)
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--multitasking",
-                    help="Choose resunet-a model or not", type=int, default=0)
+parser.add_argument("--use_multitasking",
+                    help="Choose resunet-a model or not", action='store_true')
 parser.add_argument("--model_path",
                     help="Model's filepath .h5", type=str, required=True)
 parser.add_argument("--dataset_path",
@@ -296,7 +276,7 @@ patches_pred = Test(model, patches_test, args)
 print('='*40)
 print('[TEST]')
 
-if args.multitasking:
+if args.use_multitasking:
     seg_preds = patches_pred[0]
     print(f'seg shape argmax: {seg_preds.shape}')
     seg_pred = np.argmax(seg_preds, axis=-1)
@@ -329,11 +309,15 @@ img_reconstructed = pred_recostruction(args.patch_size, seg_pred,
                                        binary_img_test_ref, img_type=1)
 img_reconstructed_rgb = convert_preds2rgb(img_reconstructed,
                                           label_dict)
+
+if not os.path.exists(args.output_path):
+    os.makedirs(args.output_path)
+    
 plt.imsave(os.path.join(args.output_path, 'pred_seg_reconstructed.jpeg'),
            img_reconstructed_rgb)
 
 # Visualize inference per class
-if args.multitasking:
+if args.use_multitasking:
 
     for i in range(len(patches_test)):
         print(f'Patch: {i}')
