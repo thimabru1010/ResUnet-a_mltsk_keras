@@ -36,17 +36,17 @@ class Resunet_a(object):
             x1 = KL.MaxPooling2D(pool_size=(1, 1))(input)
             x2 = KL.MaxPooling2D(pool_size=(2, 2))(input)
             x3 = KL.MaxPooling2D(pool_size=(4, 4))(input)
-            if self.img_width >= 256:
+            if self.img_width >= 0:
                 x4 = KL.MaxPooling2D(pool_size=(8, 8))(input)
             x1 = KL.Conv2D(int(filter/4), (1, 1))(x1)
             x2 = KL.Conv2D(int(filter/4), (1, 1))(x2)
             x3 = KL.Conv2D(int(filter/4), (1, 1))(x3)
-            if self.img_width >= 256:
+            if self.img_width >= 0:
                 x4 = KL.Conv2D(int(filter/4), (1, 1))(x4)
             x1 = KL.UpSampling2D(size=(1, 1))(x1)
             x2 = KL.UpSampling2D(size=(2, 2))(x2)
             x3 = KL.UpSampling2D(size=(4, 4))(x3)
-            if self.img_width >= 256:
+            if self.img_width >= 0:
                 x4 = KL.UpSampling2D(size=(8, 8))(x4)
                 x = KL.Concatenate()([x1, x2, x3, x4, input])
             else:
