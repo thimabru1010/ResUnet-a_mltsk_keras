@@ -408,7 +408,9 @@ if __name__ == '__main__':
     print('='*60)
     if args.loss == 'cross_entropy':
         print('Using Cross Entropy')
-        loss = "categorical_crossentropy"
+        # loss = "categorical_crossentropy"
+        loss = tf.keras.losses.CategoricalCrossentropy()
+        loss_reg = tf.keras.losses.MeanSquaredError()
         loss_color = "categorical_crossentropy"
     elif args.loss == "tanimoto":
         print('Using Tanimoto Dual Loss')
@@ -419,6 +421,7 @@ if __name__ == '__main__':
         weights = [4.34558461, 2.97682037, 3.92124661, 5.67350328, 374.0300152]
         print(weights)
         loss = weighted_categorical_crossentropy(weights)
+        loss_reg = tf.keras.losses.MeanSquaredError()
         loss_color = "categorical_crossentropy"
     print('='*60)
 
@@ -431,7 +434,7 @@ if __name__ == '__main__':
                 model.summary()
 
             losses = {'seg': loss, 'bound': loss,
-                      'dist': loss, 'color': loss_color}
+                      'dist': loss_reg, 'color': loss_reg}
             lossWeights = {'seg': 1.0, 'bound': args.bound_weight,
                            'dist': args.dist_weight, 'color': args.color_weight}
 
