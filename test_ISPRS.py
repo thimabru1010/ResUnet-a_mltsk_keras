@@ -123,6 +123,7 @@ def extract_patches_test(binary_img_test_ref, patch_size):
 
     return new_img_ref
 
+
 def extract_patches_train(img_test_normalized, patch_size):
     # Extract training patches manual
     stride = patch_size
@@ -217,7 +218,7 @@ parser.add_argument("--model_path",
                     help="Model's filepath .h5", type=str, required=True)
 parser.add_argument("--dataset_path",
                     help="Dataset directory path", type=str, required=True)
-parser.add_argument("--patch_size",
+parser.add_argument("-ps", "--patch_size",
                     help="Size of Patches extracted from image and reference",
                     type=int, default=256)
 parser.add_argument("--norm_type", choices=[1, 2, 3],
@@ -277,10 +278,15 @@ print('='*40)
 print('[TEST]')
 
 if args.use_multitasking:
-    seg_preds = patches_pred[0]
+    print(model.output_names)
+    preds = dict(zip(model.output_names, patches_pred))
+    print(preds.keys())
+    # seg_preds = patches_pred[3]
+    seg_preds = preds['seg']
     print(f'seg shape argmax: {seg_preds.shape}')
     seg_pred = np.argmax(seg_preds, axis=-1)
     print(f'seg shape argmax: {seg_pred.shape}')
+    patches_pred = [preds['seg'], preds['bound'], preds['dist'], preds['color']]
 else:
     seg_pred = patches_pred
 
@@ -329,8 +335,6 @@ if args.use_multitasking:
         img_ref = patches_test_ref[i]
         img_ref_h = tf.keras.utils.to_categorical(img_ref, args.num_classes)
         bound_ref_h = get_boundary_label(img_ref_h)
-
-
         dist_ref_h = get_distance_label(img_ref_h)
         # Put the first plot as the patch to be observed on each row
         for n_class in range(args.num_classes):
@@ -342,6 +346,7 @@ if args.use_multitasking:
             for task in range(len(patches_pred) - 1):
                 task_pred = patches_pred[task]
                 col_ref = (task + 1)*2
+                print(task_pred.shape)
                 axes[n_class, col_ref].imshow(task_pred[i, :, :, n_class],
                                               cmap=cm.Greys_r)
                 col = col_ref - 1
@@ -368,7 +373,7 @@ if args.use_multitasking:
 
         for n_class in range(args.num_classes):
             axes[n_class, 0].set_ylabel(f'Class {n_class}')
-            
+
         plt.savefig(os.path.join(args.output_path, f'pred{i}_classes.jpg'))
 
         # Color

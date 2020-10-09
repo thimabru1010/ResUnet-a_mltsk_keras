@@ -123,9 +123,11 @@ class Resunet_a(object):
             out = []
 
             # Segmentation
-            x_seg = KL.Conv2D(32, (3, 3), activation='relu', padding='same',
-                              name='seg1')(x_psp)
-            x_seg = KL.Conv2D(32, (3, 3), activation='relu', padding='same',
+            x_seg = KL.ZeroPadding2D(padding=1)(x_psp)
+            x_seg = KL.Conv2D(32, (3, 3), activation='relu', padding='valid',
+                              name='seg1')(x_seg)
+            x_seg = KL.ZeroPadding2D(padding=1)(x_seg)
+            x_seg = KL.Conv2D(32, (3, 3), activation='relu', padding='valid',
                               name='seg2')(x_seg)
             x_seg = KL.Conv2D(self.num_classes, (1, 1), padding='valid',
                               name='seg3')(x_seg)
@@ -133,18 +135,21 @@ class Resunet_a(object):
             out.append(out_seg)
 
             # Boundary
+            x_bound = KL.ZeroPadding2D(padding=1)(x_psp)
             x_bound = KL.Conv2D(32, (3, 3), activation='relu',
-                                padding='same')(x_psp)
+                                padding='valid')(x_bound)
             x_bound = KL.Conv2D(self.num_classes, (1, 1),
                                 padding='valid')(x_bound)
             out_bound = KL.Activation('sigmoid', name='bound')(x_bound)
             out.append(out_bound)
 
             # Distance
+            x_dist = KL.ZeroPadding2D(padding=1)(x_comb)
             x_dist = KL.Conv2D(32, (3, 3), activation='relu',
-                               padding='same')(x_comb)
+                               padding='valid')(x_dist)
+            x_dist = KL.ZeroPadding2D(padding=1)(x_dist)
             x_dist = KL.Conv2D(32, (3, 3), activation='relu',
-                               padding='same')(x_dist)
+                               padding='valid')(x_dist)
             x_dist = KL.Conv2D(self.num_classes, (1, 1),
                                padding='valid')(x_dist)
             out_dist = KL.Activation('softmax', name='dist')(x_dist)
