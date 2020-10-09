@@ -416,6 +416,7 @@ if __name__ == '__main__':
         print('Using Tanimoto Dual Loss')
         loss = Tanimoto_dual_loss()
         loss_color = Tanimoto_dual_loss()
+        loss_reg = Tanimoto_dual_loss()
     else:
         print('Using Weighted cross entropy')
         weights = [4.34558461, 2.97682037, 3.92124661, 5.67350328, 374.0300152]
