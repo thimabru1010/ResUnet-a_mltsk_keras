@@ -1,7 +1,7 @@
 import time
 from utils import np, unet, weighted_categorical_crossentropy, Adam
 
-from ResUnet_a.model import Resunet_a
+from ResUnet_a.model2 import Resunet_a
 from multitasking_utils import Tanimoto_dual_loss
 import argparse
 import os
