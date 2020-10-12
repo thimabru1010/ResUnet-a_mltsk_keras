@@ -37,30 +37,56 @@ class Resunet_a(object):
             # for ps = 128 input = [?, 4, 4, 1024]
             # If statement avoid erros to apply grater max pooling to images samll then filter size.
             # Like apply a max pooling of (8,8) to an image (4,4)
+            # Pooling
             x1 = KL.MaxPooling2D(pool_size=(1, 1))(input)
             x2 = KL.MaxPooling2D(pool_size=(2, 2))(input)
             if self.img_width >= 128:
                 x3 = KL.MaxPooling2D(pool_size=(4, 4))(input)
             if self.img_width >= 256:
                 x4 = KL.MaxPooling2D(pool_size=(8, 8))(input)
+
+            # Convs
             x1 = KL.Conv2D(int(filter/4), (1, 1))(x1)
+            x1 = KL.BatchNormalization()(x1)
             x2 = KL.Conv2D(int(filter/4), (1, 1))(x2)
+            x2 = KL.BatchNormalization()(x2)
             if self.img_width >= 128:
                 x3 = KL.Conv2D(int(filter/4), (1, 1))(x3)
+                x3 = KL.BatchNormalization()(x3)
             if self.img_width >= 256:
                 x4 = KL.Conv2D(int(filter/4), (1, 1))(x4)
+                x4 = KL.BatchNormalization()(x4)
+
+            # Upsample
             x1 = KL.UpSampling2D(size=(1, 1))(x1)
             x2 = KL.UpSampling2D(size=(2, 2))(x2)
             if self.img_width >= 128:
                 x3 = KL.UpSampling2D(size=(4, 4))(x3)
             if self.img_width >= 256:
                 x4 = KL.UpSampling2D(size=(8, 8))(x4)
+
+            # Convs
+            x1 = KL.Conv2D(int(filter/4), (1, 1))(x1)
+            x1 = KL.BatchNormalization()(x1)
+            x2 = KL.Conv2D(int(filter/4), (1, 1))(x2)
+            x2 = KL.BatchNormalization()(x2)
+            if self.img_width >= 128:
+                x3 = KL.Conv2D(int(filter/4), (1, 1))(x3)
+                x3 = KL.BatchNormalization()(x3)
+            if self.img_width >= 256:
+                x4 = KL.Conv2D(int(filter/4), (1, 1))(x4)
+                x4 = KL.BatchNormalization()(x4)
+
+            # Concatenate
+            if self.img_width >= 256:
                 x = KL.Concatenate()([x1, x2, x3, x4, input])
             elif self.img_width >= 128:
                 x = KL.Concatenate()([x1, x2, x3, input])
             else:
                 x = KL.Concatenate()([x1, x2, input])
+
             x = KL.Conv2D(filter, (1, 1))(x)
+            x = KL.BatchNormalization()(x)
             return x
 
         def combine(input1, input2, filter):
@@ -68,7 +94,7 @@ class Resunet_a(object):
             x = KL.Concatenate()([x, input2])
             x = KL.Conv2D(filter, (1, 1))(x)
             # Maybe a BatchNorm layer should be here (remember the beggining of ResBlock)
-            # x = KL.BatchNormalization()(x)
+            x = KL.BatchNormalization()(x)
             return x
 
         def UpSampling(x, nfilter):
