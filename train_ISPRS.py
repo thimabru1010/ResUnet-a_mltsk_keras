@@ -441,20 +441,20 @@ if __name__ == '__main__':
 
             print(f'Loss Weights: {lossWeights}')
             if args.gpu_parallel:
-                with strategy.scope():
-                    inputs = KE.Input(shape=(args.patch_size,
-                                      args.patch_size, 3))
-                    resuneta = Resunet_a((rows, cols, channels), args.num_classes, args, inputs=inputs)
-                    inp_out = resuneta.model
-                    inputs, out = inp_out
-                    model = KM.Model(inputs=inputs, outputs=out)
-                    model.summary()
-                    model.compile(optimizer=optm, loss=losses,
-                                  loss_weights=lossWeights,
-                                  metrics={'seg': ['accuracy', tf.keras.metrics.TruePositives(),
-                                                 tf.keras.metrics.FalsePositives(),
-                                                 tf.keras.metrics.TrueNegatives(),
-                                                 tf.keras.metrics.FalseNegatives()]})
+                # with strategy.scope():
+                #     inputs = KE.Input(shape=(args.patch_size,
+                #                       args.patch_size, 3))
+                #     resuneta = Resunet_a((rows, cols, channels), args.num_classes, args, inputs=inputs)
+                #     inp_out = resuneta.model
+                #     inputs, out = inp_out
+                #     model = KM.Model(inputs=inputs, outputs=out)
+                #     model.summary()
+                #     model.compile(optimizer=optm, loss=losses,
+                #                   loss_weights=lossWeights,
+                #                   metrics={'seg': ['accuracy', tf.keras.metrics.TruePositives(),
+                #                                  tf.keras.metrics.FalsePositives(),
+                #                                  tf.keras.metrics.TrueNegatives(),
+                #                                  tf.keras.metrics.FalseNegatives()]})
             else:
                 model.compile(optimizer=optm, loss=losses,
                               loss_weights=lossWeights, metrics={'seg': ['accuracy', tf.keras.metrics.TruePositives(),
@@ -486,14 +486,29 @@ if __name__ == '__main__':
 
     # train the model
     if args.multitasking:
-        x_shape_batch = (args.batch_size, args.patch_size, args.patch_size, 3)
-        y_shape_batch = (args.batch_size, args.patch_size, args.patch_size, 5)
-        start_time = time.time()
-        train_model(args, model, patches_tr, y_paths, patches_val, val_paths,
-                    args.batch_size, args.epochs,
-                    x_shape_batch=x_shape_batch, y_shape_batch=y_shape_batch)
-        end_time = time.time() - start_time
-        print(f'\nTraining took: {end_time / 3600} \n')
+        with strategy.scope():
+            inputs = KE.Input(shape=(args.patch_size,
+                              args.patch_size, 3))
+            resuneta = Resunet_a((rows, cols, channels), args.num_classes, args, inputs=inputs)
+            inp_out = resuneta.model
+            inputs, out = inp_out
+            model = KM.Model(inputs=inputs, outputs=out)
+            model.summary()
+            model.compile(optimizer=optm, loss=losses,
+                          loss_weights=lossWeights,
+                          metrics={'seg': ['accuracy', tf.keras.metrics.TruePositives(),
+                                         tf.keras.metrics.FalsePositives(),
+                                         tf.keras.metrics.TrueNegatives(),
+                                         tf.keras.metrics.FalseNegatives()]})
+            # ---------------------------------------------------------------------------
+            x_shape_batch = (args.batch_size, args.patch_size, args.patch_size, 3)
+            y_shape_batch = (args.batch_size, args.patch_size, args.patch_size, 5)
+            start_time = time.time()
+            train_model(args, model, patches_tr, y_paths, patches_val, val_paths,
+                        args.batch_size, args.epochs,
+                        x_shape_batch=x_shape_batch, y_shape_batch=y_shape_batch)
+            end_time = time.time() - start_time
+            print(f'\nTraining took: {end_time / 3600} \n')
     else:
         x_shape_batch = (args.batch_size, args.patch_size, args.patch_size, 3)
         y_shape_batch = (args.batch_size, args.patch_size, args.patch_size, 5)
