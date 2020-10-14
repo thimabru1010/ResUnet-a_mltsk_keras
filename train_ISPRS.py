@@ -493,7 +493,7 @@ if __name__ == '__main__':
             resuneta = Resunet_a((rows, cols, channels), args.num_classes, args, inputs=inputs)
             inp_out = resuneta.model
             inputs, out = inp_out
-            model = KM.Model(inputs=inputs, outputs=out, training=True)
+            model = KM.Model(inputs=inputs, outputs=ou)
             model.summary()
             model.compile(optimizer=optm, loss=losses,
                           loss_weights=lossWeights,
