@@ -94,6 +94,7 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                                    dtype=np.float32)
     print(net.metrics_names)
     print(net.output_names)
+    print(model.metrics)
     for epoch in range(epochs):
         metrics_len = len(net.metrics_names)
         loss_tr = np.zeros((1, metrics_len))
