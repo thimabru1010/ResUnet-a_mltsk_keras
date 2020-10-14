@@ -102,8 +102,6 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
         metrics_len = len(metrics_names)
         loss_tr = np.zeros((1, metrics_len))
         loss_val = np.zeros((1, metrics_len))
-        loss_tr = {}
-        loss_val = {}
         # Computing the number of batchs on training
         n_batchs_tr = len(x_train_paths)//batch_size
         # Random shuffle the data
