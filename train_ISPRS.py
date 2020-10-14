@@ -15,7 +15,6 @@ from tqdm import tqdm
 import tensorflow.keras.models as KM
 import tensorflow.keras as KE
 
-from tensorflow.keras.utils import multi_gpu_model
 
 def str2bool(v):
     if isinstance(v, bool):
@@ -93,7 +92,8 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                                     y_shape_batch[2], 3),
                                    dtype=np.float32)
 
-    metrics_names = ['loss', 'seg_loss', 'bound_loss', 'dist_loss', 'color_loss', 'seg_accuracy', 'seg_true_positives', 'seg_false_positives', 'seg_true_negatives', 'seg_false_negatives']
+    # metrics_names = ['loss', 'seg_loss', 'bound_loss', 'dist_loss', 'color_loss', 'seg_accuracy', 'seg_true_positives', 'seg_false_positives', 'seg_true_negatives', 'seg_false_negatives']
+    metrics_names = ['loss', 'accuracy', 'true_positives', 'false_positives', 'true_negatives', 'false_negatives']
     print(net.metrics_names)
     print(net.output_names)
     print(model.metrics)

@@ -21,6 +21,7 @@ from matplotlib import cm
 from matplotlib.colors import hsv_to_rgb
 from sklearn.preprocessing import StandardScaler
 
+from multitasking_utils import Tanimoto_dual_loss
 
 def Test(model, patches, args):
     num_patches, weight, height, _ = patches.shape
@@ -270,7 +271,12 @@ patches_test_ref = extract_patches_test(binary_img_test_ref, args.patch_size)
 print(patches_test.shape)
 
 # Load model
-model = load_model(args.model_path, compile=False)
+# another_strategy = tf.distribute.OneDeviceStrategy("/gpu:0")
+# with another_strategy.scope():
+another_strategy = tf.distribute.MirroredStrategy()
+with another_strategy.scope():
+    # model = load_model(args.model_path, custom_objects={'seg_loss': Tanimoto_dual_loss()})
+    model = load_model(args.model_path, compile=False)
 model.summary()
 # Prediction
 patches_pred = Test(model, patches_test, args)
