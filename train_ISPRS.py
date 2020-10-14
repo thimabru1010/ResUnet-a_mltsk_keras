@@ -137,6 +137,9 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                 y_train_b['dist'] = y_train_h_b_dist
                 y_train_b['color'] = y_train_h_b_color
 
+                print('='*30 + ' [CHECKING LOSS] ' + '='*30)
+                print(net.metrics_names)
+
                 loss_tr = loss_tr + net.train_on_batch(x=x_train_b, y=y_train_b)
 
             print('='*30 + ' [CHECKING LOSS] ' + '='*30)
