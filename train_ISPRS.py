@@ -92,13 +92,14 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                                     y_shape_batch[1],
                                     y_shape_batch[2], 3),
                                    dtype=np.float32)
-        
-    net.metrics_names = ['loss', 'seg_loss', 'bound_loss', 'dist_loss', 'color_loss', 'seg_accuracy', 'seg_true_positives', 'seg_false_positives', 'seg_true_negatives', 'seg_false_negatives']
+
+    metrics_names = ['loss', 'seg_loss', 'bound_loss', 'dist_loss', 'color_loss', 'seg_accuracy', 'seg_true_positives', 'seg_false_positives', 'seg_true_negatives', 'seg_false_negatives']
     print(net.metrics_names)
     print(net.output_names)
     print(model.metrics)
     for epoch in range(epochs):
-        metrics_len = len(net.metrics_names)
+        # metrics_len = len(net.metrics_names)
+        metrics_len = len(metrics_names)
         loss_tr = np.zeros((1, metrics_len))
         loss_val = np.zeros((1, metrics_len))
         loss_tr = {}
@@ -192,8 +193,8 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
 
         if not args.multitasking:
             # print(f'loss_val shape: {loss_val.shape}')
-            train_metrics = dict(zip(net.metrics_names, loss_tr.tolist()[0]))
-            val_metrics = dict(zip(net.metrics_names, loss_val.tolist()[0]))
+            train_metrics = dict(zip(metrics_names, loss_tr.tolist()[0]))
+            val_metrics = dict(zip(metrics_names, loss_val.tolist()[0]))
             train_loss = train_metrics['loss']
             train_acc = train_metrics['accuracy']
             val_loss = val_metrics['loss']
