@@ -15,7 +15,7 @@ from tqdm import tqdm
 import tensorflow.keras.models as KM
 import tensorflow.keras as KE
 
-from keras.utils import multi_gpu_model
+from tensorflow.keras.utils import multi_gpu_model
 
 def str2bool(v):
     if isinstance(v, bool):
