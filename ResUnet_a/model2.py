@@ -43,20 +43,20 @@ class Resunet_a(object):
             # If statement avoid erros to apply grater max pooling to images samll then filter size.
             # Like apply a max pooling of (8,8) to an image (4,4)
             # Pooling
-            x1 = KL.MaxPooling2D(pool_size=(1, 1))(x_input)
-            x2 = KL.MaxPooling2D(pool_size=(2, 2))(x_input)
+            x1 = KL.MaxPooling2D(pool_size=(1, 1), stride=(1, 1))(x_input)
+            x2 = KL.MaxPooling2D(pool_size=(2, 2), stride=(2, 2))(x_input)
             if self.img_width >= 128:
-                x3 = KL.MaxPooling2D(pool_size=(4, 4))(x_input)
+                x3 = KL.MaxPooling2D(pool_size=(4, 4), stride=(4, 4))(x_input)
             if self.img_width >= 256:
-                x4 = KL.MaxPooling2D(pool_size=(8, 8))(x_input)
+                x4 = KL.MaxPooling2D(pool_size=(8, 8), stride=(8, 8))(x_input)
 
-            # Convs
-            x1 = Conv2DN(x1, int(nfilter/4))
-            x2 = Conv2DN(x2, int(nfilter/4))
-            if self.img_width >= 128:
-                x3 = Conv2DN(x3, int(nfilter/4))
-            if self.img_width >= 256:
-                x4 = Conv2DN(x4, int(nfilter/4))
+            # # Convs
+            # x1 = Conv2DN(x1, int(nfilter/4))
+            # x2 = Conv2DN(x2, int(nfilter/4))
+            # if self.img_width >= 128:
+            #     x3 = Conv2DN(x3, int(nfilter/4))
+            # if self.img_width >= 256:
+            #     x4 = Conv2DN(x4, int(nfilter/4))
 
             # Upsample
             x1 = KL.UpSampling2D(size=(1, 1))(x1)
