@@ -457,7 +457,7 @@ if __name__ == '__main__':
                                                  tf.keras.metrics.TrueNegatives(),
                                                  tf.keras.metrics.FalseNegatives()]})
             else:
-                model = multi_gpu_model(model, gpus=2)
+                # model = multi_gpu_model(model, gpus=2)
                 model.compile(optimizer=optm, loss=losses,
                               loss_weights=lossWeights, metrics={'seg': ['accuracy', tf.keras.metrics.TruePositives(),
                                                                          tf.keras.metrics.FalsePositives(),
@@ -491,6 +491,9 @@ if __name__ == '__main__':
         x_shape_batch = (args.batch_size, args.patch_size, args.patch_size, 3)
         y_shape_batch = (args.batch_size, args.patch_size, args.patch_size, 5)
         start_time = time.time()
+        config = tf.ConfigProto(device_count = {'GPU': 0 , 'CPU': 1} )
+        sess = tf.Session(config=config)
+        tf.keras.backend.set_session(sess)
         train_model(args, model, patches_tr, y_paths, patches_val, val_paths,
                     args.batch_size, args.epochs,
                     x_shape_batch=x_shape_batch, y_shape_batch=y_shape_batch)
