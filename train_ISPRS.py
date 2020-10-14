@@ -441,6 +441,7 @@ if __name__ == '__main__':
 
             print(f'Loss Weights: {lossWeights}')
             if args.gpu_parallel:
+                pass
                 # with strategy.scope():
                 #     inputs = KE.Input(shape=(args.patch_size,
                 #                       args.patch_size, 3))
