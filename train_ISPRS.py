@@ -191,10 +191,12 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                 loss_val = loss_val + net.test_on_batch(x=x_val_b, y=y_val_b)
         loss_val = loss_val/n_batchs_val
 
+        # train_metrics = dict(zip(net.metrics_names, loss_tr.tolist()[0]))
+        # val_metrics = dict(zip(net.metrics_names, loss_val.tolist()[0]))
+        train_metrics = dict(zip(metrics_names, loss_tr.tolist()[0]))
+        val_metrics = dict(zip(metrics_names, loss_val.tolist()[0]))
         if not args.multitasking:
             # print(f'loss_val shape: {loss_val.shape}')
-            train_metrics = dict(zip(metrics_names, loss_tr.tolist()[0]))
-            val_metrics = dict(zip(metrics_names, loss_val.tolist()[0]))
             train_loss = train_metrics['loss']
             train_acc = train_metrics['accuracy']
             val_loss = val_metrics['loss']
@@ -215,9 +217,6 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                                     epoch, 'Total', train_loss, val_loss,
                                     train_acc, val_acc, val_mcc=mcc)
         else:
-            train_metrics = dict(zip(net.metrics_names, loss_tr.tolist()[0]))
-            val_metrics = dict(zip(net.metrics_names, loss_val.tolist()[0]))
-
             mcc = compute_mcc(val_metrics['seg_true_positives'],
                               val_metrics['seg_true_negatives'],
                               val_metrics['seg_false_positives'],
