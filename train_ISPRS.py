@@ -467,6 +467,7 @@ if __name__ == '__main__':
             resuneta = Resunet_a((rows, cols, channels), args.num_classes, args)
             model = resuneta.model
             model.summary()
+            model = multi_gpu_model(model, gpus=2)
             model.compile(optimizer=optm, loss=loss, metrics=['accuracy', tf.keras.metrics.TruePositives(),
                                                        tf.keras.metrics.FalsePositives(),
                                                        tf.keras.metrics.TrueNegatives(),
