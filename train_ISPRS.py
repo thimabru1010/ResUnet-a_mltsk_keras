@@ -97,8 +97,10 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
     print(model.metrics)
     for epoch in range(epochs):
         metrics_len = len(net.metrics_names)
-        loss_tr = np.zeros((1, metrics_len))
-        loss_val = np.zeros((1, metrics_len))
+        # loss_tr = np.zeros((1, metrics_len))
+        # loss_val = np.zeros((1, metrics_len))
+        loss_tr = {}
+        loss_val = {}
         # Computing the number of batchs on training
         n_batchs_tr = len(x_train_paths)//batch_size
         # Random shuffle the data
@@ -138,9 +140,6 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                 y_train_b['dist'] = y_train_h_b_dist
                 y_train_b['color'] = y_train_h_b_color
 
-                print('='*30 + ' [CHECKING LOSS] ' + '='*30)
-                print(net.metrics_names)
-
                 loss_tr = loss_tr + net.train_on_batch(x=x_train_b, y=y_train_b, return_dict=True)
 
             print('='*30 + ' [CHECKING LOSS] ' + '='*30)
@@ -148,7 +147,7 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
             print(type(loss_tr))
             print(len(loss_tr))
             print(loss_tr)
-            print(loss_tr.shape)
+            # print(loss_tr.shape)
 
         # Training loss; Divide by the number of batches
         # print(loss_tr)
