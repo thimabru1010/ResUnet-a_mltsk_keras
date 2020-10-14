@@ -56,7 +56,7 @@ def add_tensorboard_scalars(train_writer, val_writer, epoch,
 
 def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                 y_val_paths, batch_size, epochs, x_shape_batch, y_shape_batch,
-                patience=10, delta=0.001):
+                patience=10, delta=0.001, metrics=None):
     # patches_train = x_train_paths
     print('Start training...')
     print('='*60)
@@ -141,7 +141,7 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                 print('='*30 + ' [CHECKING LOSS] ' + '='*30)
                 print(net.metrics_names)
 
-                loss_tr = loss_tr + net.train_on_batch(x=x_train_b, y=y_train_b)
+                loss_tr = loss_tr + net.train_on_batch(x=x_train_b, y=y_train_b, return_dict=True)
 
             print('='*30 + ' [CHECKING LOSS] ' + '='*30)
             print(net.metrics_names)
@@ -454,12 +454,13 @@ if __name__ == '__main__':
                     inputs, out = inp_out
                     model = KM.Model(inputs=inputs, outputs=out)
                     model.summary()
+                    metrics_dict = {'seg': ['accuracy', tf.keras.metrics.TruePositives(),
+                                   tf.keras.metrics.FalsePositives(),
+                                   tf.keras.metrics.TrueNegatives(),
+                                   tf.keras.metrics.FalseNegatives()]}
                     model.compile(optimizer=optm, loss=losses,
                                   loss_weights=lossWeights,
-                                  metrics={'seg': ['accuracy', tf.keras.metrics.TruePositives(),
-                                                 tf.keras.metrics.FalsePositives(),
-                                                 tf.keras.metrics.TrueNegatives(),
-                                                 tf.keras.metrics.FalseNegatives()]})
+                                  metrics=metrics_dict)
             else:
                 model.compile(optimizer=optm, loss=losses,
                               loss_weights=lossWeights, metrics={'seg': ['accuracy', tf.keras.metrics.TruePositives(),
@@ -496,7 +497,7 @@ if __name__ == '__main__':
         start_time = time.time()
         train_model(args, model, patches_tr, y_paths, patches_val, val_paths,
                     args.batch_size, args.epochs,
-                    x_shape_batch=x_shape_batch, y_shape_batch=y_shape_batch)
+                    x_shape_batch=x_shape_batch, y_shape_batch=y_shape_batch, metrics=metrics_dict)
         end_time = time.time() - start_time
         print(f'\nTraining took: {end_time / 3600} \n')
     else:
