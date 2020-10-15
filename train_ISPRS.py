@@ -92,11 +92,8 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                                     y_shape_batch[2], 3),
                                    dtype=np.float32)
 
-    # metrics_names = ['loss', 'seg_loss', 'bound_loss', 'dist_loss', 'color_loss', 'seg_accuracy', 'seg_true_positives', 'seg_false_positives', 'seg_true_negatives', 'seg_false_negatives']
-    metrics_names = ['loss', 'accuracy', 'true_positives', 'false_positives', 'true_negatives', 'false_negatives']
-    print(net.metrics_names)
+    # print(net.metrics_names)
     print(net.output_names)
-    print(model.metrics)
     for epoch in range(epochs):
         # metrics_len = len(net.metrics_names)
         metrics_len = len(metrics_names)
@@ -443,6 +440,11 @@ if __name__ == '__main__':
             lossWeights = {'seg': 1.0, 'bound': args.bound_weight,
                            'dist': args.dist_weight, 'color': args.color_weight}
 
+            metrics_dict = {'seg': ['accuracy', tf.keras.metrics.TruePositives(),
+                          tf.keras.metrics.FalsePositives(),
+                          tf.keras.metrics.TrueNegatives(),
+                          tf.keras.metrics.FalseNegatives()]}
+
             print(f'Loss Weights: {lossWeights}')
             if args.gpu_parallel:
                 with strategy.scope():
@@ -453,27 +455,21 @@ if __name__ == '__main__':
                     inputs, out = inp_out
                     model = KM.Model(inputs=inputs, outputs=out)
                     model.summary()
-                    metrics_dict = {'seg': ['accuracy', tf.keras.metrics.TruePositives(),
-                                   tf.keras.metrics.FalsePositives(),
-                                   tf.keras.metrics.TrueNegatives(),
-                                   tf.keras.metrics.FalseNegatives()]}
                     model.compile(optimizer=optm, loss=losses,
                                   loss_weights=lossWeights,
                                   metrics=metrics_dict)
             else:
                 model.compile(optimizer=optm, loss=losses,
-                              loss_weights=lossWeights, metrics={'seg': ['accuracy', tf.keras.metrics.TruePositives(),
-                                                                         tf.keras.metrics.FalsePositives(),
-                                                                         tf.keras.metrics.TrueNegatives(),
-                                                                         tf.keras.metrics.FalseNegatives()]})
+                              loss_weights=lossWeights, metrics=metrics_dict)
         else:
-            resuneta = Resunet_a((rows, cols, channels), args.num_classes, args)
-            model = resuneta.model
-            model.summary()
-            model.compile(optimizer=optm, loss=loss, metrics=['accuracy', tf.keras.metrics.TruePositives(),
-                                                       tf.keras.metrics.FalsePositives(),
-                                                       tf.keras.metrics.TrueNegatives(),
-                                                       tf.keras.metrics.FalseNegatives()])
+            with strategy.scope():
+                resuneta = Resunet_a((rows, cols, channels), args.num_classes, args)
+                model = resuneta.model
+                model.summary()
+                model.compile(optimizer=optm, loss=loss, metrics=['accuracy', tf.keras.metrics.TruePositives(),
+                                                           tf.keras.metrics.FalsePositives(),
+                                                           tf.keras.metrics.TrueNegatives(),
+                                                           tf.keras.metrics.FalseNegatives()])
 
         print('ResUnet-a compiled!')
     else:
@@ -484,8 +480,6 @@ if __name__ == '__main__':
                                                    tf.keras.metrics.TrueNegatives(),
                                                    tf.keras.metrics.FalseNegatives()])
 
-    filepath = './models/'
-
     if not os.path.exists(args.log_path):
         os.makedirs(args.log_path)
 
@@ -494,6 +488,10 @@ if __name__ == '__main__':
         x_shape_batch = (args.batch_size, args.patch_size, args.patch_size, 3)
         y_shape_batch = (args.batch_size, args.patch_size, args.patch_size, 5)
         start_time = time.time()
+        metrics_names = ['loss', 'seg_loss', 'bound_loss', 'dist_loss',
+                         'color_loss', 'seg_accuracy', 'seg_true_positives',
+                         'seg_false_positives', 'seg_true_negatives',
+                         'seg_false_negatives']
         train_model(args, model, patches_tr, y_paths, patches_val, val_paths,
                     args.batch_size, args.epochs,
                     x_shape_batch=x_shape_batch, y_shape_batch=y_shape_batch, metrics=metrics_dict)
@@ -504,7 +502,8 @@ if __name__ == '__main__':
         y_shape_batch = (args.batch_size, args.patch_size, args.patch_size, 5)
 
         start_time = time.time()
-
+        metrics_names = ['loss', 'accuracy', 'true_positives', 'false_positives',
+                         'true_negatives', 'false_negatives']
         train_model(args, model, patches_tr, y_paths, patches_val, val_paths,
                     args.batch_size, args.epochs,
                     x_shape_batch=x_shape_batch, y_shape_batch=y_shape_batch)
