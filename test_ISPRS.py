@@ -275,7 +275,6 @@ print(patches_test.shape)
 # with another_strategy.scope():
 another_strategy = tf.distribute.MirroredStrategy()
 with another_strategy.scope():
-    # model = load_model(args.model_path, custom_objects={'seg_loss': Tanimoto_dual_loss()})
     model = load_model(args.model_path, compile=False)
 model.summary()
 # Prediction
@@ -410,98 +409,3 @@ if args.use_multitasking:
         plt.savefig(os.path.join(args.output_path, f'pred{i}_color.jpg'))
         plt.show()
         plt.close()
-
-
-# if not args.multitasking:
-#     img_reconstructed = pred_recostruction(patch_size, patches_pred, binary_img_test_ref, 1)
-#     img_reconstructed_rgb = reconstruction_rgb_prdiction_patches(img_reconstructed, label_dict)
-#
-#     plt.imsave(f'img_reconstructed_rgb_exp{exp}.jpeg', img_reconstructed_rgb)
-# else:
-#     # segmentation
-#     patches_seg = np.argmax(patches_pred[0], axis=-1)
-#     img_reconstructed = pred_recostruction(patch_size, patches_seg, binary_img_test_ref, 1)
-#     img_reconstructed_rgb = reconstruction_rgb_prdiction_patches(img_reconstructed, label_dict)
-#
-#     plt.imsave(f'img_reconstructed_rgb_seg_exp{exp}.jpeg', img_reconstructed_rgb)
-#
-#     # Boundaries
-#     print(patches_pred[1].shape)
-#     pred_bound = np.sum(patches_pred[1],axis=-1)
-#     pred_bound /= pred_bound.max()
-#     print(pred_bound.shape)
-#     img_reconstructed = pred_recostruction(patch_size, pred_bound, binary_img_test_ref, 1)
-#
-#     fig1, (ax1, ax2) = plt.subplots(ncols=2, figsize=(13, 4))
-#     im = ax1.imshow(img_reconstructed,cmap=cm.Greys_r)
-#     ax1.set_title('Prediction')
-#
-#     # Creates Boundaries label
-#     patches_test_ref_h = tf.keras.utils.to_categorical(patches_test_ref, 5)
-#     bounds = get_boundary_labels(patches_test_ref_h)
-#     bounds = np.sum(bounds, axis=-1)/5
-#     img_reconstructed = pred_recostruction(patch_size, bounds, binary_img_test_ref, 1)
-#     im = ax2.imshow(img_reconstructed,cmap=cm.Greys_r)
-#     ax2.set_title('Reference')
-#     colorbar(im, ax2, fig1)
-#     #fig1.colorbar(im, ax=ax2)
-#
-#     plt.savefig('boundaries_pred_label.jpg')
-#     plt.show()
-#     print('Boundaries image saved!')
-#
-#     #plt.imsave(f'img_reconstructed_pred_bound_exp{exp}.jpeg', img_reconstructed)
-#
-#     # Distance transform
-#     pred_dist = np.sum(np.clip(patches_pred[2],a_min=0.3,a_max=1.0),axis=-1)
-#
-#     pred_dist = (pred_dist - pred_dist.min())/(pred_dist.max() - pred_dist.min())
-#     img_reconstructed = pred_recostruction(patch_size, pred_dist, binary_img_test_ref, 1)
-#
-#     fig2, (ax1, ax2) = plt.subplots(ncols=2, figsize=(13, 4))
-#     im = ax1.imshow(img_reconstructed,cmap=cm.Greys_r)
-#     ax1.set_title('Prediction')
-#     fig2.colorbar(im, ax=ax1)
-#     # Label creation
-#     patches_test_ref_h = tf.keras.utils.to_categorical(patches_test_ref, 5)
-#     dists = get_distance_labels(patches_test_ref_h)
-#     dists = np.sum(dists, axis=-1)/5
-#     img_reconstructed = pred_recostruction(patch_size, dists, binary_img_test_ref, 1)
-#     im = ax2.imshow(img_reconstructed,cmap=cm.Greys_r)
-#     ax2.set_title('Reference')
-#     fig2.colorbar(im, ax=ax2)
-#     plt.savefig('distance_pred_label.jpg')
-#     plt.show()
-#     print('Distance image saved!')
-#
-#     # Color transform
-#     fig3, (ax1, ax2, ax3) = plt.subplots(ncols=3, figsize=(13, 4))
-#     ax1.imshow(img_test.transpose((1,2,0)).astype(np.uint8))
-#     ax1.set_title('Original Image')
-#
-#     #rgb_img = hsv_to_rgb(patches_pred[3][10,:,:,:])*255
-#     rgb_img = convert_hsvpatches2rgb(patches_pred[3])
-#     img_reconstructed_rgb = pred_recostruction(patch_size, rgb_img, binary_img_test_ref, 2)
-#     #,rasterized=True
-#     ax2.imshow(img_reconstructed_rgb.astype(np.uint8))
-#     ax2.set_title('Prediction Reconstructed')
-#
-#     hsv_patches_label = get_color_labels(patches_test.astype(np.uint8))
-#     diff = np.mean(patches_pred[3] - hsv_patches_label ,axis=-1)
-#     diff =  2*(diff-diff.min())/(diff.max()-diff.min()) - np.ones_like(diff)
-#     #
-#     # fig2, ax2 = plt.subplots()
-#     # im = ax2.imshow(img_reconstructed,cmap=cm.Greys_r)
-#     # fig2.colorbar(im, ax=ax2)
-#     # plt.savefig('teste3.jpg')
-#
-#     img_reconstructed = pred_recostruction(patch_size, diff, binary_img_test_ref, 1)
-#     im = ax3.imshow(img_reconstructed,cmap=cm.Greys_r)
-#     ax3.set_title('Difference between both')
-#     #fig3.colorbar(im, ax=ax6)
-#     colorbar(im, ax3, fig3)
-#
-#
-#
-#     plt.savefig('color_pred_label.jpg')
-#     plt.show()

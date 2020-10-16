@@ -13,7 +13,7 @@ class Resunet_a(object):
 
     def build_model_ResUneta(self):
         def ResBlock(x_input, nfilter, kernel_size, dilation_rates, stride):
-            def branch(dilation_rate):
+            def branch(dilation_rate, x_input, nfilter, kernel_size, stride):
                 x = KL.BatchNormalization()(x_input)
                 x = KL.Activation('relu')(x)
                 x = KL.Conv2D(nfilter, kernel_size, strides=stride,
@@ -23,13 +23,14 @@ class Resunet_a(object):
                 x = KL.Conv2D(nfilter, kernel_size, strides=stride,
                               dilation_rate=dilation_rate, padding='same')(x)
                 return x
-            out = []
+            # Check this
+            out = [x_input]
             for d in dilation_rates:
-                out.append(branch(d))
-            if len(dilation_rates) > 1:
-                out = KL.Add()(out)
-            else:
-                out = out[0]
+                out.append(branch(d, x_input, nfilter, kernel_size, stride))
+            # if len(dilation_rates) > 1:
+            out = KL.Add()(out)
+            # else:
+            #     out = out[0]
             return out
 
         def Conv2DN(x, nfilter, kernel_size=(1, 1)):
@@ -49,14 +50,6 @@ class Resunet_a(object):
                 x3 = KL.MaxPooling2D(pool_size=(4, 4), strides=(4, 4))(x_input)
             if self.img_width >= 256:
                 x4 = KL.MaxPooling2D(pool_size=(8, 8), strides=(8, 8))(x_input)
-
-            # # Convs
-            # x1 = Conv2DN(x1, int(nfilter/4))
-            # x2 = Conv2DN(x2, int(nfilter/4))
-            # if self.img_width >= 128:
-            #     x3 = Conv2DN(x3, int(nfilter/4))
-            # if self.img_width >= 256:
-            #     x4 = Conv2DN(x4, int(nfilter/4))
 
             # Upsample
             x1 = KL.UpSampling2D(size=(1, 1))(x1)
@@ -94,6 +87,7 @@ class Resunet_a(object):
             return x
 
         def UpSampling(x, nfilter):
+            # Maybe should test bilinear
             x = KL.UpSampling2D(interpolation="nearest")(x)
             x = KL.Conv2D(nfilter, (1, 1))(x)
             x = KL.BatchNormalization()(x)
