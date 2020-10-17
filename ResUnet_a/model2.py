@@ -116,25 +116,23 @@ class Resunet_a(object):
         x = KL.Activation('relu')(x)
 
         # Decoder
-        # Nao deve começar com uma conv e sim Upsample ??????
-        # x = KL.Conv2D(512, (1, 1))(x)
         # Upsample + conv_normed with nfilter / 2 --> Altered by me feevos suggestion
         x = UpSampling(x, 256)
         x = combine(x, c6, 512)
-        x = ResBlock(x, 512, (3, 3), [1], 1)
-        # x = KL.Conv2D(256, (1, 1))(x)
+        # x = ResBlock(x, 512, (3, 3), [1], 1)
+        # This was on original implementation [Line 46]
+        # https://github.com/feevos/resuneta/blob/49d26563f84c737e07d34edfe30b56c59cbb4203/models/resunet_d6_causal_mtskcolor_ddist.py
+        x = ResBlock(x, 512, (3, 3), [1, 3, 5], 1)
         x = UpSampling(x, 128)
         x = combine(x, c5, 256)
         x = ResBlock(x, 256, (3, 3), [1, 3, 15], 1)
-        # x = KL.Conv2D(128, (1, 1))(x)
         x = UpSampling(x, 64)
         x = combine(x, c4, 128)
+        # x = ResBlock(x, 128, (3, 3), [1, 3, 15], 1)
         x = ResBlock(x, 128, (3, 3), [1, 3, 15], 1)
-        # x = KL.Conv2D(64, (1, 1))(x)
         x = UpSampling(x, 32)
         x = combine(x, c3, 64)
         x = ResBlock(x, 64, (3, 3), [1, 3, 15, 31], 1)
-        # x = KL.Conv2D(32, (1, 1))(x)
         x = UpSampling(x, 16)
         x = combine(x, c2, 32)
         x = ResBlock(x, 32, (3, 3), [1, 3, 15, 31], 1)
