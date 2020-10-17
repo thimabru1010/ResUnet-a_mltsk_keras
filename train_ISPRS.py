@@ -510,7 +510,7 @@ if __name__ == '__main__':
 
     # Create folder for checkpoint
     if not os.path.exists(args.checkpoint_path):
-        os.makedirs(args.log_path)
+        os.makedirs(args.checkpoint_path)
 
     # train the model
     if args.multitasking:
