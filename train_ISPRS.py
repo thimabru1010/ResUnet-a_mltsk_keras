@@ -494,7 +494,7 @@ if __name__ == '__main__':
         train_model(args, model, patches_tr, y_paths, patches_val, val_paths,
                     args.batch_size, args.epochs,
                     x_shape_batch=x_shape_batch, y_shape_batch=y_shape_batch,
-                    metrics_names=metrics_dict)
+                    metrics_names=metrics_names)
         end_time = time.time() - start_time
         print(f'\nTraining took: {end_time / 3600} \n')
     else:
