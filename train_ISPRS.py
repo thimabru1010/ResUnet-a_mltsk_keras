@@ -472,6 +472,9 @@ if __name__ == '__main__':
                 #         inputs, out = inp_out
                 #         model = KM.Model(inputs=inputs, outputs=out)
                 #         model.summary()
+                resuneta = Resunet_a((rows, cols, channels), args.num_classes, args)
+                model = resuneta.model
+                model.summary()
                 metrics_dict = {'seg': ['accuracy', tf.keras.metrics.TruePositives(),
                               tf.keras.metrics.FalsePositives(),
                               tf.keras.metrics.TrueNegatives(),
