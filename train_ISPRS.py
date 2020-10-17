@@ -52,7 +52,6 @@ def add_tensorboard_scalars(train_writer, val_writer, epoch,
             tf.summary.scalar(metric_name+'/MCC', val_mcc,
                             step=epoch)
 
-
 def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                 y_val_paths, batch_size, epochs, x_shape_batch, y_shape_batch,
                 patience=10, delta=0.001, metrics_names=None):
@@ -116,23 +115,31 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
         for batch in tqdm(range(n_batchs_tr), desc="Train"):
             x_train_paths_b = x_train_paths_rand[batch * batch_size:(batch + 1) * batch_size]
             y_train_paths_b_seg = y_train_paths_rand_seg[batch * batch_size:(batch + 1) * batch_size]
-            if args.multitasking:
-                y_train_paths_b_bound = y_train_paths_rand_bound[batch * batch_size:(batch + 1) * batch_size]
-
-                y_train_paths_b_dist = y_train_paths_rand_dist[batch * batch_size:(batch + 1) * batch_size]
-
-                y_train_paths_b_color = y_train_paths_rand_color[batch * batch_size:(batch + 1) * batch_size]
+            # if args.multitasking:
+            #     y_train_paths_b_bound = y_train_paths_rand_bound[batch * batch_size:(batch + 1) * batch_size]
+            #     y_train_paths_b_dist = y_train_paths_rand_dist[batch * batch_size:(batch + 1) * batch_size]
+            #     y_train_paths_b_color = y_train_paths_rand_color[batch * batch_size:(batch + 1) * batch_size]
             for b in range(batch_size):
                 x_train_b[b] = np.load(x_train_paths_b[b])
                 y_train_h_b_seg[b] = np.load(y_train_paths_b_seg[b])
-                if args.multitasking:
-                    y_train_h_b_bound[b] = np.load(y_train_paths_b_bound[b])
-                    y_train_h_b_dist[b] = np.load(y_train_paths_b_dist[b])
-                    y_train_h_b_color[b] = np.load(y_train_paths_b_color[b])
+                # if args.multitasking:
+                #     y_train_h_b_bound[b] = np.load(y_train_paths_b_bound[b])
+                #     y_train_h_b_dist[b] = np.load(y_train_paths_b_dist[b])
+                #     y_train_h_b_color[b] = np.load(y_train_paths_b_color[b])
 
             if not args.multitasking:
                 loss_tr = loss_tr + net.train_on_batch(x_train_b, y_train_h_b_seg)
             else:
+                # Get paths per batch on multitasking labels
+                y_train_paths_b_bound = y_train_paths_rand_bound[batch * batch_size:(batch + 1) * batch_size]
+                y_train_paths_b_dist = y_train_paths_rand_dist[batch * batch_size:(batch + 1) * batch_size]
+                y_train_paths_b_color = y_train_paths_rand_color[batch * batch_size:(batch + 1) * batch_size]
+                # Load multitasking labels
+                for b in range(batch_size):
+                    y_train_h_b_bound[b] = np.load(y_train_paths_b_bound[b])
+                    y_train_h_b_dist[b] = np.load(y_train_paths_b_dist[b])
+                    y_train_h_b_color[b] = np.load(y_train_paths_b_color[b])
+
                 y_train_b = {"seg": y_train_h_b_seg}
                 y_train_b['bound'] = y_train_h_b_bound
                 y_train_b['dist'] = y_train_h_b_dist
@@ -158,23 +165,30 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
         for batch in tqdm(range(n_batchs_val), desc="Validation"):
             x_val_paths_b = x_val_paths[batch * batch_size:(batch + 1) * batch_size]
             y_val_paths_b_seg = y_val_paths[0][batch * batch_size:(batch + 1) * batch_size]
-            if args.multitasking:
-                y_val_paths_b_bound = y_val_paths[1][batch * batch_size:(batch + 1) * batch_size]
-
-                y_val_paths_b_dist = y_val_paths[2][batch * batch_size:(batch + 1) * batch_size]
-
-                y_val_paths_b_color = y_val_paths[3][batch * batch_size:(batch + 1) * batch_size]
+            # if args.multitasking:
+            #     y_val_paths_b_bound = y_val_paths[1][batch * batch_size:(batch + 1) * batch_size]
+            #     y_val_paths_b_dist = y_val_paths[2][batch * batch_size:(batch + 1) * batch_size]
+            #     y_val_paths_b_color = y_val_paths[3][batch * batch_size:(batch + 1) * batch_size]
             for b in range(batch_size):
                 x_val_b[b] = np.load(x_val_paths_b[b])
                 y_val_h_b_seg[b] = np.load(y_val_paths_b_seg[b])
-                if args.multitasking:
-                    y_val_h_b_bound[b] = np.load(y_val_paths_b_bound[b])
-                    y_val_h_b_dist[b] = np.load(y_val_paths_b_dist[b])
-                    y_val_h_b_color[b] = np.load(y_val_paths_b_color[b])
+                # if args.multitasking:
+                #     y_val_h_b_bound[b] = np.load(y_val_paths_b_bound[b])
+                #     y_val_h_b_dist[b] = np.load(y_val_paths_b_dist[b])
+                #     y_val_h_b_color[b] = np.load(y_val_paths_b_color[b])
 
             if not args.multitasking:
                 loss_val = loss_val + net.test_on_batch(x_val_b, y_val_h_b_seg)
             else:
+                # Get paths per batch on multitasking labels
+                y_val_paths_b_bound = y_val_paths[1][batch * batch_size:(batch + 1) * batch_size]
+                y_val_paths_b_dist = y_val_paths[2][batch * batch_size:(batch + 1) * batch_size]
+                y_val_paths_b_color = y_val_paths[3][batch * batch_size:(batch + 1) * batch_size]
+                # Load multitasking labels
+                for b in range(batch_size):
+                    y_val_h_b_bound[b] = np.load(y_val_paths_b_bound[b])
+                    y_val_h_b_dist[b] = np.load(y_val_paths_b_dist[b])
+                    y_val_h_b_color[b] = np.load(y_val_paths_b_color[b])
                 # Dict template: y_val_b = {"segmentation": y_val_h_b_seg,
                 # "boundary": y_val_h_b_bound, "distance":  y_val_h_b_dist,
                 # "color": y_val_h_b_color}
@@ -282,15 +296,14 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
             print(f'EarlyStopping counter: {cont} out of {patience}')
             if cont >= patience:
                 print("Early Stopping! \t Training Stopped")
-                print("Saving model...")
-                net.save('weights/model_early_stopping.h5')
+                # print("Saving model...")
+                # net.save(os.path.join(args.checkpoint, 'model_early_stopping.h5'))
                 return net
         else:
             cont = 0
-            # best_score = score
             min_loss = val_loss
             print("Saving best model...")
-            net.save('weights/best_model.h5')
+            net.save(os.path.join(args.checkpoint, 'best_model.h5'))
 
 # End functions definition -----------------------------------------------------
 
@@ -306,7 +319,9 @@ if __name__ == '__main__':
                         type=str2bool, default=False)
     parser.add_argument("--log_path", help="Path where to save logs",
                         type=str, default='./results/log_run1')
-    parser.add_argument("--dataset_path", help="Path where to load dataset",
+    parser.add_argument("-cp", "--checkpoint_path", help="Path where to save model checkpoint",
+                        type=str, default='./results/checkpoint_run1')
+    parser.add_argument("-dp", "--dataset_path", help="Path where to load dataset",
                         type=str, default='./DATASETS/patch_size=256_stride=32')
     parser.add_argument("-bs", "--batch_size", help="Batch size on training",
                         type=int, default=4)
@@ -342,11 +357,14 @@ if __name__ == '__main__':
         tf.config.experimental.set_memory_growth(device, True)
     # tf.config.experimental.set_memory_growth(gpu_devices[0][0], True)
     # tf.config.experimental.set_memory_growth(gpu_devices[1][0], True)
-    if args.gpu_parallel:
-        strategy = tf.distribute.MirroredStrategy()
-        print(f'Number of devices: {strategy.num_replicas_in_sync}')
-    else:
-        strategy = None
+    # if args.gpu_parallel:
+    #     strategy = tf.distribute.MirroredStrategy()
+    #     print(f'Number of devices: {strategy.num_replicas_in_sync}')
+    # else:
+    #     strategy = None
+
+    strategy = tf.distribute.MirroredStrategy()
+    print(f'Number of devices: {strategy.num_replicas_in_sync}')
 
     tf.config.experimental_run_functions_eagerly(False)
     #tf.config.run_functions_eagerly(True)
@@ -401,11 +419,13 @@ if __name__ == '__main__':
     cols = args.patch_size
     channels = 3
 
+    # Define optimizer
     if args.optimizer == 'adam':
         optm = Adam(lr=args.learning_rate, beta_1=0.9)
     elif args.optimizer == 'sgd':
         optm = SGD(lr=args.learning_rate, momentum=0.8)
 
+    # Define Loss
     print('='*60)
     if args.loss == 'cross_entropy':
         print('Using Cross Entropy')
@@ -427,41 +447,43 @@ if __name__ == '__main__':
         loss_color = "categorical_crossentropy"
     print('='*60)
 
-    if args.resunet_a:
-        if args.multitasking:
-            print('Multitasking enabled!')
-            if not args.gpu_parallel:
-                resuneta = Resunet_a((rows, cols, channels), args.num_classes, args)
-                model = resuneta.model
-                model.summary()
-
-            losses = {'seg': loss, 'bound': loss,
-                      'dist': loss_reg, 'color': loss_reg}
-            lossWeights = {'seg': 1.0, 'bound': args.bound_weight,
-                           'dist': args.dist_weight, 'color': args.color_weight}
-
-            print(f'Loss Weights: {lossWeights}')
-            if args.gpu_parallel:
-                with strategy.scope():
-                    inputs = KE.Input(shape=(args.patch_size,
-                                      args.patch_size, 3))
-                    resuneta = Resunet_a((rows, cols, channels), args.num_classes, args, inputs=inputs)
-                    inp_out = resuneta.model
-                    inputs, out = inp_out
-                    model = KM.Model(inputs=inputs, outputs=out)
+    # Compile Models
+    with strategy.scope():
+        if args.resunet_a:
+            if args.multitasking:
+                print('Multitasking enabled!')
+                if not args.gpu_parallel:
+                    resuneta = Resunet_a((rows, cols, channels), args.num_classes, args)
+                    model = resuneta.model
                     model.summary()
-                    metrics_dict = {'seg': ['accuracy', tf.keras.metrics.TruePositives(),
-                                  tf.keras.metrics.FalsePositives(),
-                                  tf.keras.metrics.TrueNegatives(),
-                                  tf.keras.metrics.FalseNegatives()]}
-                    model.compile(optimizer=optm, loss=losses,
-                                  loss_weights=lossWeights,
-                                  metrics=metrics_dict)
-            else:
+
+                losses = {'seg': loss, 'bound': loss,
+                          'dist': loss_reg, 'color': loss_reg}
+                lossWeights = {'seg': 1.0, 'bound': args.bound_weight,
+                               'dist': args.dist_weight, 'color': args.color_weight}
+
+                print(f'Loss Weights: {lossWeights}')
+                # if args.gpu_parallel:
+                #     with strategy.scope():
+                #         inputs = KE.Input(shape=(args.patch_size,
+                #                           args.patch_size, 3))
+                #         resuneta = Resunet_a((rows, cols, channels), args.num_classes, args, inputs=inputs)
+                #         inp_out = resuneta.model
+                #         inputs, out = inp_out
+                #         model = KM.Model(inputs=inputs, outputs=out)
+                #         model.summary()
+                metrics_dict = {'seg': ['accuracy', tf.keras.metrics.TruePositives(),
+                              tf.keras.metrics.FalsePositives(),
+                              tf.keras.metrics.TrueNegatives(),
+                              tf.keras.metrics.FalseNegatives()]}
+                #         model.compile(optimizer=optm, loss=losses,
+                #                       loss_weights=lossWeights,
+                #                       metrics=metrics_dict)
+                # else:
                 model.compile(optimizer=optm, loss=losses,
                               loss_weights=lossWeights, metrics=metrics_dict)
-        else:
-            with strategy.scope():
+            else:
+                #with strategy.scope():
                 resuneta = Resunet_a((rows, cols, channels), args.num_classes, args)
                 model = resuneta.model
                 model.summary()
@@ -470,16 +492,21 @@ if __name__ == '__main__':
                                                            tf.keras.metrics.TrueNegatives(),
                                                            tf.keras.metrics.FalseNegatives()])
 
-        print('ResUnet-a compiled!')
-    else:
-        model = unet((rows, cols, channels), args.num_classes)
-        model.summary()
-        model.compile(optimizer=optm, loss=loss, metrics=['accuracy', tf.keras.metrics.TruePositives(),
-                                                   tf.keras.metrics.FalsePositives(),
-                                                   tf.keras.metrics.TrueNegatives(),
-                                                   tf.keras.metrics.FalseNegatives()])
+            print('ResUnet-a compiled!')
+        else:
+            model = unet((rows, cols, channels), args.num_classes)
+            model.summary()
+            model.compile(optimizer=optm, loss=loss, metrics=['accuracy', tf.keras.metrics.TruePositives(),
+                                                       tf.keras.metrics.FalsePositives(),
+                                                       tf.keras.metrics.TrueNegatives(),
+                                                       tf.keras.metrics.FalseNegatives()])
 
+    # create folder for logs
     if not os.path.exists(args.log_path):
+        os.makedirs(args.log_path)
+
+    # Create folder for checkpoint
+    if not os.path.exists(args.checkpoint_path):
         os.makedirs(args.log_path)
 
     # train the model

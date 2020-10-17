@@ -93,9 +93,9 @@ class Resunet_a(object):
             x = KL.BatchNormalization()(x)
             return x
 
-        if self.inputs is None:
-            self.inputs = KE.Input(shape=(self.img_height,
-                          self.img_width, self.img_channel))
+        # if self.inputs is None:
+        self.inputs = KE.Input(shape=(self.img_height,
+                                      self.img_width, self.img_channel))
 
         # Encoder
         c1 = x = KL.Conv2D(32, (1, 1), strides=(1, 1), dilation_rate=1)(self.inputs)
@@ -190,11 +190,11 @@ class Resunet_a(object):
             out.append(out_color)
 
             # out = [out_seg, out_bound, out_dist, out_color]
-            if self.args.gpu_parallel:
-                return self.inputs, out
-                # model=KM.Model(inputs=inputs,outputs=out)
-            else:
-                model = KM.Model(inputs=self.inputs, outputs={'seg': out_seg, 'bound': out_bound, 'dist': out_dist,
+            # if self.args.gpu_parallel:
+            #     return self.inputs, out
+            #     # model=KM.Model(inputs=inputs,outputs=out)
+            # else:
+            model = KM.Model(inputs=self.inputs, outputs={'seg': out_seg, 'bound': out_bound, 'dist': out_dist,
                                                               'color': out_color})
 
         return model
