@@ -440,11 +440,6 @@ if __name__ == '__main__':
             lossWeights = {'seg': 1.0, 'bound': args.bound_weight,
                            'dist': args.dist_weight, 'color': args.color_weight}
 
-            metrics_dict = {'seg': ['accuracy', tf.keras.metrics.TruePositives(),
-                          tf.keras.metrics.FalsePositives(),
-                          tf.keras.metrics.TrueNegatives(),
-                          tf.keras.metrics.FalseNegatives()]}
-
             print(f'Loss Weights: {lossWeights}')
             if args.gpu_parallel:
                 with strategy.scope():
@@ -455,6 +450,10 @@ if __name__ == '__main__':
                     inputs, out = inp_out
                     model = KM.Model(inputs=inputs, outputs=out)
                     model.summary()
+                    metrics_dict = {'seg': ['accuracy', tf.keras.metrics.TruePositives(),
+                                  tf.keras.metrics.FalsePositives(),
+                                  tf.keras.metrics.TrueNegatives(),
+                                  tf.keras.metrics.FalseNegatives()]}
                     model.compile(optimizer=optm, loss=losses,
                                   loss_weights=lossWeights,
                                   metrics=metrics_dict)
