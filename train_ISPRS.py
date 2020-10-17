@@ -64,9 +64,9 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
     print(f'Total Epochs: {epochs}')
     # Initialize tensorboard metrics
     train_summary_writer = tf.summary.create_file_writer(
-        os.path.join(args.log_path, 'train'))
+        os.path.join(args.results_path, 'logs', 'train'))
     val_summary_writer = tf.summary.create_file_writer(
-        os.path.join(args.log_path, 'val'))
+        os.path.join(args.results_path, 'logs', 'val'))
     # Initialize as maximum possible number
     min_loss = float('inf')
     cont = 0
@@ -303,7 +303,7 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
             cont = 0
             min_loss = val_loss
             print("Saving best model...")
-            net.save(os.path.join(args.checkpoint, 'best_model.h5'))
+            net.save(os.path.join(args.results_path, 'best_model.h5'))
 
 # End functions definition -----------------------------------------------------
 
@@ -317,10 +317,8 @@ if __name__ == '__main__':
     parser.add_argument("--gpu_parallel",
                         help="choose 1 to train one multiple gpu",
                         type=str2bool, default=False)
-    parser.add_argument("--log_path", help="Path where to save logs",
-                        type=str, default='./results/log_run1')
-    parser.add_argument("-cp", "--checkpoint_path", help="Path where to save model checkpoint",
-                        type=str, default='./results/checkpoint_run1')
+    parser.add_argument("--results_path", help="Path where to save logs and model checkpoint",
+                        type=str, default='./results/results_run1')
     parser.add_argument("-dp", "--dataset_path", help="Path where to load dataset",
                         type=str, default='./DATASETS/patch_size=256_stride=32')
     parser.add_argument("-bs", "--batch_size", help="Batch size on training",
@@ -355,13 +353,6 @@ if __name__ == '__main__':
     for device in gpu_devices:
         print(device)
         tf.config.experimental.set_memory_growth(device, True)
-    # tf.config.experimental.set_memory_growth(gpu_devices[0][0], True)
-    # tf.config.experimental.set_memory_growth(gpu_devices[1][0], True)
-    # if args.gpu_parallel:
-    #     strategy = tf.distribute.MirroredStrategy()
-    #     print(f'Number of devices: {strategy.num_replicas_in_sync}')
-    # else:
-    #     strategy = None
 
     strategy = tf.distribute.MirroredStrategy()
     print(f'Number of devices: {strategy.num_replicas_in_sync}')
@@ -463,15 +454,6 @@ if __name__ == '__main__':
                                'dist': args.dist_weight, 'color': args.color_weight}
 
                 print(f'Loss Weights: {lossWeights}')
-                # if args.gpu_parallel:
-                #     with strategy.scope():
-                #         inputs = KE.Input(shape=(args.patch_size,
-                #                           args.patch_size, 3))
-                #         resuneta = Resunet_a((rows, cols, channels), args.num_classes, args, inputs=inputs)
-                #         inp_out = resuneta.model
-                #         inputs, out = inp_out
-                #         model = KM.Model(inputs=inputs, outputs=out)
-                #         model.summary()
                 resuneta = Resunet_a((rows, cols, channels), args.num_classes, args)
                 model = resuneta.model
                 model.summary()
@@ -505,12 +487,12 @@ if __name__ == '__main__':
                                                        tf.keras.metrics.FalseNegatives()])
 
     # create folder for logs
-    if not os.path.exists(args.log_path):
-        os.makedirs(args.log_path)
+    # if not os.path.exists(args.log_path):
+    #     os.makedirs(args.log_path)
 
-    # Create folder for checkpoint
-    if not os.path.exists(args.checkpoint_path):
-        os.makedirs(args.checkpoint_path)
+    # Create folder for logs and model checkpoint
+    if not os.path.exists(args.results_path):
+        os.makedirs(args.results_path)
 
     # train the model
     if args.multitasking:
