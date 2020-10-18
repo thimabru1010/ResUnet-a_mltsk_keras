@@ -1,5 +1,5 @@
 import time
-from utils import np, unet, weighted_categorical_crossentropy, Adam
+from utils import np, unet, weighted_categorical_crossentropy, Adam, SGD, load_model, K
 
 from ResUnet_a.model2 import Resunet_a
 from multitasking_utils import Tanimoto_dual_loss
@@ -317,8 +317,12 @@ if __name__ == '__main__':
     parser.add_argument("--gpu_parallel",
                         help="choose 1 to train one multiple gpu",
                         type=str2bool, default=False)
-    parser.add_argument("--results_path", help="Path where to save logs and model checkpoint",
+    parser.add_argument("-rp", "--results_path", help="Path where to save logs and model checkpoint. \
+                        Logs and checkpoint will be saved inside this folder.",
                         type=str, default='./results/results_run1')
+    parser.add_argument("-cp", "--checkpoint_path", help="Path where to load \
+                        model checkpoint to continue training",
+                        type=str, default=None)
     parser.add_argument("-dp", "--dataset_path", help="Path where to load dataset",
                         type=str, default='./DATASETS/patch_size=256_stride=32')
     parser.add_argument("-bs", "--batch_size", help="Batch size on training",
@@ -440,55 +444,54 @@ if __name__ == '__main__':
 
     # Compile Models
     with strategy.scope():
-        if args.resunet_a:
-            if args.multitasking:
-                print('Multitasking enabled!')
-                if not args.gpu_parallel:
+        if args.checkpoint_path is None:
+            if args.resunet_a:
+                if args.multitasking:
+                    print('Multitasking enabled!')
+                    losses = {'seg': loss, 'bound': loss,
+                              'dist': loss_reg, 'color': loss_reg}
+                    lossWeights = {'seg': 1.0, 'bound': args.bound_weight,
+                                   'dist': args.dist_weight, 'color': args.color_weight}
+
+                    print(f'Loss Weights: {lossWeights}')
                     resuneta = Resunet_a((rows, cols, channels), args.num_classes, args)
                     model = resuneta.model
                     model.summary()
+                    metrics_dict = {'seg': ['accuracy', tf.keras.metrics.TruePositives(),
+                                  tf.keras.metrics.FalsePositives(),
+                                  tf.keras.metrics.TrueNegatives(),
+                                  tf.keras.metrics.FalseNegatives()]}
 
-                losses = {'seg': loss, 'bound': loss,
-                          'dist': loss_reg, 'color': loss_reg}
-                lossWeights = {'seg': 1.0, 'bound': args.bound_weight,
-                               'dist': args.dist_weight, 'color': args.color_weight}
+                    model.compile(optimizer=optm, loss=losses,
+                                  loss_weights=lossWeights, metrics=metrics_dict)
+                else:
+                    print("Using simple ResUnet-a")
+                    resuneta = Resunet_a((rows, cols, channels), args.num_classes, args)
+                    model = resuneta.model
+                    model.summary()
+                    model.compile(optimizer=optm, loss=loss, metrics=['accuracy', tf.keras.metrics.TruePositives(),
+                                                               tf.keras.metrics.FalsePositives(),
+                                                               tf.keras.metrics.TrueNegatives(),
+                                                               tf.keras.metrics.FalseNegatives()])
 
-                print(f'Loss Weights: {lossWeights}')
-                resuneta = Resunet_a((rows, cols, channels), args.num_classes, args)
-                model = resuneta.model
-                model.summary()
-                metrics_dict = {'seg': ['accuracy', tf.keras.metrics.TruePositives(),
-                              tf.keras.metrics.FalsePositives(),
-                              tf.keras.metrics.TrueNegatives(),
-                              tf.keras.metrics.FalseNegatives()]}
-                #         model.compile(optimizer=optm, loss=losses,
-                #                       loss_weights=lossWeights,
-                #                       metrics=metrics_dict)
-                # else:
-                model.compile(optimizer=optm, loss=losses,
-                              loss_weights=lossWeights, metrics=metrics_dict)
+                print('ResUnet-a compiled!')
             else:
-                #with strategy.scope():
-                resuneta = Resunet_a((rows, cols, channels), args.num_classes, args)
-                model = resuneta.model
+                model = unet((rows, cols, channels), args.num_classes)
                 model.summary()
                 model.compile(optimizer=optm, loss=loss, metrics=['accuracy', tf.keras.metrics.TruePositives(),
                                                            tf.keras.metrics.FalsePositives(),
                                                            tf.keras.metrics.TrueNegatives(),
                                                            tf.keras.metrics.FalseNegatives()])
-
-            print('ResUnet-a compiled!')
         else:
-            model = unet((rows, cols, channels), args.num_classes)
-            model.summary()
-            model.compile(optimizer=optm, loss=loss, metrics=['accuracy', tf.keras.metrics.TruePositives(),
-                                                       tf.keras.metrics.FalsePositives(),
-                                                       tf.keras.metrics.TrueNegatives(),
-                                                       tf.keras.metrics.FalseNegatives()])
+            # load checkpoint compiled
+            print(f"[INFO] loading {args.checkpoint_path}...")
+            model = load_model(args.checkpoint_path)
 
-    # create folder for logs
-    # if not os.path.exists(args.log_path):
-    #     os.makedirs(args.log_path)
+            # update the learning rate
+            print(f"[INFO] old learning rate: {K.get_value(model.optimizer.lr)}"
+            K.set_value(model.optimizer.lr, args.learning_rate)
+            print(f"[INFO] new learning rate: {K.get_value(model.optimizer.lr)}")
+
 
     # Create folder for logs and model checkpoint
     if not os.path.exists(args.results_path):

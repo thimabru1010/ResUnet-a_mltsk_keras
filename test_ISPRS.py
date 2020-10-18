@@ -283,10 +283,15 @@ print('='*40)
 print('[TEST]')
 
 if args.use_multitasking:
+    print(len(patches_pred))
+    # print(patches_pred['seg'])
+    print(type(patches_pred))
     print(model.output_names)
     preds = dict(zip(model.output_names, patches_pred))
     print(preds.keys())
+    print(preds)
     # seg_preds = patches_pred[3]
+    preds = patches_pred
     seg_preds = preds['seg']
     print(f'seg shape argmax: {seg_preds.shape}')
     seg_pred = np.argmax(seg_preds, axis=-1)

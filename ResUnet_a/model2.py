@@ -93,12 +93,12 @@ class Resunet_a(object):
             x = KL.BatchNormalization()(x)
             return x
 
-        # if self.inputs is None:
-        self.inputs = KE.Input(shape=(self.img_height,
+        # Architecture ---------------------------------------------------------
+        model_input = KE.Input(shape=(self.img_height,
                                       self.img_width, self.img_channel))
 
         # Encoder
-        c1 = x = KL.Conv2D(32, (1, 1), strides=(1, 1), dilation_rate=1)(self.inputs)
+        c1 = x = KL.Conv2D(32, (1, 1), strides=(1, 1), dilation_rate=1)(model_input)
         c2 = x = ResBlock(x, 32, (3, 3), [1, 3, 15, 31], (1, 1))
         x = KL.Conv2D(64, (1, 1), strides=(2, 2))(x)
         c3 = x = ResBlock(x, 64, (3, 3), [1, 3, 15, 31], (1, 1))
@@ -119,17 +119,17 @@ class Resunet_a(object):
         # Upsample + conv_normed with nfilter / 2 --> Altered by me feevos suggestion
         x = UpSampling(x, 256)
         x = combine(x, c6, 512)
-        # x = ResBlock(x, 512, (3, 3), [1], 1)
+        x = ResBlock(x, 512, (3, 3), [1], 1)
         # This was on original implementation [Line 46]
         # https://github.com/feevos/resuneta/blob/49d26563f84c737e07d34edfe30b56c59cbb4203/models/resunet_d6_causal_mtskcolor_ddist.py
-        x = ResBlock(x, 512, (3, 3), [1, 3, 5], 1)
+        # x = ResBlock(x, 512, (3, 3), [1, 3, 5], 1)
         x = UpSampling(x, 128)
         x = combine(x, c5, 256)
         x = ResBlock(x, 256, (3, 3), [1, 3, 15], 1)
         x = UpSampling(x, 64)
         x = combine(x, c4, 128)
-        # x = ResBlock(x, 128, (3, 3), [1, 3, 15], 1)
         x = ResBlock(x, 128, (3, 3), [1, 3, 15], 1)
+        # x = ResBlock(x, 128, (3, 3), [1, 3, 15, 31], 1)
         x = UpSampling(x, 32)
         x = combine(x, c3, 64)
         x = ResBlock(x, 64, (3, 3), [1, 3, 15, 31], 1)
@@ -144,7 +144,7 @@ class Resunet_a(object):
         if not self.args.multitasking:
             x = KL.Conv2D(self.num_classes, (1, 1))(x_psp)
             x = KL.Activation('softmax')(x)
-            model = KM.Model(inputs=self.inputs, outputs=x)
+            model = KM.Model(inputs=model_input, outputs=x)
         else:
             # Models' output
             out = []
@@ -187,12 +187,7 @@ class Resunet_a(object):
                                   padding='valid', name='color')(x_comb)
             out.append(out_color)
 
-            # out = [out_seg, out_bound, out_dist, out_color]
-            # if self.args.gpu_parallel:
-            #     return self.inputs, out
-            #     # model=KM.Model(inputs=inputs,outputs=out)
-            # else:
-            model = KM.Model(inputs=self.inputs, outputs={'seg': out_seg, 'bound': out_bound, 'dist': out_dist,
+            model = KM.Model(inputs=model_input, outputs={'seg': out_seg, 'bound': out_bound, 'dist': out_dist,
                                                               'color': out_color})
 
         return model
