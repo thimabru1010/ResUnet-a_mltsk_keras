@@ -323,15 +323,15 @@ if __name__ == '__main__':
             # All multitasking labels are saved in one-hot
             # Segmentation
             np.save(os.path.join(folder_path, 'labels/seg', filename(i*5 + j)),
-                    label_aug_h[j])
+                    label_aug_h[j].astype(np.float32))
             # Boundary
             bound_label_h = get_boundary_label(label_aug_h[j])
             np.save(os.path.join(folder_path, 'labels/bound', filename(i*5 + j)),
-                    bound_label_h)
+                    bound_label_h.astype(np.float32))
             # Distance
             dist_label_h = get_distance_label(label_aug_h[j])
             np.save(os.path.join(folder_path, 'labels/dist', filename(i*5 + j)),
-                    dist_label_h)
+                    dist_label_h.astype(np.float32))
             # Color
             hsv_patch = cv2.cvtColor(img_aug[j],
                                      cv2.COLOR_RGB2HSV).astype(np.float32)

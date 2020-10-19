@@ -121,7 +121,7 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
             #     y_train_paths_b_color = y_train_paths_rand_color[batch * batch_size:(batch + 1) * batch_size]
             for b in range(batch_size):
                 x_train_b[b] = np.load(x_train_paths_b[b])
-                y_train_h_b_seg[b] = np.load(y_train_paths_b_seg[b])
+                y_train_h_b_seg[b] = np.load(y_train_paths_b_seg[b]).astype(np.float32)
                 # if args.multitasking:
                 #     y_train_h_b_bound[b] = np.load(y_train_paths_b_bound[b])
                 #     y_train_h_b_dist[b] = np.load(y_train_paths_b_dist[b])
@@ -136,9 +136,9 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                 y_train_paths_b_color = y_train_paths_rand_color[batch * batch_size:(batch + 1) * batch_size]
                 # Load multitasking labels
                 for b in range(batch_size):
-                    y_train_h_b_bound[b] = np.load(y_train_paths_b_bound[b])
-                    y_train_h_b_dist[b] = np.load(y_train_paths_b_dist[b])
-                    y_train_h_b_color[b] = np.load(y_train_paths_b_color[b])
+                    y_train_h_b_bound[b] = np.load(y_train_paths_b_bound[b]).astype(np.float32)
+                    y_train_h_b_dist[b] = np.load(y_train_paths_b_dist[b]).astype(np.float32)
+                    y_train_h_b_color[b] = np.load(y_train_paths_b_color[b]).astype(np.float32)
 
                 y_train_b = {"seg": y_train_h_b_seg}
                 y_train_b['bound'] = y_train_h_b_bound
@@ -171,7 +171,7 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
             #     y_val_paths_b_color = y_val_paths[3][batch * batch_size:(batch + 1) * batch_size]
             for b in range(batch_size):
                 x_val_b[b] = np.load(x_val_paths_b[b])
-                y_val_h_b_seg[b] = np.load(y_val_paths_b_seg[b])
+                y_val_h_b_seg[b] = np.load(y_val_paths_b_seg[b]).astype(np.float32)
                 # if args.multitasking:
                 #     y_val_h_b_bound[b] = np.load(y_val_paths_b_bound[b])
                 #     y_val_h_b_dist[b] = np.load(y_val_paths_b_dist[b])
@@ -186,9 +186,9 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
                 y_val_paths_b_color = y_val_paths[3][batch * batch_size:(batch + 1) * batch_size]
                 # Load multitasking labels
                 for b in range(batch_size):
-                    y_val_h_b_bound[b] = np.load(y_val_paths_b_bound[b])
-                    y_val_h_b_dist[b] = np.load(y_val_paths_b_dist[b])
-                    y_val_h_b_color[b] = np.load(y_val_paths_b_color[b])
+                    y_val_h_b_bound[b] = np.load(y_val_paths_b_bound[b]).astype(np.float32)
+                    y_val_h_b_dist[b] = np.load(y_val_paths_b_dist[b]).astype(np.float32)
+                    y_val_h_b_color[b] = np.load(y_val_paths_b_color[b]).astype(np.float32)
                 # Dict template: y_val_b = {"segmentation": y_val_h_b_seg,
                 # "boundary": y_val_h_b_bound, "distance":  y_val_h_b_dist,
                 # "color": y_val_h_b_color}
