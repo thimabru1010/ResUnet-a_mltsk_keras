@@ -489,7 +489,7 @@ if __name__ == '__main__':
             model.summary()
 
             # update the learning rate
-            print(f"[INFO] old learning rate: {K.get_value(model.optimizer.lr)}"
+            print(f"[INFO] old learning rate: {K.get_value(model.optimizer.lr)}")
             K.set_value(model.optimizer.lr, args.learning_rate)
             print(f"[INFO] new learning rate: {K.get_value(model.optimizer.lr)}")
 
