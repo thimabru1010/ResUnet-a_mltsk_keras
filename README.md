@@ -19,3 +19,7 @@ GPU parallel is supported and ca be eabled with `--gpu_parallel`.
 ## Testing
 
 In Testig step, we have to chop the input image in patches to do the inference and then reconstruct the predicted images to compare with the original. Also, we can visualize each patch per class. For the color transformation in multitasking the prediction seen will be the RGB image converted from HSV and the difference normalized between the original and prediciton image in RGB. Besides the visualization, a confusion matrix, accuracy, F1-score, Recall and Precision will be calculated.
+
+# Acknowledgement
+
+Thanks [feevos](https://github.com/feevos/resuneta) for all the help during the creation of this repo.
