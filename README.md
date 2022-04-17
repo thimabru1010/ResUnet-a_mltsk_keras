@@ -16,6 +16,6 @@ The dataset path can be chosen with the args `-dp` or `--dataset_path`. The logs
 
 GPU parallel is supported and ca be eabled with `--gpu_parallel`.
 
-## Testig
+## Testing
 
 In Testig step, we have to chop the input image in patches to do the inference and then reconstruct the predicted images to compare with the original. Also, we can visualize each patch per class. For the color transformation in multitasking the prediction seen will be the RGB image converted from HSV and the difference normalized between the original and prediciton image in RGB. Besides the visualization, a confusion matrix, accuracy, F1-score, Recall and Precision will be calculated.
