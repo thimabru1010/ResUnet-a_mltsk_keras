@@ -44,7 +44,6 @@ def Tanimoto_loss(label, pred):
     smooth = 1e-5
 
     Vli = tf.reduce_mean(tf.reduce_sum(label, axis=[1,2]), axis=0)
-    # wli =  1.0/Vli**2 # weighting scheme
     wli = tf.math.reciprocal(Vli**2) # weighting scheme
 
     # ---------------------This line is taken from niftyNet package --------------
@@ -54,35 +53,18 @@ def Tanimoto_loss(label, pred):
     wli = tf.where(tf.math.is_inf(wli), tf.ones_like(wli) * tf.reduce_max(new_weights), wli)
     # --------------------------------------------------------------------
 
-    # print('[DEBUG LOSS]')
-    # print(label.shape)
-    # print(pred.shape)
-
     square_pred = tf.square(pred)
     square_label = tf.square(label)
     add_squared_label_pred = tf.add(square_pred, square_label)
     sum_square = tf.reduce_sum(add_squared_label_pred, axis=[1, 2])
-    # print('sum square')
-    # print(sum_square.shape)
 
     product = tf.multiply(pred, label)
     sum_product = tf.reduce_sum(product, axis=[1, 2])
-    # print('sum product')
-    # print(sum_product.shape)
     sum_product_labels = tf.reduce_sum(tf.multiply(wli, sum_product), axis=-1)
-    # print('sum product labels')
-    # print(sum_product_labels.shape)
 
     denomintor = tf.subtract(sum_square, sum_product)
-    # print('denominator')
-    # print(denomintor.shape)
     denomintor_sum_labels = tf.reduce_sum(tf.multiply(wli, denomintor), axis=-1)
-    # print('denominator sum labels')
-    # print(denomintor_sum_labels.shape)
-    # Add smooth to avoid numerical instability
     loss = tf.divide(sum_product_labels + smooth, denomintor_sum_labels + smooth)
-    # print('loss')
-    # print(loss.shape)
     return loss
 
 

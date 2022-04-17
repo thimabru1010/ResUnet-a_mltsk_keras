@@ -122,8 +122,8 @@ parser.add_argument("--num_classes",
                     help="Choose number of classes to convert \
                     labels to one hot encoding", type=int, default=5)
 parser.add_argument("--data_aug",
-                    help="Choose number of classes to convert \
-                    labels to one hot encoding", type=str2bool, default=True)
+                    help="Allow agumentation images to be added to the dataset \
+                    along with the original images", type=str2bool, default=True)
 args = parser.parse_args()
 
 print('='*50)

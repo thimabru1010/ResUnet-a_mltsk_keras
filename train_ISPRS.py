@@ -147,12 +147,6 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
 
                 loss_tr = loss_tr + net.train_on_batch(x=x_train_b, y=y_train_b, return_dict=False)
 
-            # print('='*30 + ' [CHECKING LOSS] ' + '='*30)
-            # print(net.metrics_names)
-            # print(type(loss_tr))
-            # print(len(loss_tr))
-            # print(loss_tr)
-            # print(loss_tr.shape)
 
         # Training loss; Divide by the number of batches
         # print(loss_tr)
@@ -165,17 +159,9 @@ def train_model(args, net, x_train_paths, y_train_paths, x_val_paths,
         for batch in tqdm(range(n_batchs_val), desc="Validation"):
             x_val_paths_b = x_val_paths[batch * batch_size:(batch + 1) * batch_size]
             y_val_paths_b_seg = y_val_paths[0][batch * batch_size:(batch + 1) * batch_size]
-            # if args.multitasking:
-            #     y_val_paths_b_bound = y_val_paths[1][batch * batch_size:(batch + 1) * batch_size]
-            #     y_val_paths_b_dist = y_val_paths[2][batch * batch_size:(batch + 1) * batch_size]
-            #     y_val_paths_b_color = y_val_paths[3][batch * batch_size:(batch + 1) * batch_size]
             for b in range(batch_size):
                 x_val_b[b] = np.load(x_val_paths_b[b])
                 y_val_h_b_seg[b] = np.load(y_val_paths_b_seg[b]).astype(np.float32)
-                # if args.multitasking:
-                #     y_val_h_b_bound[b] = np.load(y_val_paths_b_bound[b])
-                #     y_val_h_b_dist[b] = np.load(y_val_paths_b_dist[b])
-                #     y_val_h_b_color[b] = np.load(y_val_paths_b_color[b])
 
             if not args.multitasking:
                 loss_val = loss_val + net.test_on_batch(x_val_b, y_val_h_b_seg)
@@ -321,7 +307,7 @@ if __name__ == '__main__':
                         Logs and checkpoint will be saved inside this folder.",
                         type=str, default='./results/results_run1')
     parser.add_argument("-cp", "--checkpoint_path", help="Path where to load \
-                        model checkpoint to continue training",
+                        model checkpoint to continue training, if needed",
                         type=str, default=None)
     parser.add_argument("-dp", "--dataset_path", help="Path where to load dataset",
                         type=str, default='./DATASETS/patch_size=256_stride=32')
@@ -426,20 +412,20 @@ if __name__ == '__main__':
         print('Using Cross Entropy')
         # loss = "categorical_crossentropy"
         loss = tf.keras.losses.CategoricalCrossentropy()
+        loss_bound = tf.keras.losses.BinaryCrossentropy()
         loss_reg = tf.keras.losses.MeanSquaredError()
-        loss_color = "categorical_crossentropy"
     elif args.loss == "tanimoto":
         print('Using Tanimoto Dual Loss')
         loss = Tanimoto_dual_loss()
-        loss_color = Tanimoto_dual_loss()
+        loss_bound = Tanimoto_dual_loss()
         loss_reg = Tanimoto_dual_loss()
     else:
         print('Using Weighted cross entropy')
         weights = [4.34558461, 2.97682037, 3.92124661, 5.67350328, 374.0300152]
         print(weights)
         loss = weighted_categorical_crossentropy(weights)
+        loss_bound = tf.keras.losses.BinaryCrossentropy()
         loss_reg = tf.keras.losses.MeanSquaredError()
-        loss_color = "categorical_crossentropy"
     print('='*60)
 
     # Compile Models
@@ -448,7 +434,7 @@ if __name__ == '__main__':
             if args.resunet_a:
                 if args.multitasking:
                     print('Multitasking enabled!')
-                    losses = {'seg': loss, 'bound': loss,
+                    losses = {'seg': loss, 'bound': loss_bound,
                               'dist': loss_reg, 'color': loss_reg}
                     lossWeights = {'seg': 1.0, 'bound': args.bound_weight,
                                    'dist': args.dist_weight, 'color': args.color_weight}
