@@ -12,7 +12,7 @@ Then, we need to chop the image in patches to feed the neural network, because a
 
 In training, remember to pass as arguments in the script the number of the patch size (`-ps, --patch_size`) in preprocessing step and number of classes of the dataset (`--num_classes`). For the multitasking case, I implemented tanimoto dual loss, used in the original paper, for tensorflow 2.x based on the [original mxnet implementation](https://github.com/feevos/resuneta/blob/master/nn/loss/loss.py). If you don't want to use tanimoto, You can use **Categorical Cross Entropy** for the *segmentation task*, **Binary Cross Entropy** for *boundary detection*, since it's a multi-label classification, and regression losses for color and *distance transform* like **MSE**. Also, You can choose in the arguments to use between weighted and standard cross entropy for segmentation task. The weights for each loss can be chosen in the arguments (`--bound_weight`, `--dist_weight`, `--color_weight`). The training is simplmented with **early stopping**. 
 
-The dataset path can be chosen with the args `-dp` or `--dataset_path`. The logs and checkpoints will be saved in the `--results_path` folder. To see logs, you can run tensorboard into this log folder specified `tensorboard --logdir log_folder_path`.
+The dataset path can be chosen with the args `-dp` or `--dataset_path`. The logs and checkpoints will be saved in the `--results_path` folder. To see logs, you can run tensorboard into this log folder specified ``tensorboard --logdir log_folder_path``.
 
 GPU parallel is supported and ca be eabled with `--gpu_parallel`.
 
